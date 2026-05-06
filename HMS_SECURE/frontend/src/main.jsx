@@ -113,7 +113,20 @@ function Stat({ icon: Icon, title, value }) {
 function Table({ rows, onEdit, onDelete }) {
   if (!rows?.length) return <p className="muted">No records found.</p>;
 
-  const hiddenKeys = ["_id", "__v", "created_at", "updated_at"];
+  const hiddenKeys = [
+    "_id",
+    "id",
+    "__v",
+    "created_at",
+    "updated_at",
+    "doctor_uid",
+    "opd_timing",
+    "ipd_timing",
+    "department_id",
+    "department_name",
+    "experience_years",
+    "status",
+  ];
   const keys = Object.keys(rows[0])
     .filter((k) => !hiddenKeys.includes(k))
     .slice(0, 7);
@@ -243,10 +256,18 @@ function App() {
     await api.delete(`/patients/${row.id || row._id}`);
     await load();
   }
-
   function editDoctor(row) {
-    setDoctor(row);
-    setEditingDoctorId(row.id || row._id);
+    setDoctor({
+      doctor_id: row.doctor_id || "",
+      full_name: row.full_name || "",
+      email: row.email || "",
+      phone: row.phone || "",
+      specialization: row.specialization || "",
+      qualification: row.qualification || "",
+      consultation_fee: row.consultation_fee || "",
+    });
+
+    setEditingDoctorId(row.id);
   }
 
   async function deleteDoctor(row) {
