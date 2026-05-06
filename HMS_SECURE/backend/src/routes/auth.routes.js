@@ -46,9 +46,21 @@ router.put('/change-password', verifyToken, asyncHandler(async (req, res) => {
     const ok = await bcrypt.compare(String(oldPassword), user.password || '');
     if (!ok) return res.status(400).json({ message: 'Old password is incorrect' });
 
-    user.password = await bcrypt.hash(String(newPassword), BCRYPT_ROUNDS);
-    user.password_changed_at = new Date();
-    await user.save();
+    const hashed = await bcrypt.hash(String(newPassword), BCRYPT_ROUNDS);
+
+    const result = await User.updateOne(
+        { email: req.user.email },
+        {
+            $set: {
+                password: hashed,
+                password_changed_at: new Date()
+            }
+        }
+    );
+
+    if (result.modifiedCount === 0) {
+        return res.status(500).json({ message: 'Password not updated in database' });
+    }
 
     res.json({ message: 'Admin password changed successfully. Please login again.' });
 }));
