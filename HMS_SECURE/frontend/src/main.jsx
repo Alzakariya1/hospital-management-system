@@ -15,6 +15,7 @@ import api from "./api/client";
 import "./style.css";
 
 const emptyPatient = {
+  patient_id: "",
   full_name: "",
   age: "",
   gender: "male",
@@ -25,6 +26,7 @@ const emptyPatient = {
   medical_notes: "",
 };
 const emptyDoctor = {
+  doctor_id: "",
   full_name: "",
   email: "",
   phone: "",
