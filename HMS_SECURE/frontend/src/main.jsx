@@ -10,6 +10,7 @@ import {
   Stethoscope,
   TestTube2,
   Users,
+  UserCircle,
 } from "lucide-react";
 import api from "./api/client";
 import "./style.css";
@@ -178,6 +179,20 @@ function App() {
   const [rads, setRads] = useState([]);
   const [meds, setMeds] = useState([]);
   const [bills, setBills] = useState([]);
+  const [profile, setProfile] = useState(user || {});
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+  });
+  const [newUser, setNewUser] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    role: "receptionist",
+    profile_image: "",
+    bio: "",
+  });
+  const [usersList, setUsersList] = useState([]);
 
   const [patient, setPatient] = useState(emptyPatient);
   const [doctor, setDoctor] = useState(emptyDoctor);
@@ -203,8 +218,9 @@ function App() {
       api.get("/radiology/tests"),
       api.get("/pharmacy/medicines"),
       api.get("/billing/all"),
+      api.get("/auth/users"),
     ];
-    const [s, p, d, a, b, l, r, m, bi] = await Promise.allSettled(calls);
+    const [s, p, d, a, b, l, r, m, bi, u] = await Promise.allSettled(calls);
     if (s.value) setStats(s.value.data);
     if (p.value) setPatients(p.value.data);
     if (d.value) setDoctors(d.value.data);
@@ -214,6 +230,7 @@ function App() {
     if (r.value) setRads(r.value.data);
     if (m.value) setMeds(m.value.data);
     if (bi.value) setBills(bi.value.data);
+    if (u.value) setUsersList(u.value.data);
   }
   useEffect(() => {
     load();
@@ -367,6 +384,40 @@ function App() {
     setBill(emptyBill);
     await load();
   }
+  async function updateProfile(e) {
+    e.preventDefault();
+    const { data } = await api.put("/auth/me", profile);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    setUser(data.user);
+    alert("Profile updated");
+  }
+
+  async function changePassword(e) {
+    e.preventDefault();
+    await api.put("/auth/change-password", passwordForm);
+    setPasswordForm({ oldPassword: "", newPassword: "" });
+    alert("Password changed successfully");
+  }
+
+  async function addUser(e) {
+    e.preventDefault();
+    await api.post("/auth/users", newUser);
+    setNewUser({
+      full_name: "",
+      email: "",
+      password: "",
+      role: "receptionist",
+      profile_image: "",
+      bio: "",
+    });
+    await load();
+  }
+
+  async function deleteUser(row) {
+    if (!confirm("Delete this user?")) return;
+    await api.delete(`/auth/users/${row.id}`);
+    await load();
+  }
   function logout() {
     localStorage.clear();
     setUser(null);
@@ -380,6 +431,7 @@ function App() {
     ["labs", "Lab/Radiology", TestTube2],
     ["pharmacy", "Pharmacy", Pill],
     ["billing", "Billing", ReceiptText],
+    ["profile", "Profile", UserCircle],
   ];
   return (
     <div className="app">
@@ -527,6 +579,100 @@ function App() {
               submit={addBill}
             />
             <Table rows={bills} />
+          </section>
+        )}
+        {tab === "profile" && (
+          <section>
+            <form className="card form" onSubmit={updateProfile}>
+              <h2>Admin Profile</h2>
+
+              {profile.profile_image && (
+                <img
+                  src={profile.profile_image}
+                  alt="Profile"
+                  style={{
+                    width: 90,
+                    height: 90,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
+
+              <div className="formGrid">
+                <input
+                  placeholder="Name"
+                  value={profile.full_name || ""}
+                  onChange={(e) =>
+                    setProfile({ ...profile, full_name: e.target.value })
+                  }
+                />
+                <input
+                  placeholder="Email"
+                  value={profile.email || ""}
+                  disabled
+                />
+                <input
+                  placeholder="Profile Image URL"
+                  value={profile.profile_image || ""}
+                  onChange={(e) =>
+                    setProfile({ ...profile, profile_image: e.target.value })
+                  }
+                />
+                <input
+                  placeholder="Bio"
+                  value={profile.bio || ""}
+                  onChange={(e) =>
+                    setProfile({ ...profile, bio: e.target.value })
+                  }
+                />
+              </div>
+
+              <button>Update Profile</button>
+            </form>
+
+            <form className="card form" onSubmit={changePassword}>
+              <h2>Change Password</h2>
+              <div className="formGrid">
+                <input
+                  type="password"
+                  placeholder="Old Password"
+                  value={passwordForm.oldPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      oldPassword: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      newPassword: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <button>Change Password</button>
+            </form>
+
+            {(user.role === "super_admin" || user.role === "admin") && (
+              <>
+                <Form
+                  title="Add New User / Role"
+                  data={newUser}
+                  setData={setNewUser}
+                  submit={addUser}
+                />
+
+                <h2>User List</h2>
+                <Table rows={usersList} onDelete={deleteUser} />
+              </>
+            )}
           </section>
         )}
       </main>
