@@ -39,11 +39,9 @@ router.put('/change-password', verifyToken, asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Old password and new password are required' });
     }
 
-    const err = validatePassword(newPassword);
-    if (err) return res.status(400).json({ message: err });
+    const user = await User.findOne({ email: req.user.email });
 
-    const user = await User.findOne({ id: req.user.id });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'Admin user not found' });
 
     const ok = await bcrypt.compare(String(oldPassword), user.password || '');
     if (!ok) return res.status(400).json({ message: 'Old password is incorrect' });
@@ -52,7 +50,7 @@ router.put('/change-password', verifyToken, asyncHandler(async (req, res) => {
     user.password_changed_at = new Date();
     await user.save();
 
-    res.json({ message: 'Password changed successfully' });
+    res.json({ message: 'Admin password changed successfully. Please login again.' });
 }));
 router.get('/users', verifyToken, allowRoles('super_admin', 'admin'), asyncHandler(async (req, res) => res.json((await User.find().sort({ id: -1 })).map(publicUser))));
 async function createUser(req, res) {

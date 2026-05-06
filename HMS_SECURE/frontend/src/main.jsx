@@ -395,8 +395,11 @@ function App() {
   async function changePassword(e) {
     e.preventDefault();
     await api.put("/auth/change-password", passwordForm);
-    setPasswordForm({ oldPassword: "", newPassword: "" });
-    alert("Password changed successfully");
+
+    alert("Password changed successfully. Please login again.");
+
+    localStorage.clear();
+    setUser(null);
   }
 
   async function addUser(e) {
