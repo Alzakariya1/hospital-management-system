@@ -145,21 +145,12 @@ function App() {
   const [stats, setStats] = useState({});
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
-  // const [appointments, setAppointments] = useState([]);
-  // const [beds, setBeds] = useState([]);
-  // const [labs, setLabs] = useState([]);
-  // const [rads, setRads] = useState([]);
-  // const [meds, setMeds] = useState([]);
-  // const [bills, setBills] = useState([]);
-  const [appointment, setAppointment] = useState(emptyAppointment);
-  const [bed, setBed] = useState(emptyBed);
-  const [lab, setLab] = useState(emptyLab);
-  const [rad, setRad] = useState(emptyRad);
-  const [med, setMed] = useState(emptyMed);
-  const [bill, setBill] = useState(emptyBill);
-  const [patient, setPatient] = useState(emptyPatient);
-  const [doctor, setDoctor] = useState(emptyDoctor);
-
+  const [appointments, setAppointments] = useState([]);
+  const [beds, setBeds] = useState([]);
+  const [labs, setLabs] = useState([]);
+  const [rads, setRads] = useState([]);
+  const [meds, setMeds] = useState([]);
+  const [bills, setBills] = useState([]);
   async function load() {
     if (!localStorage.getItem("token")) return;
     const calls = [
