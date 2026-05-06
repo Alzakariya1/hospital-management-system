@@ -151,6 +151,16 @@ function App() {
   const [rads, setRads] = useState([]);
   const [meds, setMeds] = useState([]);
   const [bills, setBills] = useState([]);
+
+  const [patient, setPatient] = useState(emptyPatient);
+  const [doctor, setDoctor] = useState(emptyDoctor);
+
+  const [appointment, setAppointment] = useState(emptyAppointment);
+  const [bed, setBed] = useState(emptyBed);
+  const [lab, setLab] = useState(emptyLab);
+  const [rad, setRad] = useState(emptyRad);
+  const [med, setMed] = useState(emptyMed);
+  const [bill, setBill] = useState(emptyBill);
   async function load() {
     if (!localStorage.getItem("token")) return;
     const calls = [
