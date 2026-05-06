@@ -14,5 +14,13 @@ const Patient = makeModel('Patient', 'patients', {
 const Doctor = makeModel('Doctor', 'doctors', {
     doctor_id: { type: String, unique: true, index: true },
 });
-const Appointment = makeModel('Appointment', 'appointments'); const Bed = makeModel('Bed', 'beds'); const OpdRecord = makeModel('OpdRecord', 'opd_records'); const IpdAdmission = makeModel('IpdAdmission', 'ipd_admissions'); const NursingNote = makeModel('NursingNote', 'nursing_notes'); const LabTest = makeModel('LabTest', 'lab_tests'); const RadiologyTest = makeModel('RadiologyTest', 'radiology_tests'); const Medicine = makeModel('Medicine', 'medicines'); const PharmacySale = makeModel('PharmacySale', 'pharmacy_sales'); const Billing = makeModel('Billing', 'billing'); const AuditLog = makeModel('AuditLog', 'audit_logs'); const SecuritySetting = makeModel('SecuritySetting', 'security_settings', { setting_key: { type: String, unique: true, index: true } });
+const Appointment = makeModel('Appointment', 'appointments', {
+    patient_id: String,
+    doctor_id: String,
+    appointment_date: String,
+    appointment_time: String,
+    status: String,
+    notes: String,
+});
+const Bed = makeModel('Bed', 'beds'); const OpdRecord = makeModel('OpdRecord', 'opd_records'); const IpdAdmission = makeModel('IpdAdmission', 'ipd_admissions'); const NursingNote = makeModel('NursingNote', 'nursing_notes'); const LabTest = makeModel('LabTest', 'lab_tests'); const RadiologyTest = makeModel('RadiologyTest', 'radiology_tests'); const Medicine = makeModel('Medicine', 'medicines'); const PharmacySale = makeModel('PharmacySale', 'pharmacy_sales'); const Billing = makeModel('Billing', 'billing'); const AuditLog = makeModel('AuditLog', 'audit_logs'); const SecuritySetting = makeModel('SecuritySetting', 'security_settings', { setting_key: { type: String, unique: true, index: true } });
 module.exports = { Counter, User, Department, Patient, Doctor, Appointment, Bed, OpdRecord, IpdAdmission, NursingNote, LabTest, RadiologyTest, Medicine, PharmacySale, Billing, AuditLog, SecuritySetting };

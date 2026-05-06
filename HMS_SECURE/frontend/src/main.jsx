@@ -37,9 +37,10 @@ const emptyDoctor = {
 const emptyAppointment = {
   patient_id: "",
   doctor_id: "",
-  date: "",
-  time: "",
+  appointment_date: "",
+  appointment_time: "",
   status: "scheduled",
+  notes: "",
 };
 const emptyBed = { ward: "", bed_number: "", status: "available" };
 const emptyLab = { name: "", price: "" };
@@ -176,6 +177,7 @@ function App() {
   const [bill, setBill] = useState(emptyBill);
   const [editingPatientId, setEditingPatientId] = useState(null);
   const [editingDoctorId, setEditingDoctorId] = useState(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState(null);
   async function load() {
     if (!localStorage.getItem("token")) return;
     const calls = [
@@ -254,7 +256,47 @@ function App() {
   }
   async function addAppointment(e) {
     e.preventDefault();
-    await api.post("/appointments", appointment);
+
+    if (editingAppointmentId) {
+      await api.put(`/appointments/${editingAppointmentId}`, appointment);
+      setEditingAppointmentId(null);
+    } else {
+      await api.post("/appointments", appointment);
+    }
+
+    setAppointment(emptyAppointment);
+    await load();
+  }
+
+  function editAppointment(row) {
+    setAppointment({
+      patient_id: row.patient_id || "",
+      doctor_id: row.doctor_id || "",
+      appointment_date: row.appointment_date || "",
+      appointment_time: row.appointment_time || "",
+      status: row.status || "scheduled",
+      notes: row.notes || "",
+    });
+
+    setEditingAppointmentId(row.id || row._id);
+  }
+
+  async function deleteAppointment(row) {
+    if (!confirm("Delete this appointment?")) return;
+
+    await api.delete(`/appointments/${row.id || row._id}`);
+    await load();
+  }
+  async function addAppointment(e) {
+    e.preventDefault();
+
+    if (editingAppointmentId) {
+      await api.put(`/appointments/${editingAppointmentId}`, appointment);
+      setEditingAppointmentId(null);
+    } else {
+      await api.post("/appointments", appointment);
+    }
+
     setAppointment(emptyAppointment);
     await load();
   }
@@ -398,7 +440,11 @@ function App() {
               setData={setAppointment}
               submit={addAppointment}
             />
-            <Table rows={appointments} />
+            <Table
+              rows={appointments}
+              onEdit={editAppointment}
+              onDelete={deleteAppointment}
+            />
           </section>
         )}
 
@@ -456,19 +502,50 @@ function App() {
   );
 }
 function Form({ title, data, setData, submit }) {
+  function inputType(k) {
+    if (k.includes("date")) return "date";
+    if (k.includes("time")) return "time";
+    if (k.includes("email")) return "email";
+    if (
+      k.includes("age") ||
+      k.includes("fee") ||
+      k.includes("price") ||
+      k.includes("stock") ||
+      k.includes("amount")
+    )
+      return "number";
+    return "text";
+  }
+
   return (
     <form className="card form" onSubmit={submit}>
       <h2>{title}</h2>
       <div className="formGrid">
-        {Object.keys(data).map((k) => (
-          <input
-            key={k}
-            required={k === "full_name"}
-            placeholder={k.replaceAll("_", " ")}
-            value={data[k] ?? ""}
-            onChange={(e) => setData({ ...data, [k]: e.target.value })}
-          />
-        ))}
+        {Object.keys(data).map((k) =>
+          k === "status" ? (
+            <select
+              key={k}
+              value={data[k] ?? ""}
+              onChange={(e) => setData({ ...data, [k]: e.target.value })}
+            >
+              <option value="scheduled">scheduled</option>
+              <option value="completed">completed</option>
+              <option value="cancelled">cancelled</option>
+              <option value="pending">pending</option>
+            </select>
+          ) : (
+            <input
+              key={k}
+              type={inputType(k)}
+              required={
+                k === "full_name" || k === "patient_id" || k === "doctor_id"
+              }
+              placeholder={k.replaceAll("_", " ")}
+              value={data[k] ?? ""}
+              onChange={(e) => setData({ ...data, [k]: e.target.value })}
+            />
+          ),
+        )}
       </div>
       <button>Save</button>
     </form>
