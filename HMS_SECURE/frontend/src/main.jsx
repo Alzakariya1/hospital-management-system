@@ -247,13 +247,24 @@ function App() {
     await load();
   }
   function editPatient(row) {
-    setPatient(row);
-    setEditingPatientId(row.id || row._id);
+    setPatient({
+      patient_id: row.patient_id || "",
+      full_name: row.full_name || "",
+      age: row.age || "",
+      gender: row.gender || "male",
+      phone: row.phone || "",
+      email: row.email || "",
+      address: row.address || "",
+      blood_group: row.blood_group || "",
+      medical_notes: row.medical_notes || "",
+    });
+
+    setEditingPatientId(row.id);
   }
 
   async function deletePatient(row) {
     if (!confirm("Delete this patient?")) return;
-    await api.delete(`/patients/${row.id || row._id}`);
+    await api.delete(`/patients/${row.id}`);
     await load();
   }
   function editDoctor(row) {
