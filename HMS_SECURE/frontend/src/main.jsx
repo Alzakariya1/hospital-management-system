@@ -109,28 +109,39 @@ function Stat({ icon: Icon, title, value }) {
     </div>
   );
 }
-function Table({ rows }) {
+function Table({ rows, onEdit, onDelete }) {
   if (!rows?.length) return <p className="muted">No records found.</p>;
+
+  const hiddenKeys = ["_id", "__v", "created_at", "updated_at"];
+  const keys = Object.keys(rows[0])
+    .filter((k) => !hiddenKeys.includes(k))
+    .slice(0, 7);
+
   return (
     <div className="tableWrap">
       <table>
         <thead>
           <tr>
-            {Object.keys(rows[0])
-              .slice(0, 7)
-              .map((k) => (
-                <th key={k}>{k}</th>
-              ))}
+            {keys.map((k) => (
+              <th key={k}>{k.replaceAll("_", " ")}</th>
+            ))}
+            {(onEdit || onDelete) && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i}>
-              {Object.keys(rows[0])
-                .slice(0, 7)
-                .map((k) => (
-                  <td key={k}>{String(r[k] ?? "")}</td>
-                ))}
+              {keys.map((k) => (
+                <td key={k}>{String(r[k] ?? "")}</td>
+              ))}
+              {(onEdit || onDelete) && (
+                <td>
+                  {onEdit && <button onClick={() => onEdit(r)}>Edit</button>}
+                  {onDelete && (
+                    <button onClick={() => onDelete(r)}>Delete</button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -163,6 +174,8 @@ function App() {
   const [rad, setRad] = useState(emptyRad);
   const [med, setMed] = useState(emptyMed);
   const [bill, setBill] = useState(emptyBill);
+  const [editingPatientId, setEditingPatientId] = useState(null);
+  const [editingDoctorId, setEditingDoctorId] = useState(null);
   async function load() {
     if (!localStorage.getItem("token")) return;
     const calls = [
@@ -193,14 +206,50 @@ function App() {
   if (!user) return <Login onLogin={setUser} />;
   async function addPatient(e) {
     e.preventDefault();
-    await api.post("/patients", patient);
+
+    if (editingPatientId) {
+      await api.put(`/patients/${editingPatientId}`, patient);
+      setEditingPatientId(null);
+    } else {
+      await api.post("/patients", patient);
+    }
+
     setPatient(emptyPatient);
     await load();
   }
+
   async function addDoctor(e) {
     e.preventDefault();
-    await api.post("/doctors", doctor);
+
+    if (editingDoctorId) {
+      await api.put(`/doctors/${editingDoctorId}`, doctor);
+      setEditingDoctorId(null);
+    } else {
+      await api.post("/doctors", doctor);
+    }
+
     setDoctor(emptyDoctor);
+    await load();
+  }
+  function editPatient(row) {
+    setPatient(row);
+    setEditingPatientId(row.id || row._id);
+  }
+
+  async function deletePatient(row) {
+    if (!confirm("Delete this patient?")) return;
+    await api.delete(`/patients/${row.id || row._id}`);
+    await load();
+  }
+
+  function editDoctor(row) {
+    setDoctor(row);
+    setEditingDoctorId(row.id || row._id);
+  }
+
+  async function deleteDoctor(row) {
+    if (!confirm("Delete this doctor?")) return;
+    await api.delete(`/doctors/${row.id || row._id}`);
     await load();
   }
   async function addAppointment(e) {
@@ -323,7 +372,11 @@ function App() {
               setData={setPatient}
               submit={addPatient}
             />
-            <Table rows={patients} />
+            <Table
+              rows={patients}
+              onEdit={editPatient}
+              onDelete={deletePatient}
+            />
           </section>
         )}
         {tab === "doctors" && (
@@ -334,7 +387,7 @@ function App() {
               setData={setDoctor}
               submit={addDoctor}
             />
-            <Table rows={doctors} />
+            <Table rows={doctors} onEdit={editDoctor} onDelete={deleteDoctor} />
           </section>
         )}
         {tab === "appointments" && (
