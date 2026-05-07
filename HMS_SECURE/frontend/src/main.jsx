@@ -683,7 +683,7 @@ function App() {
             <div>
               <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
 
-              <p style={{ color: "#666", marginTop: -10 }}>
+              <p style={{ color: "#666", marginTop: 2 }}>
                 Welcome back, {user.full_name}
               </p>
             </div>
