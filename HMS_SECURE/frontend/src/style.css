@@ -89,9 +89,9 @@ aside {
 main {
   margin-left: 260px;
   width: calc(100% - 260px);
-  min-height: 100vh;
-  padding: 28px;
+  height: 100vh;
   overflow-y: auto;
+  background: #f3f4f6;
 }
 aside h2 {
   font-size: 32px;
@@ -114,14 +114,32 @@ aside button:hover {
   color: #fff;
 }
 main {
-  padding: 28px;
-  overflow: auto;
+  margin-left: 260px;
+  width: calc(100% - 260px);
+  height: 100vh;
+  overflow-y: auto;
+  background: #f3f4f6;
 }
+
 header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+
+  background: #f3f4f6;
+
+  padding: 28px 0 18px;
+
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 22px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  margin-bottom: 24px;
+}
+.mainContent {
+  padding: 24px 28px 40px;
 }
 header h1 {
   margin: 0;

@@ -672,649 +672,674 @@ function App() {
           </button>
         </aside>
         <main>
-          <header
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 20,
-            }}
-          >
-            <div>
-              <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
-
-              <p style={{ color: "#666", marginTop: 2 }}>
-                Welcome back, {user.full_name}
-              </p>
-            </div>
-
-            <div
+          <div className="mainContent">
+            <header
               style={{
                 display: "flex",
+                justifyContent: "space-between",
                 alignItems: "center",
-                gap: 14,
+                gap: 20,
               }}
             >
-              <div
-                style={{
-                  background: "#fff",
-                  padding: "10px 16px",
-                  borderRadius: 14,
-                  display: "flex",
-                  gap: 16,
-                  alignItems: "center",
-                  border: "1px solid #eee",
-                }}
-              >
-                <span>📅 {appointments.length} Appointments</span>
+              <div>
+                <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
 
-                <span>
-                  💊 {meds.filter((m) => Number(m.stock || 0) < 10).length} Low
-                  Stock
-                </span>
-
-                <span>
-                  💰 {bills.filter((b) => b.status === "pending").length}{" "}
-                  Pending Bills
-                </span>
+                <p style={{ color: "#666", marginTop: 2 }}>
+                  Welcome back, {user.full_name}
+                </p>
               </div>
 
-              <button onClick={load}>Refresh</button>
-            </div>
-          </header>
-          {tab === "dashboard" && (
-            <section>
-              <div className="grid">
-                <Stat
-                  icon={Users}
-                  title="Total Patients"
-                  value={stats.totalPatients}
-                />
-                <Stat
-                  icon={Stethoscope}
-                  title="Total Doctors"
-                  value={stats.totalDoctors}
-                />
-                <Stat
-                  icon={Calendar}
-                  title="Appointments Today"
-                  value={stats.appointmentsToday}
-                />
-                <Stat
-                  icon={Bed}
-                  title="Available Beds"
-                  value={stats.availableBeds}
-                />
-              </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: 20,
-                  marginTop: 24,
-                }}
-              >
-                <div className="card" style={{ padding: 24 }}>
-                  <h2>Hospital Overview</h2>
-                  <div style={{ width: "100%", height: 320 }}>
-                    <ResponsiveContainer>
-                      <BarChart data={appointmentChartData}>
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="value" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-
-                <div className="card" style={{ padding: 24 }}>
-                  <h2>Billing Status</h2>
-                  <div style={{ width: "100%", height: 320 }}>
-                    <ResponsiveContainer>
-                      <PieChart>
-                        <Pie
-                          data={billingChartData}
-                          dataKey="value"
-                          nameKey="name"
-                          outerRadius={90}
-                          label
-                        >
-                          {billingChartData.map((entry, index) => (
-                            <Cell key={index} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
-              </div>
               <div
                 style={{
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
+                  gap: 14,
                 }}
               >
-                <h2>Recent Activity</h2>
-                <small className="muted">Latest 6 activities</small>
-              </div>
-              <div className="card" style={{ padding: 0, overflow: "hidden" }}>
-                <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                  <Table rows={(stats.recentActivity || []).slice(0, 6)} />
-                </div>
-              </div>
-            </section>
-          )}
-          {tab === "patients" && (
-            <section>
-              <Form
-                title="Add Patient"
-                data={patient}
-                setData={setPatient}
-                submit={addPatient}
-              />
-              <div className="card">
-                <input
-                  placeholder="Search patient by ID, name, phone or email..."
-                  value={patientSearch}
-                  onChange={(e) => setPatientSearch(e.target.value)}
+                <div
                   style={{
-                    maxWidth: 420,
-                    marginBottom: 16,
+                    background: "#fff",
+                    padding: "10px 16px",
+                    borderRadius: 14,
+                    display: "flex",
+                    gap: 16,
+                    alignItems: "center",
+                    border: "1px solid #eee",
                   }}
-                />
-
-                <Table
-                  rows={paginatedPatients}
-                  onEdit={editPatient}
-                  onDelete={deletePatient}
-                />
-                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                  <button
-                    disabled={patientPage === 1}
-                    onClick={() => setPatientPage(patientPage - 1)}
-                  >
-                    Previous
-                  </button>
+                >
+                  <span>📅 {appointments.length} Appointments</span>
 
                   <span>
-                    Page {patientPage} of {patientTotalPages || 1}
+                    💊 {meds.filter((m) => Number(m.stock || 0) < 10).length}{" "}
+                    Low Stock
                   </span>
-
-                  <button
-                    disabled={patientPage >= patientTotalPages}
-                    onClick={() => setPatientPage(patientPage + 1)}
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </section>
-          )}
-          {tab === "doctors" && (
-            <section>
-              <Form
-                title="Add Doctor"
-                data={doctor}
-                setData={setDoctor}
-                submit={addDoctor}
-              />
-              <div className="card">
-                <input
-                  placeholder="Search doctor by ID, name, phone, email or specialization..."
-                  value={doctorSearch}
-                  onChange={(e) => setDoctorSearch(e.target.value)}
-                  style={{
-                    maxWidth: 460,
-                    marginBottom: 16,
-                  }}
-                />
-
-                <Table
-                  rows={paginatedDoctors}
-                  onEdit={editDoctor}
-                  onDelete={deleteDoctor}
-                />
-                <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                  <button
-                    disabled={doctorPage === 1}
-                    onClick={() => setDoctorPage(doctorPage - 1)}
-                  >
-                    Previous
-                  </button>
 
                   <span>
-                    Page {doctorPage} of {doctorTotalPages || 1}
+                    💰 {bills.filter((b) => b.status === "pending").length}{" "}
+                    Pending Bills
                   </span>
-
-                  <button
-                    disabled={doctorPage >= doctorTotalPages}
-                    onClick={() => setDoctorPage(doctorPage + 1)}
-                  >
-                    Next
-                  </button>
                 </div>
+
+                <button onClick={load}>Refresh</button>
               </div>
-            </section>
-          )}
-          {tab === "appointments" && (
-            <section>
-              <Form
-                title="Add Appointment"
-                data={appointment}
-                setData={setAppointment}
-                submit={addAppointment}
-              />
+            </header>
+            {tab === "dashboard" && (
+              <section>
+                <div className="grid">
+                  <Stat
+                    icon={Users}
+                    title="Total Patients"
+                    value={stats.totalPatients}
+                  />
+                  <Stat
+                    icon={Stethoscope}
+                    title="Total Doctors"
+                    value={stats.totalDoctors}
+                  />
+                  <Stat
+                    icon={Calendar}
+                    title="Appointments Today"
+                    value={stats.appointmentsToday}
+                  />
+                  <Stat
+                    icon={Bed}
+                    title="Available Beds"
+                    value={stats.availableBeds}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 20,
+                    marginTop: 24,
+                  }}
+                >
+                  <div className="card" style={{ padding: 24 }}>
+                    <h2>Hospital Overview</h2>
+                    <div style={{ width: "100%", height: 320 }}>
+                      <ResponsiveContainer>
+                        <BarChart data={appointmentChartData}>
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Bar dataKey="value" radius={[8, 8, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
 
-              <div className="card">
-                <h2>Appointment Calendar</h2>
-
+                  <div className="card" style={{ padding: 24 }}>
+                    <h2>Billing Status</h2>
+                    <div style={{ width: "100%", height: 320 }}>
+                      <ResponsiveContainer>
+                        <PieChart>
+                          <Pie
+                            data={billingChartData}
+                            dataKey="value"
+                            nameKey="name"
+                            outerRadius={90}
+                            label
+                          >
+                            {billingChartData.map((entry, index) => (
+                              <Cell key={index} />
+                            ))}
+                          </Pie>
+                          <Tooltip />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
                 <div
                   style={{
                     display: "flex",
-                    gap: 12,
-                    marginBottom: 16,
-                    flexWrap: "wrap",
+                    justifyContent: "space-between",
+                    alignItems: "center",
                   }}
                 >
+                  <h2>Recent Activity</h2>
+                  <small className="muted">Latest 6 activities</small>
+                </div>
+                <div
+                  className="card"
+                  style={{ padding: 0, overflow: "hidden" }}
+                >
+                  <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                    <Table rows={(stats.recentActivity || []).slice(0, 6)} />
+                  </div>
+                </div>
+              </section>
+            )}
+            {tab === "patients" && (
+              <section>
+                <Form
+                  title="Add Patient"
+                  data={patient}
+                  setData={setPatient}
+                  submit={addPatient}
+                />
+                <div className="card">
                   <input
-                    placeholder="Search by patient/doctor ID or name..."
-                    value={appointmentSearch}
-                    onChange={(e) => setAppointmentSearch(e.target.value)}
-                    style={{ maxWidth: 380 }}
+                    placeholder="Search patient by ID, name, phone or email..."
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    style={{
+                      maxWidth: 420,
+                      marginBottom: 16,
+                    }}
                   />
 
-                  <select
-                    value={appointmentStatusFilter}
-                    onChange={(e) => setAppointmentStatusFilter(e.target.value)}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="pending">Pending</option>
-                  </select>
+                  <Table
+                    rows={paginatedPatients}
+                    onEdit={editPatient}
+                    onDelete={deletePatient}
+                  />
+                  <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                    <button
+                      disabled={patientPage === 1}
+                      onClick={() => setPatientPage(patientPage - 1)}
+                    >
+                      Previous
+                    </button>
+
+                    <span>
+                      Page {patientPage} of {patientTotalPages || 1}
+                    </span>
+
+                    <button
+                      disabled={patientPage >= patientTotalPages}
+                      onClick={() => setPatientPage(patientPage + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
+              </section>
+            )}
+            {tab === "doctors" && (
+              <section>
+                <Form
+                  title="Add Doctor"
+                  data={doctor}
+                  setData={setDoctor}
+                  submit={addDoctor}
+                />
+                <div className="card">
+                  <input
+                    placeholder="Search doctor by ID, name, phone, email or specialization..."
+                    value={doctorSearch}
+                    onChange={(e) => setDoctorSearch(e.target.value)}
+                    style={{
+                      maxWidth: 460,
+                      marginBottom: 16,
+                    }}
+                  />
 
-                {!filteredAppointments?.length ? (
-                  <p className="muted">No appointments found.</p>
-                ) : (
-                  <>
-                    <div style={{ display: "grid", gap: 12 }}>
-                      {paginatedAppointments.map((a) => (
-                        <div
-                          key={a.id}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr 1fr auto",
-                            gap: 12,
-                            alignItems: "center",
-                            padding: 14,
-                            border: "1px solid #eee",
-                            borderRadius: 14,
-                            background: "#fff",
-                          }}
-                        >
-                          <div>
-                            <b>{a.patient_name || a.patient_id}</b>
-                            <p className="muted" style={{ margin: "4px 0 0" }}>
-                              Patient ID: {a.patient_id}
-                            </p>
-                          </div>
+                  <Table
+                    rows={paginatedDoctors}
+                    onEdit={editDoctor}
+                    onDelete={deleteDoctor}
+                  />
+                  <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                    <button
+                      disabled={doctorPage === 1}
+                      onClick={() => setDoctorPage(doctorPage - 1)}
+                    >
+                      Previous
+                    </button>
 
-                          <div>
-                            <b>{a.doctor_name || a.doctor_id}</b>
-                            <p className="muted" style={{ margin: "4px 0 0" }}>
-                              Doctor ID: {a.doctor_id}
-                            </p>
-                          </div>
+                    <span>
+                      Page {doctorPage} of {doctorTotalPages || 1}
+                    </span>
 
-                          <div>
-                            <b>{a.appointment_date || "No date"}</b>
-                            <p className="muted" style={{ margin: "4px 0 0" }}>
-                              {a.appointment_time || "No time"}
-                            </p>
-                          </div>
+                    <button
+                      disabled={doctorPage >= doctorTotalPages}
+                      onClick={() => setDoctorPage(doctorPage + 1)}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </section>
+            )}
+            {tab === "appointments" && (
+              <section>
+                <Form
+                  title="Add Appointment"
+                  data={appointment}
+                  setData={setAppointment}
+                  submit={addAppointment}
+                />
 
+                <div className="card">
+                  <h2>Appointment Calendar</h2>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 12,
+                      marginBottom: 16,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <input
+                      placeholder="Search by patient/doctor ID or name..."
+                      value={appointmentSearch}
+                      onChange={(e) => setAppointmentSearch(e.target.value)}
+                      style={{ maxWidth: 380 }}
+                    />
+
+                    <select
+                      value={appointmentStatusFilter}
+                      onChange={(e) =>
+                        setAppointmentStatusFilter(e.target.value)
+                      }
+                    >
+                      <option value="all">All Status</option>
+                      <option value="scheduled">Scheduled</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                      <option value="pending">Pending</option>
+                    </select>
+                  </div>
+
+                  {!filteredAppointments?.length ? (
+                    <p className="muted">No appointments found.</p>
+                  ) : (
+                    <>
+                      <div style={{ display: "grid", gap: 12 }}>
+                        {paginatedAppointments.map((a) => (
                           <div
+                            key={a.id}
                             style={{
-                              display: "flex",
-                              gap: 8,
+                              display: "grid",
+                              gridTemplateColumns: "1fr 1fr 1fr auto",
+                              gap: 12,
                               alignItems: "center",
+                              padding: 14,
+                              border: "1px solid #eee",
+                              borderRadius: 14,
+                              background: "#fff",
                             }}
                           >
-                            <span
+                            <div>
+                              <b>{a.patient_name || a.patient_id}</b>
+                              <p
+                                className="muted"
+                                style={{ margin: "4px 0 0" }}
+                              >
+                                Patient ID: {a.patient_id}
+                              </p>
+                            </div>
+
+                            <div>
+                              <b>{a.doctor_name || a.doctor_id}</b>
+                              <p
+                                className="muted"
+                                style={{ margin: "4px 0 0" }}
+                              >
+                                Doctor ID: {a.doctor_id}
+                              </p>
+                            </div>
+
+                            <div>
+                              <b>{a.appointment_date || "No date"}</b>
+                              <p
+                                className="muted"
+                                style={{ margin: "4px 0 0" }}
+                              >
+                                {a.appointment_time || "No time"}
+                              </p>
+                            </div>
+
+                            <div
                               style={{
-                                padding: "6px 10px",
-                                borderRadius: 20,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                background:
-                                  a.status === "completed"
-                                    ? "#dcfce7"
-                                    : a.status === "cancelled"
-                                      ? "#fee2e2"
-                                      : "#fef3c7",
-                                color:
-                                  a.status === "completed"
-                                    ? "#166534"
-                                    : a.status === "cancelled"
-                                      ? "#991b1b"
-                                      : "#92400e",
+                                display: "flex",
+                                gap: 8,
+                                alignItems: "center",
                               }}
                             >
-                              {a.status || "scheduled"}
-                            </span>
+                              <span
+                                style={{
+                                  padding: "6px 10px",
+                                  borderRadius: 20,
+                                  fontSize: 12,
+                                  fontWeight: 700,
+                                  background:
+                                    a.status === "completed"
+                                      ? "#dcfce7"
+                                      : a.status === "cancelled"
+                                        ? "#fee2e2"
+                                        : "#fef3c7",
+                                  color:
+                                    a.status === "completed"
+                                      ? "#166534"
+                                      : a.status === "cancelled"
+                                        ? "#991b1b"
+                                        : "#92400e",
+                                }}
+                              >
+                                {a.status || "scheduled"}
+                              </span>
 
-                            <button onClick={() => editAppointment(a)}>
-                              Edit
-                            </button>
-                            <button onClick={() => deleteAppointment(a)}>
-                              Delete
-                            </button>
+                              <button onClick={() => editAppointment(a)}>
+                                Edit
+                              </button>
+                              <button onClick={() => deleteAppointment(a)}>
+                                Delete
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
 
-                    <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
-                      <button
-                        disabled={appointmentPage === 1}
-                        onClick={() => setAppointmentPage(appointmentPage - 1)}
+                      <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                        <button
+                          disabled={appointmentPage === 1}
+                          onClick={() =>
+                            setAppointmentPage(appointmentPage - 1)
+                          }
+                        >
+                          Previous
+                        </button>
+
+                        <span>
+                          Page {appointmentPage} of {appointmentTotalPages || 1}
+                        </span>
+
+                        <button
+                          disabled={appointmentPage >= appointmentTotalPages}
+                          onClick={() =>
+                            setAppointmentPage(appointmentPage + 1)
+                          }
+                        >
+                          Next
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {tab === "beds" && (
+              <section>
+                <Form
+                  title="Add Bed"
+                  data={bed}
+                  setData={setBed}
+                  submit={addBed}
+                />
+                <Table rows={beds} />
+              </section>
+            )}
+
+            {tab === "labs" && (
+              <section>
+                <Form
+                  title="Add Lab Test"
+                  data={lab}
+                  setData={setLab}
+                  submit={addLab}
+                />
+                <Table rows={labs} />
+                <Form
+                  title="Add Radiology Test"
+                  data={rad}
+                  setData={setRad}
+                  submit={addRadiology}
+                />
+                <Table rows={rads} />
+              </section>
+            )}
+
+            {tab === "pharmacy" && (
+              <section>
+                <Form
+                  title="Add Medicine"
+                  data={med}
+                  setData={setMed}
+                  submit={addMedicine}
+                />
+                <Table rows={meds} />
+              </section>
+            )}
+
+            {tab === "billing" && (
+              <section>
+                <Form
+                  title="Add Bill"
+                  data={bill}
+                  setData={setBill}
+                  submit={addBill}
+                />
+                <Table rows={bills} />
+              </section>
+            )}
+            {tab === "profile" && (
+              <section>
+                <div className="card" style={{ marginBottom: 18 }}>
+                  <div
+                    style={{ display: "flex", gap: 18, alignItems: "center" }}
+                  >
+                    <img
+                      src={
+                        profile.profile_image ||
+                        "https://ui-avatars.com/api/?name=" +
+                          encodeURIComponent(profile.full_name || "Admin")
+                      }
+                      alt="Profile"
+                      style={{
+                        width: 90,
+                        height: 90,
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "3px solid #e5e7eb",
+                      }}
+                    />
+
+                    <div>
+                      <h2 style={{ margin: "0 0 6px" }}>
+                        {profile.full_name || "Admin User"}
+                      </h2>
+                      <p className="muted" style={{ margin: 0 }}>
+                        {profile.email}
+                      </p>
+                      <span
+                        style={{
+                          display: "inline-block",
+                          marginTop: 8,
+                          padding: "4px 10px",
+                          borderRadius: 20,
+                          background: "#eef2ff",
+                          color: "#3730a3",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          textTransform: "uppercase",
+                        }}
                       >
-                        Previous
-                      </button>
-
-                      <span>
-                        Page {appointmentPage} of {appointmentTotalPages || 1}
+                        {profile.role || user.role}
                       </span>
+                    </div>
+                  </div>
+                </div>
 
-                      <button
-                        disabled={appointmentPage >= appointmentTotalPages}
-                        onClick={() => setAppointmentPage(appointmentPage + 1)}
+                <form className="card form" onSubmit={updateProfile}>
+                  <h2>Edit Profile</h2>
+
+                  <div className="formGrid">
+                    <input
+                      placeholder="Name"
+                      value={profile.full_name || ""}
+                      onChange={(e) =>
+                        setProfile({ ...profile, full_name: e.target.value })
+                      }
+                    />
+
+                    <input
+                      placeholder="Email / Gmail"
+                      value={profile.email || ""}
+                      disabled
+                    />
+
+                    <input
+                      placeholder="Profile Image URL"
+                      value={profile.profile_image || ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          profile_image: e.target.value,
+                        })
+                      }
+                    />
+
+                    <textarea
+                      placeholder="Bio"
+                      value={profile.bio || ""}
+                      onChange={(e) =>
+                        setProfile({ ...profile, bio: e.target.value })
+                      }
+                      style={{
+                        minHeight: 90,
+                        resize: "vertical",
+                        padding: 12,
+                        borderRadius: 10,
+                        border: "1px solid #ddd",
+                        fontFamily: "inherit",
+                      }}
+                    />
+                  </div>
+
+                  <button>Update Profile</button>
+                </form>
+
+                <form className="card form" onSubmit={changePassword}>
+                  <h2>Change Password</h2>
+
+                  <div className="formGrid">
+                    <input
+                      type="password"
+                      placeholder="Old Password"
+                      value={passwordForm.oldPassword}
+                      onChange={(e) =>
+                        setPasswordForm({
+                          ...passwordForm,
+                          oldPassword: e.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      type="password"
+                      placeholder="New Password"
+                      value={passwordForm.newPassword}
+                      onChange={(e) =>
+                        setPasswordForm({
+                          ...passwordForm,
+                          newPassword: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+
+                  <button>Change Password</button>
+                </form>
+
+                {(user.role === "super_admin" || user.role === "admin") && (
+                  <>
+                    <Form
+                      title="Add New User / Role"
+                      data={newUser}
+                      setData={setNewUser}
+                      submit={addUser}
+                    />
+
+                    <div className="card">
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: 12,
+                          marginBottom: 16,
+                          flexWrap: "wrap",
+                        }}
                       >
-                        Next
-                      </button>
+                        <input
+                          placeholder="Search user..."
+                          value={userSearch}
+                          onChange={(e) => setUserSearch(e.target.value)}
+                          style={{ maxWidth: 240 }}
+                        />
+
+                        <select
+                          value={roleFilter}
+                          onChange={(e) => setRoleFilter(e.target.value)}
+                        >
+                          <option value="all">All Roles</option>
+                          <option value="super_admin">Super Admin</option>
+                          <option value="admin">Admin</option>
+                          <option value="doctor">Doctor</option>
+                          <option value="receptionist">Receptionist</option>
+                          <option value="pharmacist">Pharmacist</option>
+                          <option value="lab_technician">Lab Technician</option>
+                          <option value="accountant">Accountant</option>
+                        </select>
+                      </div>
+
+                      <h2>User List</h2>
+
+                      <div className="tableWrap">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Name</th>
+                              <th>Email</th>
+                              <th>Role</th>
+                              <th>Status</th>
+                              <th>Actions</th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {filteredUsers.map((u) => (
+                              <tr key={u.id}>
+                                <td>{u.full_name}</td>
+                                <td>{u.email}</td>
+                                <td>{u.role}</td>
+                                <td>
+                                  <button onClick={() => toggleUserStatus(u)}>
+                                    {u.status}
+                                  </button>
+                                </td>
+                                <td>
+                                  {u.email !== user.email ? (
+                                    <button onClick={() => deleteUser(u)}>
+                                      Delete
+                                    </button>
+                                  ) : (
+                                    <button
+                                      disabled
+                                      style={{
+                                        opacity: 0.5,
+                                        cursor: "not-allowed",
+                                      }}
+                                    >
+                                      Current User
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </>
                 )}
-              </div>
-            </section>
-          )}
-
-          {tab === "beds" && (
-            <section>
-              <Form
-                title="Add Bed"
-                data={bed}
-                setData={setBed}
-                submit={addBed}
-              />
-              <Table rows={beds} />
-            </section>
-          )}
-
-          {tab === "labs" && (
-            <section>
-              <Form
-                title="Add Lab Test"
-                data={lab}
-                setData={setLab}
-                submit={addLab}
-              />
-              <Table rows={labs} />
-              <Form
-                title="Add Radiology Test"
-                data={rad}
-                setData={setRad}
-                submit={addRadiology}
-              />
-              <Table rows={rads} />
-            </section>
-          )}
-
-          {tab === "pharmacy" && (
-            <section>
-              <Form
-                title="Add Medicine"
-                data={med}
-                setData={setMed}
-                submit={addMedicine}
-              />
-              <Table rows={meds} />
-            </section>
-          )}
-
-          {tab === "billing" && (
-            <section>
-              <Form
-                title="Add Bill"
-                data={bill}
-                setData={setBill}
-                submit={addBill}
-              />
-              <Table rows={bills} />
-            </section>
-          )}
-          {tab === "profile" && (
-            <section>
-              <div className="card" style={{ marginBottom: 18 }}>
-                <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
-                  <img
-                    src={
-                      profile.profile_image ||
-                      "https://ui-avatars.com/api/?name=" +
-                        encodeURIComponent(profile.full_name || "Admin")
-                    }
-                    alt="Profile"
-                    style={{
-                      width: 90,
-                      height: 90,
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "3px solid #e5e7eb",
-                    }}
-                  />
-
-                  <div>
-                    <h2 style={{ margin: "0 0 6px" }}>
-                      {profile.full_name || "Admin User"}
-                    </h2>
-                    <p className="muted" style={{ margin: 0 }}>
-                      {profile.email}
-                    </p>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        marginTop: 8,
-                        padding: "4px 10px",
-                        borderRadius: 20,
-                        background: "#eef2ff",
-                        color: "#3730a3",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      {profile.role || user.role}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <form className="card form" onSubmit={updateProfile}>
-                <h2>Edit Profile</h2>
-
-                <div className="formGrid">
-                  <input
-                    placeholder="Name"
-                    value={profile.full_name || ""}
-                    onChange={(e) =>
-                      setProfile({ ...profile, full_name: e.target.value })
-                    }
-                  />
-
-                  <input
-                    placeholder="Email / Gmail"
-                    value={profile.email || ""}
-                    disabled
-                  />
-
-                  <input
-                    placeholder="Profile Image URL"
-                    value={profile.profile_image || ""}
-                    onChange={(e) =>
-                      setProfile({ ...profile, profile_image: e.target.value })
-                    }
-                  />
-
-                  <textarea
-                    placeholder="Bio"
-                    value={profile.bio || ""}
-                    onChange={(e) =>
-                      setProfile({ ...profile, bio: e.target.value })
-                    }
-                    style={{
-                      minHeight: 90,
-                      resize: "vertical",
-                      padding: 12,
-                      borderRadius: 10,
-                      border: "1px solid #ddd",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                </div>
-
-                <button>Update Profile</button>
-              </form>
-
-              <form className="card form" onSubmit={changePassword}>
-                <h2>Change Password</h2>
-
-                <div className="formGrid">
-                  <input
-                    type="password"
-                    placeholder="Old Password"
-                    value={passwordForm.oldPassword}
-                    onChange={(e) =>
-                      setPasswordForm({
-                        ...passwordForm,
-                        oldPassword: e.target.value,
-                      })
-                    }
-                  />
-
-                  <input
-                    type="password"
-                    placeholder="New Password"
-                    value={passwordForm.newPassword}
-                    onChange={(e) =>
-                      setPasswordForm({
-                        ...passwordForm,
-                        newPassword: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <button>Change Password</button>
-              </form>
-
-              {(user.role === "super_admin" || user.role === "admin") && (
-                <>
-                  <Form
-                    title="Add New User / Role"
-                    data={newUser}
-                    setData={setNewUser}
-                    submit={addUser}
-                  />
-
-                  <div className="card">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 12,
-                        marginBottom: 16,
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      <input
-                        placeholder="Search user..."
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                        style={{ maxWidth: 240 }}
-                      />
-
-                      <select
-                        value={roleFilter}
-                        onChange={(e) => setRoleFilter(e.target.value)}
-                      >
-                        <option value="all">All Roles</option>
-                        <option value="super_admin">Super Admin</option>
-                        <option value="admin">Admin</option>
-                        <option value="doctor">Doctor</option>
-                        <option value="receptionist">Receptionist</option>
-                        <option value="pharmacist">Pharmacist</option>
-                        <option value="lab_technician">Lab Technician</option>
-                        <option value="accountant">Accountant</option>
-                      </select>
-                    </div>
-
-                    <h2>User List</h2>
-
-                    <div className="tableWrap">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                          </tr>
-                        </thead>
-
-                        <tbody>
-                          {filteredUsers.map((u) => (
-                            <tr key={u.id}>
-                              <td>{u.full_name}</td>
-                              <td>{u.email}</td>
-                              <td>{u.role}</td>
-                              <td>
-                                <button onClick={() => toggleUserStatus(u)}>
-                                  {u.status}
-                                </button>
-                              </td>
-                              <td>
-                                {u.email !== user.email ? (
-                                  <button onClick={() => deleteUser(u)}>
-                                    Delete
-                                  </button>
-                                ) : (
-                                  <button
-                                    disabled
-                                    style={{
-                                      opacity: 0.5,
-                                      cursor: "not-allowed",
-                                    }}
-                                  >
-                                    Current User
-                                  </button>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </>
-              )}
-            </section>
-          )}
+              </section>
+            )}
+          </div>
         </main>
       </div>
     </>
