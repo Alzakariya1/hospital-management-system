@@ -520,9 +520,55 @@ function App() {
         </button>
       </aside>
       <main>
-        <header>
-          <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
-          <button onClick={load}>Refresh</button>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 20,
+          }}
+        >
+          <div>
+            <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
+
+            <p style={{ color: "#666", marginTop: -10 }}>
+              Welcome back, {user.full_name}
+            </p>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 14,
+            }}
+          >
+            <div
+              style={{
+                background: "#fff",
+                padding: "10px 16px",
+                borderRadius: 14,
+                display: "flex",
+                gap: 16,
+                alignItems: "center",
+                border: "1px solid #eee",
+              }}
+            >
+              <span>📅 {appointments.length} Appointments</span>
+
+              <span>
+                💊 {meds.filter((m) => Number(m.stock || 0) < 10).length} Low
+                Stock
+              </span>
+
+              <span>
+                💰 {bills.filter((b) => b.status === "pending").length} Pending
+                Bills
+              </span>
+            </div>
+
+            <button onClick={load}>Refresh</button>
+          </div>
         </header>
         {tab === "dashboard" && (
           <section>
