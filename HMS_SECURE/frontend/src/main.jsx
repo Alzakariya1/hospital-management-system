@@ -670,8 +670,21 @@ function App() {
                 </div>
               </div>
             </div>
-            <h2>Recent Activity</h2>
-            <Table rows={stats.recentActivity} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <h2>Recent Activity</h2>
+              <small className="muted">Latest 6 activities</small>
+            </div>
+            <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+              <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                <Table rows={(stats.recentActivity || []).slice(0, 6)} />
+              </div>
+            </div>
           </section>
         )}
         {tab === "patients" && (
