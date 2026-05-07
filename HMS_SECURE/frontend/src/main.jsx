@@ -183,7 +183,9 @@ function App() {
   const [tab, setTab] = useState("dashboard");
   const [stats, setStats] = useState({});
   const [patients, setPatients] = useState([]);
+  const [patientSearch, setPatientSearch] = useState("");
   const [doctors, setDoctors] = useState([]);
+  const [doctorSearch, setDoctorSearch] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [beds, setBeds] = useState([]);
   const [labs, setLabs] = useState([]);
@@ -506,6 +508,27 @@ function App() {
 
     return matchSearch && matchRole;
   });
+  const filteredPatients = patients.filter((p) => {
+    const q = patientSearch.toLowerCase();
+
+    return (
+      (p.patient_id || "").toLowerCase().includes(q) ||
+      (p.full_name || "").toLowerCase().includes(q) ||
+      (p.phone || "").toLowerCase().includes(q) ||
+      (p.email || "").toLowerCase().includes(q)
+    );
+  });
+  const filteredDoctors = doctors.filter((d) => {
+    const q = doctorSearch.toLowerCase();
+
+    return (
+      (d.doctor_id || "").toLowerCase().includes(q) ||
+      (d.full_name || "").toLowerCase().includes(q) ||
+      (d.email || "").toLowerCase().includes(q) ||
+      (d.phone || "").toLowerCase().includes(q) ||
+      (d.specialization || "").toLowerCase().includes(q)
+    );
+  });
   const appointmentChartData = [
     { name: "Patients", value: patients.length },
     { name: "Doctors", value: doctors.length },
@@ -695,11 +718,23 @@ function App() {
               setData={setPatient}
               submit={addPatient}
             />
-            <Table
-              rows={patients}
-              onEdit={editPatient}
-              onDelete={deletePatient}
-            />
+            <div className="card">
+              <input
+                placeholder="Search patient by ID, name, phone or email..."
+                value={patientSearch}
+                onChange={(e) => setPatientSearch(e.target.value)}
+                style={{
+                  maxWidth: 420,
+                  marginBottom: 16,
+                }}
+              />
+
+              <Table
+                rows={filteredPatients}
+                onEdit={editPatient}
+                onDelete={deletePatient}
+              />
+            </div>
           </section>
         )}
         {tab === "doctors" && (
@@ -710,7 +745,23 @@ function App() {
               setData={setDoctor}
               submit={addDoctor}
             />
-            <Table rows={doctors} onEdit={editDoctor} onDelete={deleteDoctor} />
+            <div className="card">
+              <input
+                placeholder="Search doctor by ID, name, phone, email or specialization..."
+                value={doctorSearch}
+                onChange={(e) => setDoctorSearch(e.target.value)}
+                style={{
+                  maxWidth: 460,
+                  marginBottom: 16,
+                }}
+              />
+
+              <Table
+                rows={filteredDoctors}
+                onEdit={editDoctor}
+                onDelete={deleteDoctor}
+              />
+            </div>
           </section>
         )}
         {tab === "appointments" && (
