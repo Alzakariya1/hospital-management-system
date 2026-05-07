@@ -193,6 +193,8 @@ function App() {
     bio: "",
   });
   const [usersList, setUsersList] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
 
   const [patient, setPatient] = useState(emptyPatient);
   const [doctor, setDoctor] = useState(emptyDoctor);
@@ -416,8 +418,20 @@ function App() {
     await load();
   }
 
+  async function toggleUserStatus(row) {
+    await api.patch(`/auth/users/${row.id}`, {
+      status: row.status === "active" ? "inactive" : "active",
+    });
+
+    await load();
+  }
   async function deleteUser(row) {
+    if (row.email === user.email) {
+      return alert("You cannot delete your own admin account.");
+    }
+
     if (!confirm("Delete this user?")) return;
+
     await api.delete(`/auth/users/${row.id}`);
     await load();
   }
@@ -471,6 +485,16 @@ function App() {
 
   const allowedTabs = roleTabs[user.role] || ["dashboard", "profile"];
   const tabs = allTabs.filter(([id]) => allowedTabs.includes(id));
+
+  const filteredUsers = usersList.filter((u) => {
+    const matchSearch =
+      (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()) ||
+      (u.email || "").toLowerCase().includes(userSearch.toLowerCase());
+
+    const matchRole = roleFilter === "all" ? true : u.role === roleFilter;
+
+    return matchSearch && matchRole;
+  });
   return (
     <div className="app">
       <aside>
@@ -753,8 +777,72 @@ function App() {
                 />
 
                 <div className="card">
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      marginBottom: 16,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <input
+                      placeholder="Search user..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      style={{ maxWidth: 240 }}
+                    />
+
+                    <select
+                      value={roleFilter}
+                      onChange={(e) => setRoleFilter(e.target.value)}
+                    >
+                      <option value="all">All Roles</option>
+                      <option value="super_admin">Super Admin</option>
+                      <option value="admin">Admin</option>
+                      <option value="doctor">Doctor</option>
+                      <option value="receptionist">Receptionist</option>
+                      <option value="pharmacist">Pharmacist</option>
+                      <option value="lab_technician">Lab Technician</option>
+                      <option value="accountant">Accountant</option>
+                    </select>
+                  </div>
+
                   <h2>User List</h2>
-                  <Table rows={usersList} onDelete={deleteUser} />
+
+                  <div className="tableWrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Email</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {filteredUsers.map((u) => (
+                          <tr key={u.id}>
+                            <td>{u.full_name}</td>
+                            <td>{u.email}</td>
+                            <td>{u.role}</td>
+                            <td>
+                              <button onClick={() => toggleUserStatus(u)}>
+                                {u.status}
+                              </button>
+                            </td>
+                            <td>
+                              <button onClick={() => deleteUser(u)}>
+                                Delete
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             )}
