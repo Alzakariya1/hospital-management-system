@@ -834,9 +834,21 @@ function App() {
                               </button>
                             </td>
                             <td>
-                              <button onClick={() => deleteUser(u)}>
-                                Delete
-                              </button>
+                              {u.email !== user.email ? (
+                                <button onClick={() => deleteUser(u)}>
+                                  Delete
+                                </button>
+                              ) : (
+                                <button
+                                  disabled
+                                  style={{
+                                    opacity: 0.5,
+                                    cursor: "not-allowed",
+                                  }}
+                                >
+                                  Current User
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -873,7 +885,21 @@ function Form({ title, data, setData, submit }) {
       <h2>{title}</h2>
       <div className="formGrid">
         {Object.keys(data).map((k) =>
-          k === "status" ? (
+          k === "role" ? (
+            <select
+              key={k}
+              value={data[k] ?? ""}
+              onChange={(e) => setData({ ...data, [k]: e.target.value })}
+            >
+              <option value="receptionist">Receptionist</option>
+              <option value="doctor">Doctor</option>
+              <option value="nurse">Nurse</option>
+              <option value="pharmacist">Pharmacist</option>
+              <option value="lab_technician">Lab Technician</option>
+              <option value="accountant">Accountant</option>
+              <option value="admin">Admin</option>
+            </select>
+          ) : k === "status" ? (
             <select
               key={k}
               value={data[k] ?? ""}
@@ -883,13 +909,19 @@ function Form({ title, data, setData, submit }) {
               <option value="completed">completed</option>
               <option value="cancelled">cancelled</option>
               <option value="pending">pending</option>
+              <option value="active">active</option>
+              <option value="inactive">inactive</option>
             </select>
           ) : (
             <input
               key={k}
               type={inputType(k)}
               required={
-                k === "full_name" || k === "patient_id" || k === "doctor_id"
+                k === "full_name" ||
+                k === "patient_id" ||
+                k === "doctor_id" ||
+                k === "email" ||
+                k === "password"
               }
               placeholder={k.replaceAll("_", " ")}
               value={data[k] ?? ""}
