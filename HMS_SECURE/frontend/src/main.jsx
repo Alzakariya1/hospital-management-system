@@ -393,19 +393,6 @@ function App() {
       toast.error(err.response?.data?.message || "Delete failed");
     }
   }
-  async function addAppointment(e) {
-    e.preventDefault();
-
-    if (editingAppointmentId) {
-      await api.put(`/appointments/${editingAppointmentId}`, appointment);
-      setEditingAppointmentId(null);
-    } else {
-      await api.post("/appointments", appointment);
-    }
-
-    setAppointment(emptyAppointment);
-    await load();
-  }
 
   async function addBed(e) {
     e.preventDefault();
