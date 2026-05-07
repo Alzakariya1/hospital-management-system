@@ -215,6 +215,8 @@ function App() {
   const [appointment, setAppointment] = useState(emptyAppointment);
   const [appointmentSearch, setAppointmentSearch] = useState("");
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
+  const [patientPage, setPatientPage] = useState(1);
+  const pageSize = 10;
   const [bed, setBed] = useState(emptyBed);
   const [lab, setLab] = useState(emptyLab);
   const [rad, setRad] = useState(emptyRad);
@@ -520,6 +522,12 @@ function App() {
       (p.email || "").toLowerCase().includes(q)
     );
   });
+  const paginatedPatients = filteredPatients.slice(
+    (patientPage - 1) * pageSize,
+    patientPage * pageSize,
+  );
+
+  const patientTotalPages = Math.ceil(filteredPatients.length / pageSize);
   const filteredDoctors = doctors.filter((d) => {
     const q = doctorSearch.toLowerCase();
 
@@ -748,10 +756,29 @@ function App() {
               />
 
               <Table
-                rows={filteredPatients}
+                rows={paginatedPatients}
                 onEdit={editPatient}
                 onDelete={deletePatient}
               />
+              <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+                <button
+                  disabled={patientPage === 1}
+                  onClick={() => setPatientPage(patientPage - 1)}
+                >
+                  Previous
+                </button>
+
+                <span>
+                  Page {patientPage} of {patientTotalPages || 1}
+                </span>
+
+                <button
+                  disabled={patientPage >= patientTotalPages}
+                  onClick={() => setPatientPage(patientPage + 1)}
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </section>
         )}
