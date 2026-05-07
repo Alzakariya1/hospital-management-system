@@ -215,11 +215,10 @@ function App() {
   const [appointment, setAppointment] = useState(emptyAppointment);
   const [appointmentSearch, setAppointmentSearch] = useState("");
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
-  const pageSize = 10;
   const [patientPage, setPatientPage] = useState(1);
   const [doctorPage, setDoctorPage] = useState(1);
   const [appointmentPage, setAppointmentPage] = useState(1);
-
+  const pageSize = 10;
   const [bed, setBed] = useState(emptyBed);
   const [lab, setLab] = useState(emptyLab);
   const [rad, setRad] = useState(emptyRad);
