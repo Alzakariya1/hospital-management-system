@@ -180,19 +180,21 @@ th {
 
 .tableWrap {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: visible;
   border-radius: 14px;
 }
 
 table {
   width: 100%;
-  min-width: 1000px;
+  table-layout: fixed;
   border-collapse: collapse;
   background: #fff;
 }
+
 .card {
-  overflow: hidden;
+  overflow: visible;
 }
+
 thead {
   position: sticky;
   top: 0;
@@ -202,17 +204,37 @@ thead {
 
 th {
   text-align: left;
-  padding: 14px;
+  padding: 12px 10px;
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #64748b;
   border-bottom: 1px solid #e5e7eb;
+  white-space: normal;
+  word-break: break-word;
 }
 
 td {
-  padding: 14px;
+  padding: 12px 10px;
+  font-size: 14px;
   border-bottom: 1px solid #f1f5f9;
+  white-space: normal;
+  word-break: break-word;
+  vertical-align: middle;
+}
+
+th:last-child,
+td:last-child {
+  width: 150px;
+  text-align: center;
+}
+
+td:last-child {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 tbody tr:nth-child(even) {
@@ -234,4 +256,9 @@ button {
 
 button:hover {
   opacity: 0.9;
+}
+
+td button {
+  padding: 8px 12px;
+  font-size: 13px;
 }
