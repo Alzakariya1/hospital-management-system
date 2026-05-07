@@ -261,29 +261,41 @@ function App() {
   async function addPatient(e) {
     e.preventDefault();
 
-    if (editingPatientId) {
-      await api.put(`/patients/${editingPatientId}`, patient);
-      setEditingPatientId(null);
-    } else {
-      await api.post("/patients", patient);
-    }
+    try {
+      if (editingPatientId) {
+        await api.put(`/patients/${editingPatientId}`, patient);
+        toast.success("Patient updated successfully");
+        setEditingPatientId(null);
+      } else {
+        await api.post("/patients", patient);
+        toast.success("Patient added successfully");
+      }
 
-    setPatient(emptyPatient);
-    await load();
+      setPatient(emptyPatient);
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Patient action failed");
+    }
   }
 
   async function addDoctor(e) {
     e.preventDefault();
 
-    if (editingDoctorId) {
-      await api.put(`/doctors/${editingDoctorId}`, doctor);
-      setEditingDoctorId(null);
-    } else {
-      await api.post("/doctors", doctor);
-    }
+    try {
+      if (editingDoctorId) {
+        await api.put(`/doctors/${editingDoctorId}`, doctor);
+        toast.success("Doctor updated successfully");
+        setEditingDoctorId(null);
+      } else {
+        await api.post("/doctors", doctor);
+        toast.success("Doctor added successfully");
+      }
 
-    setDoctor(emptyDoctor);
-    await load();
+      setDoctor(emptyDoctor);
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Doctor action failed");
+    }
   }
   function editPatient(row) {
     setPatient({
@@ -303,8 +315,14 @@ function App() {
 
   async function deletePatient(row) {
     if (!confirm("Delete this patient?")) return;
-    await api.delete(`/patients/${row.id}`);
-    await load();
+
+    try {
+      await api.delete(`/patients/${row.id || row._id}`);
+      await load();
+      toast.success("Patient deleted successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Delete failed");
+    }
   }
   function editDoctor(row) {
     setDoctor({
@@ -322,21 +340,33 @@ function App() {
 
   async function deleteDoctor(row) {
     if (!confirm("Delete this doctor?")) return;
-    await api.delete(`/doctors/${row.id || row._id}`);
-    await load();
+
+    try {
+      await api.delete(`/doctors/${row.id || row._id}`);
+      await load();
+      toast.success("Doctor deleted successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Delete failed");
+    }
   }
   async function addAppointment(e) {
     e.preventDefault();
 
-    if (editingAppointmentId) {
-      await api.put(`/appointments/${editingAppointmentId}`, appointment);
-      setEditingAppointmentId(null);
-    } else {
-      await api.post("/appointments", appointment);
-    }
+    try {
+      if (editingAppointmentId) {
+        await api.put(`/appointments/${editingAppointmentId}`, appointment);
+        toast.success("Appointment updated successfully");
+        setEditingAppointmentId(null);
+      } else {
+        await api.post("/appointments", appointment);
+        toast.success("Appointment added successfully");
+      }
 
-    setAppointment(emptyAppointment);
-    await load();
+      setAppointment(emptyAppointment);
+      await load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Appointment action failed");
+    }
   }
 
   function editAppointment(row) {
@@ -355,8 +385,13 @@ function App() {
   async function deleteAppointment(row) {
     if (!confirm("Delete this appointment?")) return;
 
-    await api.delete(`/appointments/${row.id || row._id}`);
-    await load();
+    try {
+      await api.delete(`/appointments/${row.id || row._id}`);
+      await load();
+      toast.success("Appointment deleted successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Delete failed");
+    }
   }
   async function addAppointment(e) {
     e.preventDefault();
@@ -408,34 +443,45 @@ function App() {
   }
   async function updateProfile(e) {
     e.preventDefault();
-    const { data } = await api.put("/auth/me", profile);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setUser(data.user);
-    alert("Profile updated");
+    try {
+      const { data } = await api.put("/auth/me", profile);
+      localStorage.setItem("user", JSON.stringify(data.user));
+      setUser(data.user);
+      toast.success("Profile updated successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Profile update failed");
+    }
   }
 
   async function changePassword(e) {
     e.preventDefault();
-    await api.put("/auth/change-password", passwordForm);
-
-    alert("Password changed successfully. Please login again.");
-
-    localStorage.clear();
-    setUser(null);
+    try {
+      await api.put("/auth/change-password", passwordForm);
+      toast.success("Password changed. Please login again.");
+      localStorage.clear();
+      setUser(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Password change failed");
+    }
   }
 
   async function addUser(e) {
     e.preventDefault();
-    await api.post("/auth/users", newUser);
-    setNewUser({
-      full_name: "",
-      email: "",
-      password: "",
-      role: "receptionist",
-      profile_image: "",
-      bio: "",
-    });
-    await load();
+    try {
+      await api.post("/auth/users", newUser);
+      setNewUser({
+        full_name: "",
+        email: "",
+        password: "",
+        role: "receptionist",
+        profile_image: "",
+        bio: "",
+      });
+      await load();
+      toast.success("User added successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "User add failed");
+    }
   }
 
   async function toggleUserStatus(row) {
@@ -447,13 +493,18 @@ function App() {
   }
   async function deleteUser(row) {
     if (row.email === user.email) {
-      return alert("You cannot delete your own admin account.");
+      return toast.error("You cannot delete your own admin account");
     }
 
     if (!confirm("Delete this user?")) return;
 
-    await api.delete(`/auth/users/${row.id}`);
-    await load();
+    try {
+      await api.delete(`/auth/users/${row.id}`);
+      await load();
+      toast.success("User deleted successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "User delete failed");
+    }
   }
   function logout() {
     localStorage.clear();
@@ -716,12 +767,6 @@ function App() {
                   marginTop: 24,
                 }}
               >
-                <button
-  style={{ marginBottom: 20 }}
-  onClick={() => toast.success("Working")}
->
-  Test Toast
-</button>
                 <div className="card" style={{ padding: 24 }}>
                   <h2>Hospital Overview</h2>
                   <div style={{ width: "100%", height: 320 }}>
