@@ -12,6 +12,17 @@ import {
   Users,
   UserCircle,
 } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import api from "./api/client";
 import "./style.css";
 
@@ -495,6 +506,24 @@ function App() {
 
     return matchSearch && matchRole;
   });
+  const appointmentChartData = [
+    { name: "Patients", value: patients.length },
+    { name: "Doctors", value: doctors.length },
+    { name: "Appointments", value: appointments.length },
+    { name: "Beds", value: beds.length },
+  ];
+
+  const billingChartData = [
+    { name: "Paid", value: bills.filter((b) => b.status === "paid").length },
+    {
+      name: "Pending",
+      value: bills.filter((b) => b.status === "pending").length,
+    },
+    {
+      name: "Unpaid",
+      value: bills.filter((b) => b.status === "unpaid").length,
+    },
+  ];
   return (
     <div className="app">
       <aside>
@@ -593,6 +622,43 @@ function App() {
                 title="Available Beds"
                 value={stats.availableBeds}
               />
+            </div>
+            <div className="grid" style={{ marginTop: 24 }}>
+              <div className="card">
+                <h2>Hospital Overview</h2>
+                <div style={{ width: "100%", height: 260 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={appointmentChartData}>
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="card">
+                <h2>Billing Status</h2>
+                <div style={{ width: "100%", height: 260 }}>
+                  <ResponsiveContainer>
+                    <PieChart>
+                      <Pie
+                        data={billingChartData}
+                        dataKey="value"
+                        nameKey="name"
+                        outerRadius={90}
+                        label
+                      >
+                        {billingChartData.map((entry, index) => (
+                          <Cell key={index} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
             <h2>Recent Activity</h2>
             <Table rows={stats.recentActivity} />
