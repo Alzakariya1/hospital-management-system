@@ -213,6 +213,8 @@ function App() {
   const [doctor, setDoctor] = useState(emptyDoctor);
 
   const [appointment, setAppointment] = useState(emptyAppointment);
+  const [appointmentSearch, setAppointmentSearch] = useState("");
+  const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
   const [bed, setBed] = useState(emptyBed);
   const [lab, setLab] = useState(emptyLab);
   const [rad, setRad] = useState(emptyRad);
@@ -529,6 +531,22 @@ function App() {
       (d.specialization || "").toLowerCase().includes(q)
     );
   });
+  const filteredAppointments = appointments.filter((a) => {
+    const q = appointmentSearch.toLowerCase();
+
+    const matchSearch =
+      (a.patient_id || "").toLowerCase().includes(q) ||
+      (a.doctor_id || "").toLowerCase().includes(q) ||
+      (a.patient_name || "").toLowerCase().includes(q) ||
+      (a.doctor_name || "").toLowerCase().includes(q);
+
+    const matchStatus =
+      appointmentStatusFilter === "all"
+        ? true
+        : a.status === appointmentStatusFilter;
+
+    return matchSearch && matchStatus;
+  });
   const appointmentChartData = [
     { name: "Patients", value: patients.length },
     { name: "Doctors", value: doctors.length },
@@ -775,12 +793,38 @@ function App() {
 
             <div className="card">
               <h2>Appointment Calendar</h2>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 12,
+                  marginBottom: 16,
+                  flexWrap: "wrap",
+                }}
+              >
+                <input
+                  placeholder="Search by patient/doctor ID or name..."
+                  value={appointmentSearch}
+                  onChange={(e) => setAppointmentSearch(e.target.value)}
+                  style={{ maxWidth: 380 }}
+                />
+
+                <select
+                  value={appointmentStatusFilter}
+                  onChange={(e) => setAppointmentStatusFilter(e.target.value)}
+                >
+                  <option value="all">All Status</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
 
               {!appointments?.length ? (
                 <p className="muted">No appointments found.</p>
               ) : (
                 <div style={{ display: "grid", gap: 12 }}>
-                  {appointments.map((a) => (
+                  {filteredAppointments.map((a) => (
                     <div
                       key={a.id}
                       style={{
