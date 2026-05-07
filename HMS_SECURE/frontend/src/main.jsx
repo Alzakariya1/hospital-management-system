@@ -531,13 +531,6 @@ function App() {
 
   const patientTotalPages = Math.ceil(filteredPatients.length / pageSize);
 
-  const paginatedDoctors = filteredDoctors.slice(
-    (doctorPage - 1) * pageSize,
-    doctorPage * pageSize,
-  );
-
-  const doctorTotalPages = Math.ceil(filteredDoctors.length / pageSize);
-
   const filteredDoctors = doctors.filter((d) => {
     const q = doctorSearch.toLowerCase();
 
@@ -549,6 +542,13 @@ function App() {
       (d.specialization || "").toLowerCase().includes(q)
     );
   });
+
+  const paginatedDoctors = filteredDoctors.slice(
+    (doctorPage - 1) * pageSize,
+    doctorPage * pageSize,
+  );
+
+  const doctorTotalPages = Math.ceil(filteredDoctors.length / pageSize);
   const filteredAppointments = appointments.filter((a) => {
     const q = appointmentSearch.toLowerCase();
 
