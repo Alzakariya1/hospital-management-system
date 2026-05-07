@@ -716,6 +716,12 @@ function App() {
                   marginTop: 24,
                 }}
               >
+                <button
+  style={{ marginBottom: 20 }}
+  onClick={() => toast.success("Working")}
+>
+  Test Toast
+</button>
                 <div className="card" style={{ padding: 24 }}>
                   <h2>Hospital Overview</h2>
                   <div style={{ width: "100%", height: 320 }}>
