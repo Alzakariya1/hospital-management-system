@@ -428,6 +428,22 @@ function App() {
     setBill(emptyBill);
     await load();
   }
+  function handleProfileImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      setProfile({
+        ...profile,
+        profile_image: reader.result,
+      });
+      toast.success("Profile image selected");
+    };
+
+    reader.readAsDataURL(file);
+  }
   async function updateProfile(e) {
     e.preventDefault();
     try {
@@ -1184,14 +1200,9 @@ function App() {
                     />
 
                     <input
-                      placeholder="Profile Image URL"
-                      value={profile.profile_image || ""}
-                      onChange={(e) =>
-                        setProfile({
-                          ...profile,
-                          profile_image: e.target.value,
-                        })
-                      }
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileImageUpload}
                     />
 
                     <textarea
