@@ -1162,6 +1162,17 @@ function App() {
                       <p className="muted" style={{ margin: 0 }}>
                         {profile.email}
                       </p>
+                      {profile.bio && (
+                        <p
+                          style={{
+                            margin: "8px 0 0",
+                            color: "#475569",
+                            maxWidth: 520,
+                          }}
+                        >
+                          {profile.bio}
+                        </p>
+                      )}
                       <span
                         style={{
                           display: "inline-block",
