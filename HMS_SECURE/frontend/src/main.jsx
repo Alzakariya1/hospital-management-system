@@ -621,21 +621,52 @@ function App() {
         )}
         {tab === "profile" && (
           <section>
-            <form className="card form" onSubmit={updateProfile}>
-              <h2>Admin Profile</h2>
-
-              {profile.profile_image && (
+            <div className="card" style={{ marginBottom: 18 }}>
+              <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
                 <img
-                  src={profile.profile_image}
+                  src={
+                    profile.profile_image ||
+                    "https://ui-avatars.com/api/?name=" +
+                      encodeURIComponent(profile.full_name || "Admin")
+                  }
                   alt="Profile"
                   style={{
                     width: 90,
                     height: 90,
                     borderRadius: "50%",
                     objectFit: "cover",
+                    border: "3px solid #e5e7eb",
                   }}
                 />
-              )}
+
+                <div>
+                  <h2 style={{ margin: "0 0 6px" }}>
+                    {profile.full_name || "Admin User"}
+                  </h2>
+                  <p className="muted" style={{ margin: 0 }}>
+                    {profile.email}
+                  </p>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      marginTop: 8,
+                      padding: "4px 10px",
+                      borderRadius: 20,
+                      background: "#eef2ff",
+                      color: "#3730a3",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    {profile.role || user.role}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <form className="card form" onSubmit={updateProfile}>
+              <h2>Edit Profile</h2>
 
               <div className="formGrid">
                 <input
@@ -645,11 +676,13 @@ function App() {
                     setProfile({ ...profile, full_name: e.target.value })
                   }
                 />
+
                 <input
-                  placeholder="Email"
+                  placeholder="Email / Gmail"
                   value={profile.email || ""}
                   disabled
                 />
+
                 <input
                   placeholder="Profile Image URL"
                   value={profile.profile_image || ""}
@@ -657,12 +690,21 @@ function App() {
                     setProfile({ ...profile, profile_image: e.target.value })
                   }
                 />
-                <input
+
+                <textarea
                   placeholder="Bio"
                   value={profile.bio || ""}
                   onChange={(e) =>
                     setProfile({ ...profile, bio: e.target.value })
                   }
+                  style={{
+                    minHeight: 90,
+                    resize: "vertical",
+                    padding: 12,
+                    borderRadius: 10,
+                    border: "1px solid #ddd",
+                    fontFamily: "inherit",
+                  }}
                 />
               </div>
 
@@ -671,6 +713,7 @@ function App() {
 
             <form className="card form" onSubmit={changePassword}>
               <h2>Change Password</h2>
+
               <div className="formGrid">
                 <input
                   type="password"
@@ -683,6 +726,7 @@ function App() {
                     })
                   }
                 />
+
                 <input
                   type="password"
                   placeholder="New Password"
@@ -695,6 +739,7 @@ function App() {
                   }
                 />
               </div>
+
               <button>Change Password</button>
             </form>
 
@@ -707,8 +752,10 @@ function App() {
                   submit={addUser}
                 />
 
-                <h2>User List</h2>
-                <Table rows={usersList} onDelete={deleteUser} />
+                <div className="card">
+                  <h2>User List</h2>
+                  <Table rows={usersList} onDelete={deleteUser} />
+                </div>
               </>
             )}
           </section>
