@@ -63,17 +63,35 @@ button:disabled {
   opacity: 0.6;
 }
 .app {
-  display: grid;
-  grid-template-columns: 260px 1fr;
+  display: flex;
   min-height: 100vh;
 }
+
 aside {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 260px;
+  height: 100vh;
+  overflow-y: auto;
+
   background: #0f172a;
   color: #fff;
   padding: 22px;
+
   display: flex;
   flex-direction: column;
   gap: 10px;
+
+  z-index: 1000;
+}
+
+main {
+  margin-left: 260px;
+  width: calc(100% - 260px);
+  min-height: 100vh;
+  padding: 28px;
+  overflow-y: auto;
 }
 aside h2 {
   font-size: 32px;
