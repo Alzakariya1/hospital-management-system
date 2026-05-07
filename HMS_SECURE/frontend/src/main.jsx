@@ -514,14 +514,17 @@ function App() {
   ];
 
   const billingChartData = [
-    { name: "Paid", value: bills.filter((b) => b.status === "paid").length },
+    {
+      name: "Paid",
+      value: bills.filter((b) => b.status === "paid").length || 1,
+    },
     {
       name: "Pending",
-      value: bills.filter((b) => b.status === "pending").length,
+      value: bills.filter((b) => b.status === "pending").length || 1,
     },
     {
       name: "Unpaid",
-      value: bills.filter((b) => b.status === "unpaid").length,
+      value: bills.filter((b) => b.status === "unpaid").length || 1,
     },
   ];
   return (
@@ -623,24 +626,31 @@ function App() {
                 value={stats.availableBeds}
               />
             </div>
-            <div className="grid" style={{ marginTop: 24 }}>
-              <div className="card">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 20,
+                marginTop: 24,
+              }}
+            >
+              <div className="card" style={{ padding: 24 }}>
                 <h2>Hospital Overview</h2>
-                <div style={{ width: "100%", height: 260 }}>
+                <div style={{ width: "100%", height: 320 }}>
                   <ResponsiveContainer>
                     <BarChart data={appointmentChartData}>
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="value" />
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
               </div>
 
-              <div className="card">
+              <div className="card" style={{ padding: 24 }}>
                 <h2>Billing Status</h2>
-                <div style={{ width: "100%", height: 260 }}>
+                <div style={{ width: "100%", height: 320 }}>
                   <ResponsiveContainer>
                     <PieChart>
                       <Pie
