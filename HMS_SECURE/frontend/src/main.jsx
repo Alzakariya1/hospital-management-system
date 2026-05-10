@@ -208,6 +208,7 @@ function App() {
   );
   const [tab, setTab] = useState("dashboard");
   const [stats, setStats] = useState({});
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
   const [patientSearch, setPatientSearch] = useState("");
   const [doctors, setDoctors] = useState([]);
@@ -877,7 +878,8 @@ function App() {
                     onDelete={deletePatient}
                     showProfile={true}
                     onProfile={(patient) => {
-                      console.log("Patient Profile:", patient);
+                      setSelectedPatient(patient);
+                      setTab("patientProfile");
                     }}
                   />
                   <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
@@ -899,6 +901,45 @@ function App() {
                       Next
                     </button>
                   </div>
+                </div>
+              </section>
+            )}
+            {tab === "patientProfile" && selectedPatient && (
+              <section>
+                <button onClick={() => setTab("patients")}>
+                  ← Back to Patients
+                </button>
+
+                <div className="card" style={{ marginTop: 16 }}>
+                  <h2>Patient Profile</h2>
+
+                  <p>
+                    <b>Patient ID:</b> {selectedPatient.patient_id}
+                  </p>
+                  <p>
+                    <b>Name:</b> {selectedPatient.full_name}
+                  </p>
+                  <p>
+                    <b>Age:</b> {selectedPatient.age}
+                  </p>
+                  <p>
+                    <b>Gender:</b> {selectedPatient.gender}
+                  </p>
+                  <p>
+                    <b>Phone:</b> {selectedPatient.phone}
+                  </p>
+                  <p>
+                    <b>Email:</b> {selectedPatient.email}
+                  </p>
+                  <p>
+                    <b>Blood Group:</b> {selectedPatient.blood_group}
+                  </p>
+                  <p>
+                    <b>Address:</b> {selectedPatient.address}
+                  </p>
+                  <p>
+                    <b>Medical Notes:</b> {selectedPatient.medical_notes}
+                  </p>
                 </div>
               </section>
             )}
