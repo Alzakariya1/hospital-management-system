@@ -38,6 +38,10 @@ const emptyPatient = {
   address: "",
   blood_group: "",
   medical_notes: "",
+  emergency_contact_name: "",
+  emergency_contact_phone: "",
+  insurance_provider: "",
+  insurance_policy_number: "",
 };
 const emptyDoctor = {
   doctor_id: "",
@@ -358,6 +362,10 @@ function App() {
       address: row.address || "",
       blood_group: row.blood_group || "",
       medical_notes: row.medical_notes || "",
+      emergency_contact_name: row.emergency_contact_name || "",
+      emergency_contact_phone: row.emergency_contact_phone || "",
+      insurance_provider: row.insurance_provider || "",
+      insurance_policy_number: row.insurance_policy_number || "",
     });
 
     setEditingPatientId(row.id);
@@ -1222,6 +1230,42 @@ function App() {
                           {selectedPatient.medical_notes ||
                             "No medical notes available."}
                         </p>
+                      </div>
+
+                      <div className="patient-extra-grid">
+                        <div className="extra-info-card">
+                          <h3>Emergency Contact</h3>
+
+                          <div className="extra-info-row">
+                            <span>Contact Name</span>
+                            <b>
+                              {selectedPatient.emergency_contact_name || "--"}
+                            </b>
+                          </div>
+
+                          <div className="extra-info-row">
+                            <span>Phone Number</span>
+                            <b>
+                              {selectedPatient.emergency_contact_phone || "--"}
+                            </b>
+                          </div>
+                        </div>
+
+                        <div className="extra-info-card">
+                          <h3>Insurance Details</h3>
+
+                          <div className="extra-info-row">
+                            <span>Insurance Provider</span>
+                            <b>{selectedPatient.insurance_provider || "--"}</b>
+                          </div>
+
+                          <div className="extra-info-row">
+                            <span>Policy Number</span>
+                            <b>
+                              {selectedPatient.insurance_policy_number || "--"}
+                            </b>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

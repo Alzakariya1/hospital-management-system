@@ -623,3 +623,47 @@ td button {
     grid-template-columns: 1fr;
   }
 }
+.patient-extra-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.extra-info-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  background: #fff;
+}
+
+.extra-info-card h3 {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+
+.extra-info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.extra-info-row:last-child {
+  border-bottom: none;
+}
+
+.extra-info-row span {
+  color: #64748b;
+}
+
+.extra-info-row b {
+  color: #0f172a;
+}
+
+@media (max-width: 1000px) {
+  .patient-extra-grid {
+    grid-template-columns: 1fr;
+  }
+}
