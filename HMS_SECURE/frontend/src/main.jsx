@@ -171,34 +171,59 @@ function Table({ rows, onEdit, onDelete, showProfile, onProfile }) {
                 <td key={k}>{String(r[k] ?? "")}</td>
               ))}
               {(onEdit || onDelete) && (
-                <td className="action-icons">
-                  {showProfile && (
-                    <button
-                      className="icon-btn profile-btn"
-                      title="View Profile"
-                      onClick={() => onProfile(r)}
-                    >
-                      <i className="bi bi-eye"></i>
-                    </button>
-                  )}
-                  {onEdit && (
-                    <button
-                      className="icon-btn edit-btn"
-                      title="Edit"
-                      onClick={() => onEdit(r)}
-                    >
-                      <i className="bi bi-pencil-square"></i>
-                    </button>
-                  )}
+                <td className="actions-menu-cell">
+                  <button
+                    type="button"
+                    className="three-dot-btn"
+                    onClick={() =>
+                      setOpenActionMenu(openActionMenu === i ? null : i)
+                    }
+                  >
+                    <i className="bi bi-three-dots-vertical"></i>
+                  </button>
 
-                  {onDelete && (
-                    <button
-                      className="icon-btn delete-btn"
-                      title="Delete"
-                      onClick={() => onDelete(r)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+                  {openActionMenu === i && (
+                    <div className="actions-dropdown">
+                      {showProfile && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onProfile(r);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <i className="bi bi-eye"></i>
+                          View Profile
+                        </button>
+                      )}
+
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onEdit(r);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <i className="bi bi-pencil-square"></i>
+                          Edit
+                        </button>
+                      )}
+
+                      {onDelete && (
+                        <button
+                          type="button"
+                          className="danger-action"
+                          onClick={() => {
+                            onDelete(r);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <i className="bi bi-trash"></i>
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   )}
                 </td>
               )}
