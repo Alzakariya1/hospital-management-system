@@ -571,3 +571,55 @@ td button {
     grid-template-columns: 1fr;
   }
 }
+.patient-related-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.patient-related-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 20px;
+  background: #fff;
+}
+
+.patient-related-card h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.mini-record {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 10px;
+}
+
+.mini-record p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.record-status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+@media (max-width: 1000px) {
+  .patient-related-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1225,6 +1225,70 @@ function App() {
                       </div>
                     </div>
                   </div>
+                  <div className="patient-related-grid">
+                    <div className="patient-related-card">
+                      <h3>Appointment History</h3>
+
+                      {(() => {
+                        const patientAppointments = appointments.filter(
+                          (a) => a.patient_id === selectedPatient.patient_id,
+                        );
+
+                        if (!patientAppointments.length) {
+                          return (
+                            <p className="muted">No appointments found.</p>
+                          );
+                        }
+
+                        return patientAppointments.map((a) => (
+                          <div className="mini-record" key={a.id || a._id}>
+                            <div>
+                              <b>
+                                {a.doctor_name ||
+                                  a.doctor_id ||
+                                  "Doctor not assigned"}
+                              </b>
+                              <p>
+                                {a.appointment_date || "No date"} •{" "}
+                                {a.appointment_time || "No time"}
+                              </p>
+                            </div>
+
+                            <span className="record-status">
+                              {a.status || "scheduled"}
+                            </span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+
+                    <div className="patient-related-card">
+                      <h3>Billing Summary</h3>
+
+                      {(() => {
+                        const patientBills = bills.filter(
+                          (b) => b.patient_id === selectedPatient.patient_id,
+                        );
+
+                        if (!patientBills.length) {
+                          return <p className="muted">No bills found.</p>;
+                        }
+
+                        return patientBills.map((b) => (
+                          <div className="mini-record" key={b.id || b._id}>
+                            <div>
+                              <b>₹{b.amount}</b>
+                              <p>Bill Status</p>
+                            </div>
+
+                            <span className="record-status">
+                              {b.status || "unpaid"}
+                            </span>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  </div>
                 </div>
               </section>
             )}
