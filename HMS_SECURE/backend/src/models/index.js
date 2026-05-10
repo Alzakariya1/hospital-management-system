@@ -51,7 +51,6 @@ const Patient = makeModel("Patient", "patients", {
 
     emergency_contact_name: String,
     emergency_contact_phone: String,
-
     insurance_provider: String,
     insurance_policy_number: String,
 
@@ -65,6 +64,7 @@ const Patient = makeModel("Patient", "patients", {
             file_type: String,
             file_size: Number,
             file_url: String,
+            file_public_id: String,
             uploaded_at: {
                 type: Date,
                 default: Date.now,

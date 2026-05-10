@@ -3,7 +3,15 @@ const { Patient } = require("../models");
 const asyncHandler = require("../utils/asyncHandler");
 const { verifyToken, allowRoles } = require("../middleware/auth");
 const router = express.Router();
+const multer = require("multer");
+const cloudinary = require("../config/cloudinary");
 router.use(verifyToken);
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 5 * 1024 * 1024,
+    },
+});
 router.get(
     "/",
     asyncHandler(async (req, res) =>
@@ -59,6 +67,93 @@ router.put(
             return res.status(400).json({ message: "No valid fields to update" });
         await Patient.updateOne({ id: Number(req.params.id) }, { $set: update });
         res.json({ message: "Patient updated" });
+    }),
+);
+router.post(
+    "/:id/documents",
+    allowRoles("super_admin", "admin", "receptionist"),
+    upload.single("document"),
+    asyncHandler(async (req, res) => {
+        const patient = await Patient.findOne({ id: Number(req.params.id) });
+
+        if (!patient) {
+            return res.status(404).json({ message: "Patient not found" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "Document file is required" });
+        }
+
+        const result = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                {
+                    folder: "hms/patient-documents",
+                    resource_type: "auto",
+                },
+                (error, uploadResult) => {
+                    if (error) reject(error);
+                    else resolve(uploadResult);
+                },
+            );
+
+            stream.end(req.file.buffer);
+        });
+
+        const newDoc = {
+            title: req.body.title || req.file.originalname,
+            category: req.body.category || "medical",
+            document_type: req.body.document_type || "Other",
+            notes: req.body.notes || "",
+            file_name: req.file.originalname,
+            file_type: req.file.mimetype,
+            file_size: req.file.size,
+            file_url: result.secure_url,
+            file_public_id: result.public_id,
+            uploaded_at: new Date(),
+        };
+
+        patient.documents = patient.documents || [];
+        patient.documents.push(newDoc);
+
+        await patient.save();
+
+        res.status(201).json({
+            message: "Document uploaded successfully",
+            document: newDoc,
+            documents: patient.documents,
+        });
+    }),
+);
+router.delete(
+    "/:id/documents/:docIndex",
+    allowRoles("super_admin", "admin", "receptionist"),
+    asyncHandler(async (req, res) => {
+        const patient = await Patient.findOne({ id: Number(req.params.id) });
+
+        if (!patient) {
+            return res.status(404).json({ message: "Patient not found" });
+        }
+
+        const docIndex = Number(req.params.docIndex);
+        const doc = patient.documents?.[docIndex];
+
+        if (!doc) {
+            return res.status(404).json({ message: "Document not found" });
+        }
+
+        if (doc.file_public_id) {
+            await cloudinary.uploader.destroy(doc.file_public_id, {
+                resource_type: "auto",
+            });
+        }
+
+        patient.documents.splice(docIndex, 1);
+        await patient.save();
+
+        res.json({
+            message: "Document deleted successfully",
+            documents: patient.documents,
+        });
     }),
 );
 router.delete(
