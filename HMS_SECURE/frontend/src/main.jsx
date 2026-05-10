@@ -1167,33 +1167,64 @@ function App() {
                 <div className="card" style={{ marginTop: 16 }}>
                   <h2>Patient Profile</h2>
 
-                  <p>
-                    <b>Patient ID:</b> {selectedPatient.patient_id}
-                  </p>
-                  <p>
-                    <b>Name:</b> {selectedPatient.full_name}
-                  </p>
-                  <p>
-                    <b>Age:</b> {selectedPatient.age}
-                  </p>
-                  <p>
-                    <b>Gender:</b> {selectedPatient.gender}
-                  </p>
-                  <p>
-                    <b>Phone:</b> {selectedPatient.phone}
-                  </p>
-                  <p>
-                    <b>Email:</b> {selectedPatient.email}
-                  </p>
-                  <p>
-                    <b>Blood Group:</b> {selectedPatient.blood_group}
-                  </p>
-                  <p>
-                    <b>Address:</b> {selectedPatient.address}
-                  </p>
-                  <p>
-                    <b>Medical Notes:</b> {selectedPatient.medical_notes}
-                  </p>
+                  <div className="patient-profile-top">
+                    <div className="patient-avatar">
+                      <i className="bi bi-person-circle"></i>
+                    </div>
+
+                    <div className="patient-profile-main">
+                      <div className="patient-profile-header">
+                        <div>
+                          <h1>{selectedPatient.full_name}</h1>
+
+                          <p>Patient ID: {selectedPatient.patient_id}</p>
+                        </div>
+
+                        <div className="patient-status">Active Patient</div>
+                      </div>
+
+                      <div className="patient-info-grid">
+                        <div className="info-card">
+                          <span>Age</span>
+                          <h3>{selectedPatient.age || "--"}</h3>
+                        </div>
+
+                        <div className="info-card">
+                          <span>Gender</span>
+                          <h3>{selectedPatient.gender || "--"}</h3>
+                        </div>
+
+                        <div className="info-card">
+                          <span>Blood Group</span>
+                          <h3>{selectedPatient.blood_group || "--"}</h3>
+                        </div>
+
+                        <div className="info-card">
+                          <span>Phone</span>
+                          <h3>{selectedPatient.phone || "--"}</h3>
+                        </div>
+
+                        <div className="info-card">
+                          <span>Email</span>
+                          <h3>{selectedPatient.email || "--"}</h3>
+                        </div>
+
+                        <div className="info-card">
+                          <span>Address</span>
+                          <h3>{selectedPatient.address || "--"}</h3>
+                        </div>
+                      </div>
+
+                      <div className="medical-notes-box">
+                        <h3>Medical Notes</h3>
+
+                        <p>
+                          {selectedPatient.medical_notes ||
+                            "No medical notes available."}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </section>
             )}
