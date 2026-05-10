@@ -500,8 +500,8 @@ function App() {
       patient_id: patient.patient_id,
       category: patientDocForm.category,
       document_type: patientDocForm.document_type,
-      // title: patientDocForm.title || file.name,
-      // notes: patientDocForm.notes,
+      title: patientDocForm.title || file.name,
+      notes: patientDocForm.notes,
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
@@ -1090,10 +1090,6 @@ function App() {
                         <i className="bi bi-plus-circle"></i>
                         New Patient
                       </button>
-
-                      <div className="document-badge">
-                        {pendingPatientDocs.length} Files
-                      </div>
                     </div>
                   </div>
                   <div className="patient-image-upload-section">
