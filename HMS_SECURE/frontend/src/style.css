@@ -667,3 +667,6 @@ td button {
     grid-template-columns: 1fr;
   }
 }
+.patient-save-btn {
+  margin-top: 10px;
+}

@@ -1157,7 +1157,7 @@ function App() {
                     </div>
                   )}
 
-                  <button type="submit" className="patient-save-btn mt-2">
+                  <button type="submit" className="patient-save-btn">
                     {editingPatientId ? "Update Patient" : "Save Patient"}
                   </button>
                 </form>
