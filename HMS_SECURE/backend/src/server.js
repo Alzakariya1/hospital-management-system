@@ -1,14 +1,76 @@
-require('dotenv').config();
-const express=require('express'); const cors=require('cors'); const helmet=require('helmet'); const morgan=require('morgan'); const rateLimit=require('express-rate-limit'); const {connectDB,mongoose}=require('./config/db'); const {notFound,errorHandler}=require('./middleware/errorHandler');
-const app=express(); const PORT=process.env.PORT||5000;
-app.set('trust proxy', 1);
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+const { connectDB, mongoose } = require("./config/db");
+const { notFound, errorHandler } = require("./middleware/errorHandler");
+const app = express();
+const PORT = process.env.PORT || 5000;
+app.set("trust proxy", 1);
 app.use(helmet());
-const allowedOrigins=(process.env.FRONTEND_URL?process.env.FRONTEND_URL.split(','):['http://localhost:5173','http://localhost:3000']).map(x=>x.trim()).filter(Boolean);
-app.use(cors({origin:(origin,cb)=>{ if(!origin||allowedOrigins.includes(origin)) return cb(null,true); return cb(new Error(`CORS blocked for origin: ${origin}`)); },credentials:true}));
-app.use(express.json({limit:'10mb'})); app.use(express.urlencoded({extended:true})); app.use(morgan(process.env.NODE_ENV==='production'?'combined':'dev'));
-app.use('/api',rateLimit({windowMs:15*60*1000,max:Number(process.env.RATE_LIMIT_MAX||500),standardHeaders:true,legacyHeaders:false}));
-app.get('/',(req,res)=>res.json({message:'Enterprise HMS Backend Running',database:'MongoDB Atlas ready'}));
-app.get('/api/health',async(req,res,next)=>{try{await connectDB(); res.json({status:'ok',database:mongoose.connection.readyState===1?'connected':'connecting'});}catch(e){next(e);}});
-app.use('/api/auth',require('./routes/auth.routes')); app.use('/api/patients',require('./routes/patient.routes')); app.use('/api',require('./routes/core.routes')); app.use('/api',require('./routes/opd-ipd.routes')); app.use('/api',require('./routes/lab-radiology.routes')); app.use('/api/pharmacy',require('./routes/pharmacy.routes')); app.use('/api/billing',require('./routes/billing.routes')); app.use('/api',require('./routes/audit-security.routes'));
-app.use(notFound); app.use(errorHandler);
-connectDB().then(()=>app.listen(PORT,()=>console.log(`API running on port ${PORT}`))).catch(err=>{console.error('MongoDB connection failed:',err.message); process.exit(1);});
+const allowedOrigins = (
+  process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",")
+    : ["http://localhost:5173", "http://localhost:3000"]
+)
+  .map((x) => x.trim())
+  .filter(Boolean);
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(
+  "/api",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.RATE_LIMIT_MAX || 500),
+    standardHeaders: true,
+    legacyHeaders: false,
+  }),
+);
+app.get("/", (req, res) =>
+  res.json({
+    message: "Enterprise HMS Backend Running",
+    database: "MongoDB Atlas ready",
+  }),
+);
+app.get("/api/health", async (req, res, next) => {
+  try {
+    await connectDB();
+    res.json({
+      status: "ok",
+      database:
+        mongoose.connection.readyState === 1 ? "connected" : "connecting",
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api/patients", require("./routes/patient.routes"));
+app.use("/api", require("./routes/core.routes"));
+app.use("/api", require("./routes/opd-ipd.routes"));
+app.use("/api", require("./routes/lab-radiology.routes"));
+app.use("/api/pharmacy", require("./routes/pharmacy.routes"));
+app.use("/api/billing", require("./routes/billing.routes"));
+app.use("/api", require("./routes/audit-security.routes"));
+app.use(notFound);
+app.use(errorHandler);
+connectDB()
+  .then(() =>
+    app.listen(PORT, () => console.log(`API running on port ${PORT}`)),
+  )
+  .catch((err) => {
+    console.error("MongoDB connection failed:", err.message);
+    process.exit(1);
+  });
