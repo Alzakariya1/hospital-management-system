@@ -1313,62 +1313,6 @@ function App() {
 
                 <div className="card" style={{ marginTop: 16 }}>
                   <h2>Patient Profile</h2>
-                  <div className="patient-summary-grid">
-                    <div className="summary-card">
-                      <i className="bi bi-file-earmark-medical"></i>
-                      <div>
-                        <span>Documents</span>
-                        <h3>{selectedPatient.documents?.length || 0}</h3>
-                      </div>
-                    </div>
-
-                    <div className="summary-card">
-                      <i className="bi bi-calendar-check"></i>
-                      <div>
-                        <span>Appointments</span>
-                        <h3>
-                          {
-                            appointments.filter(
-                              (a) =>
-                                a.patient_id === selectedPatient.patient_id,
-                            ).length
-                          }
-                        </h3>
-                      </div>
-                    </div>
-
-                    <div className="summary-card">
-                      <i className="bi bi-receipt"></i>
-                      <div>
-                        <span>Total Bills</span>
-                        <h3>
-                          {
-                            bills.filter(
-                              (b) =>
-                                b.patient_id === selectedPatient.patient_id,
-                            ).length
-                          }
-                        </h3>
-                      </div>
-                    </div>
-
-                    <div className="summary-card">
-                      <i className="bi bi-cash-stack"></i>
-                      <div>
-                        <span>Pending Amount</span>
-                        <h3>
-                          ₹
-                          {bills
-                            .filter(
-                              (b) =>
-                                b.patient_id === selectedPatient.patient_id &&
-                                b.status !== "paid",
-                            )
-                            .reduce((sum, b) => sum + Number(b.amount || 0), 0)}
-                        </h3>
-                      </div>
-                    </div>
-                  </div>
 
                   <div className="patient-profile-top">
                     <div className="patient-avatar">
@@ -1468,6 +1412,62 @@ function App() {
                             </b>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="patient-summary-grid">
+                    <div className="summary-card">
+                      <i className="bi bi-file-earmark-medical"></i>
+                      <div>
+                        <span>Documents</span>
+                        <h3>{selectedPatient.documents?.length || 0}</h3>
+                      </div>
+                    </div>
+
+                    <div className="summary-card">
+                      <i className="bi bi-calendar-check"></i>
+                      <div>
+                        <span>Appointments</span>
+                        <h3>
+                          {
+                            appointments.filter(
+                              (a) =>
+                                a.patient_id === selectedPatient.patient_id,
+                            ).length
+                          }
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="summary-card">
+                      <i className="bi bi-receipt"></i>
+                      <div>
+                        <span>Total Bills</span>
+                        <h3>
+                          {
+                            bills.filter(
+                              (b) =>
+                                b.patient_id === selectedPatient.patient_id,
+                            ).length
+                          }
+                        </h3>
+                      </div>
+                    </div>
+
+                    <div className="summary-card">
+                      <i className="bi bi-cash-stack"></i>
+                      <div>
+                        <span>Pending Amount</span>
+                        <h3>
+                          ₹
+                          {bills
+                            .filter(
+                              (b) =>
+                                b.patient_id === selectedPatient.patient_id &&
+                                b.status !== "paid",
+                            )
+                            .reduce((sum, b) => sum + Number(b.amount || 0), 0)}
+                        </h3>
                       </div>
                     </div>
                   </div>
