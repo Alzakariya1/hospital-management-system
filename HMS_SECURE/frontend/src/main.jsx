@@ -935,19 +935,18 @@ function App() {
             )}
             {tab === "patients" && (
               <section>
-                <Form
-                  title="Add Patient"
-                  data={patient}
-                  setData={setPatient}
-                  submit={addPatient}
-                />
-                <div className="card patient-document-card">
+                <form
+                  className="card form patient-complete-form"
+                  onSubmit={addPatient}
+                >
                   <div className="patient-document-header">
                     <div>
-                      <h2>Patient Documents</h2>
+                      <h2>
+                        {editingPatientId ? "Edit Patient" : "Add Patient"}
+                      </h2>
                       <p className="muted">
-                        Upload identity proof, prescriptions, reports, insurance
-                        or admission documents.
+                        Add patient details and upload required documents in one
+                        place.
                       </p>
                     </div>
 
@@ -955,6 +954,38 @@ function App() {
                       {pendingPatientDocs.length} Files
                     </div>
                   </div>
+
+                  <div className="formGrid">
+                    {Object.keys(patient).map((k) => (
+                      <input
+                        key={k}
+                        type={
+                          k.includes("age")
+                            ? "number"
+                            : k.includes("email")
+                              ? "email"
+                              : "text"
+                        }
+                        required={k === "patient_id" || k === "full_name"}
+                        placeholder={k.replaceAll("_", " ")}
+                        value={patient[k] ?? ""}
+                        onChange={(e) =>
+                          setPatient({
+                            ...patient,
+                            [k]: e.target.value,
+                          })
+                        }
+                      />
+                    ))}
+                  </div>
+
+                  <div className="patient-form-divider"></div>
+
+                  <h2>Patient Documents</h2>
+                  <p className="muted">
+                    Upload identity proof, prescriptions, reports, insurance or
+                    admission documents.
+                  </p>
 
                   <div className="patient-document-grid">
                     <select
@@ -1041,17 +1072,16 @@ function App() {
 
                             <div>
                               <h4>{doc.title}</h4>
-
                               <p>
                                 {doc.document_type} • {doc.category}
                               </p>
-
                               <small>Uploaded: {doc.uploaded_at}</small>
                             </div>
                           </div>
 
                           <div className="patient-document-actions">
                             <button
+                              type="button"
                               onClick={() =>
                                 window.open(doc.file_url, "_blank")
                               }
@@ -1060,6 +1090,7 @@ function App() {
                             </button>
 
                             <button
+                              type="button"
                               className="remove-btn"
                               onClick={() =>
                                 removePendingPatientDocument(doc.id)
@@ -1072,7 +1103,11 @@ function App() {
                       ))}
                     </div>
                   )}
-                </div>
+
+                  <button type="submit" className="patient-save-btn">
+                    {editingPatientId ? "Update Patient" : "Save Patient"}
+                  </button>
+                </form>
                 <div className="card">
                   <input
                     placeholder="Search patient by ID, name, phone or email..."
