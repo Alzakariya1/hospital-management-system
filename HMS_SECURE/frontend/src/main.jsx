@@ -132,6 +132,7 @@ function Stat({ icon: Icon, title, value }) {
   );
 }
 function Table({ rows, onEdit, onDelete, showProfile, onProfile }) {
+  const [openActionMenu, setOpenActionMenu] = useState(null);
   if (!rows?.length) return <p className="muted">No records found.</p>;
 
   const hiddenKeys = [
