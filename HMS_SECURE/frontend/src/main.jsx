@@ -304,42 +304,60 @@ function App() {
     e.preventDefault();
 
     try {
+      let savedPatientId = editingPatientId;
+
       if (editingPatientId) {
         await api.put(`/patients/${editingPatientId}`, patient);
-
-        setSavedPatientDocs((prev) => ({
-          ...prev,
-          [patient.patient_id]: pendingPatientDocs,
-        }));
-
-        setPatients((prev) =>
-          prev.map((p) =>
-            (p.id || p._id) === editingPatientId ? { ...p, ...patient } : p,
-          ),
-        );
-
-        setSelectedPatient((prev) =>
-          prev?.patient_id === patient.patient_id
-            ? { ...prev, ...patient }
-            : prev,
-        );
-
         toast.success("Patient updated successfully");
-        setEditingPatientId(null);
       } else {
-        await api.post("/patients", patient);
-
-        setSavedPatientDocs((prev) => ({
-          ...prev,
-          [patient.patient_id]: pendingPatientDocs,
-        }));
-
+        const { data } = await api.post("/patients", patient);
+        savedPatientId = data.id;
         toast.success("Patient added successfully");
       }
 
+      const uploadedDocs = [];
+
+      for (const doc of pendingPatientDocs) {
+        if (!doc.file) {
+          uploadedDocs.push(doc);
+          continue;
+        }
+
+        const formData = new FormData();
+
+        formData.append("document", doc.file);
+        formData.append("title", doc.title);
+        formData.append("category", doc.category);
+        formData.append("document_type", doc.document_type);
+        formData.append("notes", doc.notes || "");
+
+        const { data } = await api.post(
+          `/patients/${savedPatientId}/documents`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+
+        if (data.document) {
+          uploadedDocs.push(data.document);
+        }
+      }
+
+      setSavedPatientDocs((prev) => ({
+        ...prev,
+        [patient.patient_id]: uploadedDocs,
+      }));
+
+      setEditingPatientId(null);
       setPatient(emptyPatient);
       setPendingPatientDocs([]);
+
       await load();
+
+      toast.success("Patient and documents saved");
     } catch (err) {
       toast.error(err.response?.data?.message || "Patient action failed");
     }
@@ -439,6 +457,7 @@ function App() {
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
+      file,
       file_url: URL.createObjectURL(file),
       uploaded_at: new Date().toLocaleString(),
     };
