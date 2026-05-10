@@ -1097,21 +1097,24 @@ function App() {
                           <div className="patient-document-actions">
                             <button
                               type="button"
+                              className="icon-btn profile-btn"
+                              title="View Document"
                               onClick={() =>
                                 window.open(doc.file_url, "_blank")
                               }
                             >
-                              View
+                              <i className="bi bi-eye"></i>
                             </button>
 
                             <button
                               type="button"
-                              className="remove-btn"
+                              className="icon-btn delete-btn"
+                              title="Remove Document"
                               onClick={() =>
                                 removePendingPatientDocument(doc.id)
                               }
                             >
-                              Remove
+                              <i className="bi bi-trash"></i>
                             </button>
                           </div>
                         </div>
@@ -1139,8 +1142,12 @@ function App() {
                     onEdit={editPatient}
                     onDelete={deletePatient}
                     showProfile={true}
-                    onProfile={(patient) => {
-                      setSelectedPatient(patient);
+                    onProfile={(row) => {
+                      const latestPatient =
+                        patients.find((p) => p.patient_id === row.patient_id) ||
+                        row;
+
+                      setSelectedPatient(latestPatient);
                       setTab("patientProfile");
                     }}
                   />
@@ -1333,71 +1340,74 @@ function App() {
                       })()}
                     </div>
                   </div>
-                  <div className="patient-document-card profile-documents">
-                    <div className="patient-document-header">
-                      <div>
-                        <h2>Patient Documents</h2>
-                        <p className="muted">
-                          Uploaded records for this patient.
-                        </p>
-                      </div>
+                </div>
+                <div className="patient-document-card profile-documents">
+                  <div className="patient-document-header">
+                    <div>
+                      <h2>Patient Documents</h2>
+                      <p className="muted">
+                        Uploaded records for this patient.
+                      </p>
                     </div>
+                  </div>
 
-                    {(() => {
-                      const docs =
-                        savedPatientDocs[selectedPatient.patient_id] || [];
+                  {(() => {
+                    const docs =
+                      savedPatientDocs[selectedPatient.patient_id] || [];
 
-                      if (!docs.length) {
-                        return (
-                          <p className="muted">
-                            No documents uploaded for this patient.
-                          </p>
-                        );
-                      }
-
+                    if (!docs.length) {
                       return (
-                        <div className="patient-document-list">
-                          {docs.map((doc) => (
-                            <div className="patient-document-item" key={doc.id}>
-                              <div className="patient-document-info">
-                                <div className="document-icon">
-                                  <i className="bi bi-file-earmark-medical"></i>
-                                </div>
+                        <p className="muted">
+                          No documents uploaded for this patient.
+                        </p>
+                      );
+                    }
 
-                                <div>
-                                  <h4>{doc.title}</h4>
-
-                                  <p>
-                                    {doc.document_type} • {doc.category}
-                                  </p>
-
-                                  <small>Uploaded: {doc.uploaded_at}</small>
-                                </div>
+                    return (
+                      <div className="patient-document-list">
+                        {docs.map((doc) => (
+                          <div className="patient-document-item" key={doc.id}>
+                            <div className="patient-document-info">
+                              <div className="document-icon">
+                                <i className="bi bi-file-earmark-medical"></i>
                               </div>
 
-                              <div className="patient-document-actions">
-                                <button
-                                  onClick={() =>
-                                    window.open(doc.file_url, "_blank")
-                                  }
-                                >
-                                  View
-                                </button>
+                              <div>
+                                <h4>{doc.title}</h4>
 
-                                <a
-                                  href={doc.file_url}
-                                  download={doc.file_name}
-                                  className="download-doc-btn"
-                                >
-                                  Download
-                                </a>
+                                <p>
+                                  {doc.document_type} • {doc.category}
+                                </p>
+
+                                <small>Uploaded: {doc.uploaded_at}</small>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
+
+                            <div className="patient-document-actions">
+                              <button
+                                className="icon-btn profile-btn"
+                                title="View Document"
+                                onClick={() =>
+                                  window.open(doc.file_url, "_blank")
+                                }
+                              >
+                                <i className="bi bi-eye"></i>
+                              </button>
+
+                              <a
+                                href={doc.file_url}
+                                download={doc.file_name}
+                                className="icon-btn edit-btn"
+                                title="Download Document"
+                              >
+                                <i className="bi bi-download"></i>
+                              </a>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               </section>
             )}
