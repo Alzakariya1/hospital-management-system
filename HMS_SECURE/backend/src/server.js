@@ -13,7 +13,7 @@ app.use(helmet());
 const allowedOrigins = (
     process.env.FRONTEND_URL
         ? process.env.FRONTEND_URL.split(",")
-        : ["http://localhost:5173", "http://localhost:3000", "https://nexora-alzakariya1s-projects.vercel.app",]
+        : ["http://localhost:5173", "http://localhost:3000"]
 )
     .map((x) => x.trim())
     .filter(Boolean);
