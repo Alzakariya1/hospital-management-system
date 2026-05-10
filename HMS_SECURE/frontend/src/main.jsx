@@ -38,6 +38,7 @@ const emptyPatient = {
   address: "",
   blood_group: "",
   medical_notes: "",
+
   emergency_contact_name: "",
   emergency_contact_phone: "",
   insurance_provider: "",
@@ -310,6 +311,18 @@ function App() {
           ...prev,
           [patient.patient_id]: pendingPatientDocs,
         }));
+
+        setPatients((prev) =>
+          prev.map((p) =>
+            (p.id || p._id) === editingPatientId ? { ...p, ...patient } : p,
+          ),
+        );
+
+        setSelectedPatient((prev) =>
+          prev?.patient_id === patient.patient_id
+            ? { ...prev, ...patient }
+            : prev,
+        );
 
         toast.success("Patient updated successfully");
         setEditingPatientId(null);
