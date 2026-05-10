@@ -124,7 +124,7 @@ function Stat({ icon: Icon, title, value }) {
     </div>
   );
 }
-function Table({ rows, onEdit, onDelete }) {
+function Table({ rows, onEdit, onDelete, showProfile, onProfile }) {
   if (!rows?.length) return <p className="muted">No records found.</p>;
 
   const hiddenKeys = [
@@ -163,13 +163,16 @@ function Table({ rows, onEdit, onDelete }) {
                 <td key={k}>{String(r[k] ?? "")}</td>
               ))}
               {(onEdit || onDelete) && (
-                // <td>
-                //   {onEdit && <button onClick={() => onEdit(r)}>Edit</button>}
-                //   {onDelete && (
-                //     <button onClick={() => onDelete(r)}>Delete</button>
-                //   )}
-                // </td>
                 <td className="action-icons">
+                  {showProfile && (
+                    <button
+                      className="icon-btn profile-btn"
+                      title="View Profile"
+                      onClick={() => onProfile(r)}
+                    >
+                      <i className="bi bi-eye"></i>
+                    </button>
+                  )}
                   {onEdit && (
                     <button
                       className="icon-btn edit-btn"
@@ -872,6 +875,10 @@ function App() {
                     rows={paginatedPatients}
                     onEdit={editPatient}
                     onDelete={deletePatient}
+                    showProfile={true}
+                    onProfile={(patient) => {
+                      console.log("Patient Profile:", patient);
+                    }}
                   />
                   <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
                     <button
