@@ -211,7 +211,17 @@ function App() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
   const [patientSearch, setPatientSearch] = useState("");
-  const [patientDocuments, setPatientDocuments] = useState([]);
+  const [pendingPatientDocs, setPendingPatientDocs] = useState([]);
+
+  const [savedPatientDocs, setSavedPatientDocs] = useState({});
+
+  const [patientDocForm, setPatientDocForm] = useState({
+    category: "medical",
+    document_type: "Prescription",
+    title: "",
+    notes: "",
+  });
+
   const [doctors, setDoctors] = useState([]);
   const [doctorSearch, setDoctorSearch] = useState("");
   const [appointments, setAppointments] = useState([]);
@@ -239,12 +249,6 @@ function App() {
 
   const [patient, setPatient] = useState(emptyPatient);
   const [doctor, setDoctor] = useState(emptyDoctor);
-  const [documentForm, setDocumentForm] = useState({
-    category: "medical",
-    document_type: "Prescription",
-    title: "",
-    notes: "",
-  });
 
   const [appointment, setAppointment] = useState(emptyAppointment);
   const [appointmentSearch, setAppointmentSearch] = useState("");
@@ -301,64 +305,21 @@ function App() {
         setEditingPatientId(null);
       } else {
         await api.post("/patients", patient);
+
+        setSavedPatientDocs((prev) => ({
+          ...prev,
+          [patient.patient_id]: pendingPatientDocs,
+        }));
+
         toast.success("Patient added successfully");
       }
 
       setPatient(emptyPatient);
+      setPendingPatientDocs([]);
       await load();
     } catch (err) {
       toast.error(err.response?.data?.message || "Patient action failed");
     }
-  }
-  function uploadPatientDocument(e) {
-    const file = e.target.files?.[0];
-    if (!file || !selectedPatient) return;
-
-    const patientKey =
-      selectedPatient.id || selectedPatient._id || selectedPatient.patient_id;
-
-    const newDoc = {
-      id: Date.now(),
-      category: documentForm.category,
-      document_type: documentForm.document_type,
-      title: documentForm.title || file.name,
-      notes: documentForm.notes,
-      file_name: file.name,
-      file_type: file.type,
-      file_size: file.size,
-      uploaded_at: new Date().toLocaleString(),
-      file_url: URL.createObjectURL(file),
-    };
-
-    setPatientDocuments((prev) => ({
-      ...prev,
-      [patientKey]: [...(prev[patientKey] || []), newDoc],
-    }));
-
-    setDocumentForm({
-      category: "medical",
-      document_type: "Prescription",
-      title: "",
-      notes: "",
-    });
-
-    e.target.value = "";
-    toast.success("Patient document uploaded");
-  }
-
-  function deletePatientDocument(docId) {
-    if (!selectedPatient) return;
-    if (!confirm("Delete this document?")) return;
-
-    const patientKey =
-      selectedPatient.id || selectedPatient._id || selectedPatient.patient_id;
-
-    setPatientDocuments((prev) => ({
-      ...prev,
-      [patientKey]: (prev[patientKey] || []).filter((doc) => doc.id !== docId),
-    }));
-
-    toast.success("Document deleted");
   }
 
   async function addDoctor(e) {
@@ -406,6 +367,68 @@ function App() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
     }
+  }
+  function handlePendingPatientDocument(e) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    if (!patient.patient_id) {
+      toast.error("Please enter Patient ID before uploading document");
+      e.target.value = "";
+      return;
+    }
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only PDF, JPG, PNG, and WEBP files are allowed");
+      e.target.value = "";
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      toast.error("File size should be less than 5MB");
+      e.target.value = "";
+      return;
+    }
+
+    const newDoc = {
+      id: Date.now(),
+      patient_id: patient.patient_id,
+      category: patientDocForm.category,
+      document_type: patientDocForm.document_type,
+      title: patientDocForm.title || file.name,
+      notes: patientDocForm.notes,
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+      file_url: URL.createObjectURL(file),
+      uploaded_at: new Date().toLocaleString(),
+    };
+
+    setPendingPatientDocs((prev) => [...prev, newDoc]);
+
+    setPatientDocForm({
+      category: "medical",
+      document_type: "Prescription",
+      title: "",
+      notes: "",
+    });
+
+    e.target.value = "";
+    toast.success("Document added to patient form");
+  }
+  function removePendingPatientDocument(docId) {
+    setPendingPatientDocs((prev) => prev.filter((doc) => doc.id !== docId));
+    toast.success("Document removed");
   }
   function editDoctor(row) {
     setDoctor({
@@ -918,6 +941,138 @@ function App() {
                   setData={setPatient}
                   submit={addPatient}
                 />
+                <div className="card patient-document-card">
+                  <div className="patient-document-header">
+                    <div>
+                      <h2>Patient Documents</h2>
+                      <p className="muted">
+                        Upload identity proof, prescriptions, reports, insurance
+                        or admission documents.
+                      </p>
+                    </div>
+
+                    <div className="document-badge">
+                      {pendingPatientDocs.length} Files
+                    </div>
+                  </div>
+
+                  <div className="patient-document-grid">
+                    <select
+                      value={patientDocForm.category}
+                      onChange={(e) =>
+                        setPatientDocForm({
+                          ...patientDocForm,
+                          category: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="identity">Identity Document</option>
+                      <option value="medical">Medical Document</option>
+                      <option value="insurance">Insurance Document</option>
+                      <option value="admission">Admission Document</option>
+                      <option value="billing">Billing Document</option>
+                      <option value="other">Other</option>
+                    </select>
+
+                    <select
+                      value={patientDocForm.document_type}
+                      onChange={(e) =>
+                        setPatientDocForm({
+                          ...patientDocForm,
+                          document_type: e.target.value,
+                        })
+                      }
+                    >
+                      <option value="Aadhaar Card">Aadhaar Card</option>
+                      <option value="PAN Card">PAN Card</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Insurance Card">Insurance Card</option>
+                      <option value="Prescription">Prescription</option>
+                      <option value="Lab Report">Lab Report</option>
+                      <option value="X-Ray">X-Ray</option>
+                      <option value="MRI / CT Scan">MRI / CT Scan</option>
+                      <option value="ECG Report">ECG Report</option>
+                      <option value="Discharge Summary">
+                        Discharge Summary
+                      </option>
+                      <option value="Consent Form">Consent Form</option>
+                      <option value="Admission Form">Admission Form</option>
+                      <option value="Invoice / Bill">Invoice / Bill</option>
+                      <option value="Other">Other</option>
+                    </select>
+
+                    <input
+                      placeholder="Document title"
+                      value={patientDocForm.title}
+                      onChange={(e) =>
+                        setPatientDocForm({
+                          ...patientDocForm,
+                          title: e.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      placeholder="Document notes"
+                      value={patientDocForm.notes}
+                      onChange={(e) =>
+                        setPatientDocForm({
+                          ...patientDocForm,
+                          notes: e.target.value,
+                        })
+                      }
+                    />
+
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp"
+                      onChange={handlePendingPatientDocument}
+                    />
+                  </div>
+
+                  {pendingPatientDocs.length > 0 && (
+                    <div className="patient-document-list">
+                      {pendingPatientDocs.map((doc) => (
+                        <div className="patient-document-item" key={doc.id}>
+                          <div className="patient-document-info">
+                            <div className="document-icon">
+                              <i className="bi bi-file-earmark-medical"></i>
+                            </div>
+
+                            <div>
+                              <h4>{doc.title}</h4>
+
+                              <p>
+                                {doc.document_type} • {doc.category}
+                              </p>
+
+                              <small>Uploaded: {doc.uploaded_at}</small>
+                            </div>
+                          </div>
+
+                          <div className="patient-document-actions">
+                            <button
+                              onClick={() =>
+                                window.open(doc.file_url, "_blank")
+                              }
+                            >
+                              View
+                            </button>
+
+                            <button
+                              className="remove-btn"
+                              onClick={() =>
+                                removePendingPatientDocument(doc.id)
+                              }
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="card">
                   <input
                     placeholder="Search patient by ID, name, phone or email..."
@@ -997,137 +1152,6 @@ function App() {
                   <p>
                     <b>Medical Notes:</b> {selectedPatient.medical_notes}
                   </p>
-                  <div className="patient-documents-box">
-                    <h3>Patient Documents</h3>
-
-                    <div className="document-form-grid">
-                      <select
-                        value={documentForm.category}
-                        onChange={(e) =>
-                          setDocumentForm({
-                            ...documentForm,
-                            category: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="identity">Identity Document</option>
-                        <option value="medical">Medical Document</option>
-                        <option value="admission">Admission Document</option>
-                        <option value="insurance">Insurance Document</option>
-                        <option value="billing">Billing Document</option>
-                        <option value="other">Other</option>
-                      </select>
-
-                      <select
-                        value={documentForm.document_type}
-                        onChange={(e) =>
-                          setDocumentForm({
-                            ...documentForm,
-                            document_type: e.target.value,
-                          })
-                        }
-                      >
-                        <option value="Aadhaar Card">Aadhaar Card</option>
-                        <option value="PAN Card">PAN Card</option>
-                        <option value="Passport">Passport</option>
-                        <option value="Insurance Card">Insurance Card</option>
-                        <option value="Prescription">Prescription</option>
-                        <option value="Lab Report">Lab Report</option>
-                        <option value="X-Ray">X-Ray</option>
-                        <option value="MRI / CT Scan">MRI / CT Scan</option>
-                        <option value="ECG Report">ECG Report</option>
-                        <option value="Discharge Summary">
-                          Discharge Summary
-                        </option>
-                        <option value="Consent Form">Consent Form</option>
-                        <option value="Admission Form">Admission Form</option>
-                        <option value="Invoice / Bill">Invoice / Bill</option>
-                        <option value="Other">Other</option>
-                      </select>
-
-                      <input
-                        placeholder="Document title"
-                        value={documentForm.title}
-                        onChange={(e) =>
-                          setDocumentForm({
-                            ...documentForm,
-                            title: e.target.value,
-                          })
-                        }
-                      />
-
-                      <input
-                        placeholder="Notes"
-                        value={documentForm.notes}
-                        onChange={(e) =>
-                          setDocumentForm({
-                            ...documentForm,
-                            notes: e.target.value,
-                          })
-                        }
-                      />
-
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                        onChange={uploadPatientDocument}
-                      />
-                    </div>
-
-                    {(() => {
-                      const patientKey =
-                        selectedPatient.id ||
-                        selectedPatient._id ||
-                        selectedPatient.patient_id;
-
-                      const docs = patientDocuments[patientKey] || [];
-
-                      if (!docs.length) {
-                        return (
-                          <p className="muted">
-                            No documents uploaded for this patient.
-                          </p>
-                        );
-                      }
-
-                      return (
-                        <div className="document-list">
-                          {docs.map((doc) => (
-                            <div className="document-item" key={doc.id}>
-                              <div>
-                                <b>{doc.title}</b>
-                                <p>
-                                  {doc.document_type} • {doc.category} •{" "}
-                                  {doc.uploaded_at}
-                                </p>
-                                {doc.notes && <small>{doc.notes}</small>}
-                              </div>
-
-                              <div className="document-actions">
-                                <button
-                                  onClick={() =>
-                                    window.open(doc.file_url, "_blank")
-                                  }
-                                >
-                                  View
-                                </button>
-
-                                <a href={doc.file_url} download={doc.file_name}>
-                                  Download
-                                </a>
-
-                                <button
-                                  onClick={() => deletePatientDocument(doc.id)}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    })()}
-                  </div>
                 </div>
               </section>
             )}
