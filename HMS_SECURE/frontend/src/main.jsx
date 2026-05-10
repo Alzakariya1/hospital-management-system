@@ -1333,6 +1333,71 @@ function App() {
                       })()}
                     </div>
                   </div>
+                  <div className="patient-document-card profile-documents">
+                    <div className="patient-document-header">
+                      <div>
+                        <h2>Patient Documents</h2>
+                        <p className="muted">
+                          Uploaded records for this patient.
+                        </p>
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const docs =
+                        savedPatientDocs[selectedPatient.patient_id] || [];
+
+                      if (!docs.length) {
+                        return (
+                          <p className="muted">
+                            No documents uploaded for this patient.
+                          </p>
+                        );
+                      }
+
+                      return (
+                        <div className="patient-document-list">
+                          {docs.map((doc) => (
+                            <div className="patient-document-item" key={doc.id}>
+                              <div className="patient-document-info">
+                                <div className="document-icon">
+                                  <i className="bi bi-file-earmark-medical"></i>
+                                </div>
+
+                                <div>
+                                  <h4>{doc.title}</h4>
+
+                                  <p>
+                                    {doc.document_type} • {doc.category}
+                                  </p>
+
+                                  <small>Uploaded: {doc.uploaded_at}</small>
+                                </div>
+                              </div>
+
+                              <div className="patient-document-actions">
+                                <button
+                                  onClick={() =>
+                                    window.open(doc.file_url, "_blank")
+                                  }
+                                >
+                                  View
+                                </button>
+
+                                <a
+                                  href={doc.file_url}
+                                  download={doc.file_name}
+                                  className="download-doc-btn"
+                                >
+                                  Download
+                                </a>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               </section>
             )}
