@@ -211,6 +211,7 @@ function App() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
   const [patientSearch, setPatientSearch] = useState("");
+  const [patientDocuments, setPatientDocuments] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [doctorSearch, setDoctorSearch] = useState("");
   const [appointments, setAppointments] = useState([]);
@@ -238,6 +239,12 @@ function App() {
 
   const [patient, setPatient] = useState(emptyPatient);
   const [doctor, setDoctor] = useState(emptyDoctor);
+  const [documentForm, setDocumentForm] = useState({
+    category: "medical",
+    document_type: "Prescription",
+    title: "",
+    notes: "",
+  });
 
   const [appointment, setAppointment] = useState(emptyAppointment);
   const [appointmentSearch, setAppointmentSearch] = useState("");
@@ -302,6 +309,56 @@ function App() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Patient action failed");
     }
+  }
+  function uploadPatientDocument(e) {
+    const file = e.target.files?.[0];
+    if (!file || !selectedPatient) return;
+
+    const patientKey =
+      selectedPatient.id || selectedPatient._id || selectedPatient.patient_id;
+
+    const newDoc = {
+      id: Date.now(),
+      category: documentForm.category,
+      document_type: documentForm.document_type,
+      title: documentForm.title || file.name,
+      notes: documentForm.notes,
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+      uploaded_at: new Date().toLocaleString(),
+      file_url: URL.createObjectURL(file),
+    };
+
+    setPatientDocuments((prev) => ({
+      ...prev,
+      [patientKey]: [...(prev[patientKey] || []), newDoc],
+    }));
+
+    setDocumentForm({
+      category: "medical",
+      document_type: "Prescription",
+      title: "",
+      notes: "",
+    });
+
+    e.target.value = "";
+    toast.success("Patient document uploaded");
+  }
+
+  function deletePatientDocument(docId) {
+    if (!selectedPatient) return;
+    if (!confirm("Delete this document?")) return;
+
+    const patientKey =
+      selectedPatient.id || selectedPatient._id || selectedPatient.patient_id;
+
+    setPatientDocuments((prev) => ({
+      ...prev,
+      [patientKey]: (prev[patientKey] || []).filter((doc) => doc.id !== docId),
+    }));
+
+    toast.success("Document deleted");
   }
 
   async function addDoctor(e) {
@@ -940,6 +997,137 @@ function App() {
                   <p>
                     <b>Medical Notes:</b> {selectedPatient.medical_notes}
                   </p>
+                  <div className="patient-documents-box">
+                    <h3>Patient Documents</h3>
+
+                    <div className="document-form-grid">
+                      <select
+                        value={documentForm.category}
+                        onChange={(e) =>
+                          setDocumentForm({
+                            ...documentForm,
+                            category: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="identity">Identity Document</option>
+                        <option value="medical">Medical Document</option>
+                        <option value="admission">Admission Document</option>
+                        <option value="insurance">Insurance Document</option>
+                        <option value="billing">Billing Document</option>
+                        <option value="other">Other</option>
+                      </select>
+
+                      <select
+                        value={documentForm.document_type}
+                        onChange={(e) =>
+                          setDocumentForm({
+                            ...documentForm,
+                            document_type: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="Aadhaar Card">Aadhaar Card</option>
+                        <option value="PAN Card">PAN Card</option>
+                        <option value="Passport">Passport</option>
+                        <option value="Insurance Card">Insurance Card</option>
+                        <option value="Prescription">Prescription</option>
+                        <option value="Lab Report">Lab Report</option>
+                        <option value="X-Ray">X-Ray</option>
+                        <option value="MRI / CT Scan">MRI / CT Scan</option>
+                        <option value="ECG Report">ECG Report</option>
+                        <option value="Discharge Summary">
+                          Discharge Summary
+                        </option>
+                        <option value="Consent Form">Consent Form</option>
+                        <option value="Admission Form">Admission Form</option>
+                        <option value="Invoice / Bill">Invoice / Bill</option>
+                        <option value="Other">Other</option>
+                      </select>
+
+                      <input
+                        placeholder="Document title"
+                        value={documentForm.title}
+                        onChange={(e) =>
+                          setDocumentForm({
+                            ...documentForm,
+                            title: e.target.value,
+                          })
+                        }
+                      />
+
+                      <input
+                        placeholder="Notes"
+                        value={documentForm.notes}
+                        onChange={(e) =>
+                          setDocumentForm({
+                            ...documentForm,
+                            notes: e.target.value,
+                          })
+                        }
+                      />
+
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        onChange={uploadPatientDocument}
+                      />
+                    </div>
+
+                    {(() => {
+                      const patientKey =
+                        selectedPatient.id ||
+                        selectedPatient._id ||
+                        selectedPatient.patient_id;
+
+                      const docs = patientDocuments[patientKey] || [];
+
+                      if (!docs.length) {
+                        return (
+                          <p className="muted">
+                            No documents uploaded for this patient.
+                          </p>
+                        );
+                      }
+
+                      return (
+                        <div className="document-list">
+                          {docs.map((doc) => (
+                            <div className="document-item" key={doc.id}>
+                              <div>
+                                <b>{doc.title}</b>
+                                <p>
+                                  {doc.document_type} • {doc.category} •{" "}
+                                  {doc.uploaded_at}
+                                </p>
+                                {doc.notes && <small>{doc.notes}</small>}
+                              </div>
+
+                              <div className="document-actions">
+                                <button
+                                  onClick={() =>
+                                    window.open(doc.file_url, "_blank")
+                                  }
+                                >
+                                  View
+                                </button>
+
+                                <a href={doc.file_url} download={doc.file_name}>
+                                  Download
+                                </a>
+
+                                <button
+                                  onClick={() => deletePatientDocument(doc.id)}
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
                 </div>
               </section>
             )}
