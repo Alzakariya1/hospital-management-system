@@ -362,13 +362,14 @@ function App() {
       address: row.address || "",
       blood_group: row.blood_group || "",
       medical_notes: row.medical_notes || "",
+
       emergency_contact_name: row.emergency_contact_name || "",
       emergency_contact_phone: row.emergency_contact_phone || "",
       insurance_provider: row.insurance_provider || "",
       insurance_policy_number: row.insurance_policy_number || "",
     });
 
-    setEditingPatientId(row.id);
+    setEditingPatientId(row.id || row._id);
     setPendingPatientDocs(savedPatientDocs[row.patient_id] || []);
   }
 
