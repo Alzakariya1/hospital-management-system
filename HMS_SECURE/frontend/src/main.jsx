@@ -1130,7 +1130,7 @@ function App() {
                     <div className="patient-image-upload-actions">
                       <label className="upload-image-btn">
                         <i className="bi bi-camera"></i>
-                        Upload Patient Photo
+                        Upload
                         <input
                           type="file"
                           accept=".jpg,.jpeg,.png,.webp"
