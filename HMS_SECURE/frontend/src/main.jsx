@@ -401,7 +401,9 @@ function App() {
     });
 
     setEditingPatientId(row.id || row._id);
-    setPendingPatientDocs(savedPatientDocs[row.patient_id] || []);
+    setPendingPatientDocs(
+      row.documents || savedPatientDocs[row.patient_id] || [],
+    );
   }
 
   async function deletePatient(row) {
@@ -1177,8 +1179,10 @@ function App() {
                     showProfile={true}
                     onProfile={(row) => {
                       const latestPatient =
-                        patients.find((p) => p.patient_id === row.patient_id) ||
-                        row;
+                        patients.find(
+                          (p) =>
+                            p.id === row.id || p.patient_id === row.patient_id,
+                        ) || row;
 
                       setSelectedPatient(latestPatient);
                       setTab("patientProfile");
@@ -1384,7 +1388,9 @@ function App() {
 
                       {(() => {
                         const docs =
-                          savedPatientDocs[selectedPatient.patient_id] || [];
+                          selectedPatient.documents ||
+                          savedPatientDocs[selectedPatient.patient_id] ||
+                          [];
 
                         if (!docs.length) {
                           return (
