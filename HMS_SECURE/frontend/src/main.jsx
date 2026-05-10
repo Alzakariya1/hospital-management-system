@@ -39,7 +39,7 @@ const emptyPatient = {
   blood_group: "",
   medical_notes: "",
 
-  profile_image_url: "",
+  // profile_image_url: "",
 
   emergency_contact_name: "",
   emergency_contact_phone: "",
@@ -500,8 +500,8 @@ function App() {
       patient_id: patient.patient_id,
       category: patientDocForm.category,
       document_type: patientDocForm.document_type,
-      title: patientDocForm.title || file.name,
-      notes: patientDocForm.notes,
+      // title: patientDocForm.title || file.name,
+      // notes: patientDocForm.notes,
       file_name: file.name,
       file_type: file.type,
       file_size: file.size,
@@ -1075,6 +1075,26 @@ function App() {
                     <div className="document-badge">
                       {pendingPatientDocs.length} Files
                     </div>
+                    <div className="form-header-actions">
+                      <button
+                        type="button"
+                        className="new-patient-btn"
+                        onClick={() => {
+                          setPatient(emptyPatient);
+                          setEditingPatientId(null);
+                          setPendingPatientDocs([]);
+                          setPatientProfileImage(null);
+                          setPatientProfilePreview("");
+                        }}
+                      >
+                        <i className="bi bi-plus-circle"></i>
+                        New Patient
+                      </button>
+
+                      <div className="document-badge">
+                        {pendingPatientDocs.length} Files
+                      </div>
+                    </div>
                   </div>
                   <div className="patient-image-upload-section">
                     <div className="patient-image-preview">
@@ -1101,27 +1121,44 @@ function App() {
                     </div>
                   </div>
                   <div className="formGrid">
-                    {Object.keys(patient).map((k) => (
-                      <input
-                        key={k}
-                        type={
-                          k.includes("age")
-                            ? "number"
-                            : k.includes("email")
-                              ? "email"
-                              : "text"
-                        }
-                        required={k === "patient_id" || k === "full_name"}
-                        placeholder={k.replaceAll("_", " ")}
-                        value={patient[k] ?? ""}
-                        onChange={(e) =>
-                          setPatient({
-                            ...patient,
-                            [k]: e.target.value,
-                          })
-                        }
-                      />
-                    ))}
+                    {Object.keys(patient).map((k) =>
+                      k === "gender" ? (
+                        <select
+                          key={k}
+                          value={patient[k] ?? ""}
+                          onChange={(e) =>
+                            setPatient({
+                              ...patient,
+                              [k]: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      ) : (
+                        <input
+                          key={k}
+                          type={
+                            k.includes("age")
+                              ? "number"
+                              : k.includes("email")
+                                ? "email"
+                                : "text"
+                          }
+                          required={k === "patient_id" || k === "full_name"}
+                          placeholder={k.replaceAll("_", " ")}
+                          value={patient[k] ?? ""}
+                          onChange={(e) =>
+                            setPatient({
+                              ...patient,
+                              [k]: e.target.value,
+                            })
+                          }
+                        />
+                      ),
+                    )}
                   </div>
 
                   <div className="patient-form-divider"></div>
