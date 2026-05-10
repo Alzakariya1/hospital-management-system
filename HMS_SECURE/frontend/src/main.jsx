@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import "bootstrap-icons/font/bootstrap-icons.css";
 import {
   Activity,
   Bed,
@@ -162,10 +163,31 @@ function Table({ rows, onEdit, onDelete }) {
                 <td key={k}>{String(r[k] ?? "")}</td>
               ))}
               {(onEdit || onDelete) && (
-                <td>
-                  {onEdit && <button onClick={() => onEdit(r)}>Edit</button>}
+                // <td>
+                //   {onEdit && <button onClick={() => onEdit(r)}>Edit</button>}
+                //   {onDelete && (
+                //     <button onClick={() => onDelete(r)}>Delete</button>
+                //   )}
+                // </td>
+                <td className="action-icons">
+                  {onEdit && (
+                    <button
+                      className="icon-btn edit-btn"
+                      title="Edit"
+                      onClick={() => onEdit(r)}
+                    >
+                      <i className="bi bi-pencil-square"></i>
+                    </button>
+                  )}
+
                   {onDelete && (
-                    <button onClick={() => onDelete(r)}>Delete</button>
+                    <button
+                      className="icon-btn delete-btn"
+                      title="Delete"
+                      onClick={() => onDelete(r)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   )}
                 </td>
               )}
