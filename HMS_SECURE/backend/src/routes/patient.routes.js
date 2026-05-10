@@ -124,6 +124,60 @@ router.post(
         });
     }),
 );
+router.post(
+    "/:id/profile-image",
+    allowRoles("super_admin", "admin", "receptionist"),
+    upload.single("profile_image"),
+    asyncHandler(async (req, res) => {
+        const patient = await Patient.findOne({ id: Number(req.params.id) });
+
+        if (!patient) {
+            return res.status(404).json({ message: "Patient not found" });
+        }
+
+        if (!req.file) {
+            return res.status(400).json({ message: "Profile image is required" });
+        }
+
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+        if (!allowedTypes.includes(req.file.mimetype)) {
+            return res.status(400).json({
+                message: "Only JPG, PNG, and WEBP images are allowed",
+            });
+        }
+
+        if (patient.profile_image_public_id) {
+            await cloudinary.uploader.destroy(patient.profile_image_public_id);
+        }
+
+        const result = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                {
+                    folder: "hms/patient-profile-images",
+                    resource_type: "image",
+                },
+                (error, uploadResult) => {
+                    if (error) reject(error);
+                    else resolve(uploadResult);
+                },
+            );
+
+            stream.end(req.file.buffer);
+        });
+
+        patient.profile_image_url = result.secure_url;
+        patient.profile_image_public_id = result.public_id;
+
+        await patient.save();
+
+        res.json({
+            message: "Patient profile image uploaded successfully",
+            profile_image_url: patient.profile_image_url,
+            profile_image_public_id: patient.profile_image_public_id,
+        });
+    }),
+);
 router.delete(
     "/:id/documents/:docIndex",
     allowRoles("super_admin", "admin", "receptionist"),

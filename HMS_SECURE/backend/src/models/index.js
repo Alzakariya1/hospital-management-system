@@ -49,6 +49,9 @@ const Patient = makeModel("Patient", "patients", {
     blood_group: String,
     medical_notes: String,
 
+    profile_image_url: String,
+    profile_image_public_id: String,
+
     emergency_contact_name: String,
     emergency_contact_phone: String,
     insurance_provider: String,

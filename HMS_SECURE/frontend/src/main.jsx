@@ -39,6 +39,8 @@ const emptyPatient = {
   blood_group: "",
   medical_notes: "",
 
+  profile_image_url: "",
+
   emergency_contact_name: "",
   emergency_contact_phone: "",
   insurance_provider: "",
@@ -217,6 +219,8 @@ function App() {
   const [patients, setPatients] = useState([]);
   const [patientSearch, setPatientSearch] = useState("");
   const [pendingPatientDocs, setPendingPatientDocs] = useState([]);
+  const [patientProfileImage, setPatientProfileImage] = useState(null);
+  const [patientProfilePreview, setPatientProfilePreview] = useState("");
 
   const [savedPatientDocs, setSavedPatientDocs] = useState({});
 
@@ -314,6 +318,40 @@ function App() {
         savedPatientId = data.id;
         toast.success("Patient added successfully");
       }
+      if (patientProfileImage && savedPatientId) {
+        const imageFormData = new FormData();
+
+        imageFormData.append("profile_image", patientProfileImage);
+
+        const imageUploadResponse = await api.post(
+          `/patients/${savedPatientId}/profile-image`,
+          imageFormData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+
+        patient.profile_image_url = imageUploadResponse.data.profile_image_url;
+      }
+      if (patientProfileImage && savedPatientId) {
+        const imageFormData = new FormData();
+
+        imageFormData.append("profile_image", patientProfileImage);
+
+        const imageUploadResponse = await api.post(
+          `/patients/${savedPatientId}/profile-image`,
+          imageFormData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          },
+        );
+
+        patient.profile_image_url = imageUploadResponse.data.profile_image_url;
+      }
 
       const uploadedDocs = [];
 
@@ -352,8 +390,12 @@ function App() {
       }));
 
       setEditingPatientId(null);
+
       setPatient(emptyPatient);
       setPendingPatientDocs([]);
+
+      setPatientProfileImage(null);
+      setPatientProfilePreview("");
 
       await load();
 
@@ -393,6 +435,7 @@ function App() {
       address: row.address || "",
       blood_group: row.blood_group || "",
       medical_notes: row.medical_notes || "",
+      profile_image_url: row.profile_image_url || "",
 
       emergency_contact_name: row.emergency_contact_name || "",
       emergency_contact_phone: row.emergency_contact_phone || "",
@@ -404,6 +447,9 @@ function App() {
     setPendingPatientDocs(
       row.documents || savedPatientDocs[row.patient_id] || [],
     );
+
+    setPatientProfilePreview(row.profile_image_url || "");
+    setPatientProfileImage(null);
   }
 
   async function deletePatient(row) {
@@ -475,6 +521,32 @@ function App() {
 
     e.target.value = "";
     toast.success("Document added to patient form");
+  }
+  function handlePatientProfileImage(e) {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPG, PNG, and WEBP images are allowed");
+      e.target.value = "";
+      return;
+    }
+
+    const maxSize = 3 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      toast.error("Image size should be less than 3MB");
+      e.target.value = "";
+      return;
+    }
+
+    setPatientProfileImage(file);
+    setPatientProfilePreview(URL.createObjectURL(file));
+
+    toast.success("Patient profile image selected");
   }
   function removePendingPatientDocument(docId) {
     setPendingPatientDocs((prev) => prev.filter((doc) => doc.id !== docId));
@@ -1004,7 +1076,30 @@ function App() {
                       {pendingPatientDocs.length} Files
                     </div>
                   </div>
+                  <div className="patient-image-upload-section">
+                    <div className="patient-image-preview">
+                      {patientProfilePreview ? (
+                        <img src={patientProfilePreview} alt="Patient" />
+                      ) : (
+                        <i className="bi bi-person-circle"></i>
+                      )}
+                    </div>
 
+                    <div className="patient-image-upload-actions">
+                      <label className="upload-image-btn">
+                        <i className="bi bi-camera"></i>
+                        Upload Patient Photo
+                        <input
+                          type="file"
+                          accept=".jpg,.jpeg,.png,.webp"
+                          hidden
+                          onChange={handlePatientProfileImage}
+                        />
+                      </label>
+
+                      <p>JPG, PNG or WEBP • Max 3MB</p>
+                    </div>
+                  </div>
                   <div className="formGrid">
                     {Object.keys(patient).map((k) => (
                       <input
@@ -1221,7 +1316,14 @@ function App() {
 
                   <div className="patient-profile-top">
                     <div className="patient-avatar">
-                      <i className="bi bi-person-circle"></i>
+                      {selectedPatient.profile_image_url ? (
+                        <img
+                          src={selectedPatient.profile_image_url}
+                          alt={selectedPatient.full_name}
+                        />
+                      ) : (
+                        <i className="bi bi-person-circle"></i>
+                      )}
                     </div>
 
                     <div className="patient-profile-main">
