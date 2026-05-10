@@ -823,6 +823,8 @@ td button {
 .actions-menu-cell {
   position: relative;
   text-align: center;
+  width: 90px !important;
+  text-align: center;
 }
 
 .three-dot-btn {
