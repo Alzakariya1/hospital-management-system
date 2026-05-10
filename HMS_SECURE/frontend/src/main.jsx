@@ -301,6 +301,12 @@ function App() {
     try {
       if (editingPatientId) {
         await api.put(`/patients/${editingPatientId}`, patient);
+
+        setSavedPatientDocs((prev) => ({
+          ...prev,
+          [patient.patient_id]: pendingPatientDocs,
+        }));
+
         toast.success("Patient updated successfully");
         setEditingPatientId(null);
       } else {
@@ -355,6 +361,7 @@ function App() {
     });
 
     setEditingPatientId(row.id);
+    setPendingPatientDocs(savedPatientDocs[row.patient_id] || []);
   }
 
   async function deletePatient(row) {
