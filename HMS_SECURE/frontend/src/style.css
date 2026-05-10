@@ -802,3 +802,21 @@ td button {
 .profile-documents .patient-document-item {
   width: 100%;
 }
+.form-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.new-patient-btn {
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: #0f172a;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
