@@ -790,3 +790,15 @@ td button {
   padding: 22px;
   background: #fff;
 }
+.profile-documents {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.profile-documents .patient-document-list {
+  width: 100%;
+}
+
+.profile-documents .patient-document-item {
+  width: 100%;
+}
