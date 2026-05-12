@@ -6,13 +6,14 @@ const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
 
 const router = express.Router();
 
-const DEFAULT_MODULES = ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile'];
+const DEFAULT_MODULES = ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'];
+const ALLOWED_MODULES = new Set(DEFAULT_MODULES);
 
 function publicHospital(hospital) {
   const x = hospital?.toJSON ? hospital.toJSON() : { ...(hospital || {}) };
   if (!x.id) x.id = DEFAULT_HOSPITAL_ID;
   if (!x.name) x.name = process.env.DEFAULT_HOSPITAL_NAME || 'Default Hospital';
-  if (!Array.isArray(x.enabled_modules)) x.enabled_modules = DEFAULT_MODULES;
+  if (!Array.isArray(x.enabled_modules) || !x.enabled_modules.length) x.enabled_modules = DEFAULT_MODULES;
   if (!x.feature_flags) x.feature_flags = {};
   if (!x.branding) x.branding = {};
   if (!x.settings) x.settings = {};
@@ -33,8 +34,22 @@ async function ensureHospital(id = DEFAULT_HOSPITAL_ID) {
       feature_flags: { multiTenant: true },
     });
   }
+  if (hospital && Number(id) === DEFAULT_HOSPITAL_ID && (!Array.isArray(hospital.enabled_modules) || !hospital.enabled_modules.length)) {
+    hospital.enabled_modules = DEFAULT_MODULES;
+    await hospital.save();
+  }
   return hospital;
 }
+
+function sanitizeModules(modules) {
+  if (!Array.isArray(modules)) return DEFAULT_MODULES;
+  const cleanModules = Array.from(new Set(modules.filter((moduleId) => ALLOWED_MODULES.has(moduleId))));
+  return cleanModules.length ? cleanModules : DEFAULT_MODULES;
+}
+
+router.get('/tenant/modules', verifyToken, requirePermission('hospital.manage'), (_req, res) => {
+  res.json(DEFAULT_MODULES);
+});
 
 router.get('/tenant/me', verifyToken, asyncHandler(async (req, res) => {
   const hospitalId = Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID);
@@ -54,7 +69,7 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
     type: req.body.type || 'hospital',
     status: req.body.status || 'active',
     plan: req.body.plan || 'enterprise',
-    enabled_modules: Array.isArray(req.body.enabled_modules) ? req.body.enabled_modules : DEFAULT_MODULES,
+    enabled_modules: sanitizeModules(req.body.enabled_modules),
     feature_flags: req.body.feature_flags || {},
     branding: req.body.branding || {},
     settings: req.body.settings || {},
@@ -68,7 +83,7 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
 router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
   const allowed = ['name', 'type', 'status', 'plan', 'enabled_modules', 'feature_flags', 'branding', 'settings'];
   const update = {};
-  for (const key of allowed) if (key in req.body) update[key] = req.body[key];
+  for (const key of allowed) if (key in req.body) update[key] = key === 'enabled_modules' ? sanitizeModules(req.body[key]) : req.body[key];
   await Hospital.updateOne({ id: Number(req.params.id) }, { $set: update });
   const hospital = await Hospital.findOne({ id: Number(req.params.id) });
   res.json(publicHospital(hospital));

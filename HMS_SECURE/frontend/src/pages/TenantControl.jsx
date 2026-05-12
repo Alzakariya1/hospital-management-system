@@ -1,8 +1,13 @@
 import React from "react";
+import { DEFAULT_ENABLED_MODULES, MODULES } from "../utils";
 
 const TENANT_TYPES = ["hospital", "clinic", "diagnostic_center", "nursing_home"];
 const PLANS = ["clinic", "hospital", "enterprise"];
 const STATUSES = ["active", "inactive"];
+
+function getModules(formModules) {
+  return Array.isArray(formModules) && formModules.length ? formModules : DEFAULT_ENABLED_MODULES;
+}
 
 export default function TenantControl({
   tenants,
@@ -29,6 +34,22 @@ export default function TenantControl({
     setTenantForm({ ...tenantForm, [key]: value });
   }
 
+  function toggleModule(moduleId) {
+    const currentModules = getModules(tenantForm.enabled_modules);
+    const nextModules = currentModules.includes(moduleId)
+      ? currentModules.filter((id) => id !== moduleId)
+      : [...currentModules, moduleId];
+
+    setTenantForm({
+      ...tenantForm,
+      enabled_modules: nextModules,
+    });
+  }
+
+  function enableAllModules() {
+    setTenantForm({ ...tenantForm, enabled_modules: DEFAULT_ENABLED_MODULES });
+  }
+
   function resetForm() {
     setTenantForm({
       hospital_code: "",
@@ -36,9 +57,12 @@ export default function TenantControl({
       type: "hospital",
       plan: "enterprise",
       status: "active",
+      enabled_modules: DEFAULT_ENABLED_MODULES,
     });
     setEditingTenantId(null);
   }
+
+  const selectedModules = getModules(tenantForm.enabled_modules);
 
   return (
     <section>
@@ -47,7 +71,7 @@ export default function TenantControl({
           <div>
             <h2>{editingTenantId ? "Edit Hospital" : "Add Hospital"}</h2>
             <p className="muted">
-              Manage tenant records for clinics, hospitals, diagnostic centers, and nursing homes.
+              Manage tenant records, subscription plans, status, and enabled modules without code changes.
             </p>
           </div>
           {editingTenantId && (
@@ -101,6 +125,32 @@ export default function TenantControl({
               ))}
             </select>
           </div>
+
+          <div className="moduleConfigBox">
+            <div className="sectionTitleRow compact">
+              <div>
+                <h3>Enabled Modules</h3>
+                <p className="muted">These modules control the hospital sidebar and module access.</p>
+              </div>
+              <button type="button" className="ghostBtn" onClick={enableAllModules}>
+                Enable All
+              </button>
+            </div>
+
+            <div className="moduleGrid">
+              {MODULES.map((module) => (
+                <label className="moduleCheck" key={module.id}>
+                  <input
+                    type="checkbox"
+                    checked={selectedModules.includes(module.id)}
+                    onChange={() => toggleModule(module.id)}
+                  />
+                  <span>{module.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <button type="submit">{editingTenantId ? "Update Hospital" : "Create Hospital"}</button>
         </form>
       </div>
@@ -125,29 +175,36 @@ export default function TenantControl({
                 </tr>
               </thead>
               <tbody>
-                {tenants.map((tenant) => (
-                  <tr key={tenant.id}>
-                    <td>{tenant.id}</td>
-                    <td>{tenant.hospital_code || "—"}</td>
-                    <td>{tenant.name}</td>
-                    <td>{(tenant.type || "hospital").replaceAll("_", " ")}</td>
-                    <td>{tenant.plan || "enterprise"}</td>
-                    <td>
-                      <span className={tenant.status === "active" ? "statusPill success" : "statusPill mutedPill"}>
-                        {tenant.status || "active"}
-                      </span>
-                    </td>
-                    <td>{Array.isArray(tenant.enabled_modules) ? tenant.enabled_modules.length : 0}</td>
-                    <td>
-                      <div className="inlineActions">
-                        <button type="button" onClick={() => editTenant(tenant)}>Edit</button>
-                        <button type="button" onClick={() => toggleTenantStatus(tenant)}>
-                          {tenant.status === "active" ? "Disable" : "Enable"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {tenants.map((tenant) => {
+                  const activeModules = getModules(tenant.enabled_modules);
+                  return (
+                    <tr key={tenant.id}>
+                      <td>{tenant.id}</td>
+                      <td>{tenant.hospital_code || "—"}</td>
+                      <td>{tenant.name}</td>
+                      <td>{(tenant.type || "hospital").replaceAll("_", " ")}</td>
+                      <td>{tenant.plan || "enterprise"}</td>
+                      <td>
+                        <span className={tenant.status === "active" ? "statusPill success" : "statusPill mutedPill"}>
+                          {tenant.status || "active"}
+                        </span>
+                      </td>
+                      <td>
+                        <span title={activeModules.join(", ")}>
+                          {activeModules.length} enabled
+                        </span>
+                      </td>
+                      <td>
+                        <div className="inlineActions">
+                          <button type="button" onClick={() => editTenant(tenant)}>Edit</button>
+                          <button type="button" onClick={() => toggleTenantStatus(tenant)}>
+                            {tenant.status === "active" ? "Disable" : "Enable"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

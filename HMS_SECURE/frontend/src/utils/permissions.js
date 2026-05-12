@@ -59,6 +59,22 @@ export const ROLE_PERMISSIONS = {
   ]
 };
 
+export const MODULES = [
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'patients', label: 'Patients' },
+  { id: 'doctors', label: 'Doctors' },
+  { id: 'appointments', label: 'Appointments' },
+  { id: 'beds', label: 'Beds' },
+  { id: 'lab', label: 'Laboratory' },
+  { id: 'radiology', label: 'Radiology' },
+  { id: 'pharmacy', label: 'Pharmacy' },
+  { id: 'billing', label: 'Billing' },
+  { id: 'profile', label: 'Profile' },
+  { id: 'tenants', label: 'Hospitals' },
+];
+
+export const DEFAULT_ENABLED_MODULES = MODULES.map((module) => module.id);
+
 export const TAB_PERMISSIONS = {
   dashboard: 'dashboard.view',
   patients: 'patient.view',
@@ -70,6 +86,19 @@ export const TAB_PERMISSIONS = {
   billing: 'billing.view',
   profile: 'admin.profile.manage',
   tenants: 'hospital.manage',
+};
+
+export const TAB_MODULES = {
+  dashboard: ['dashboard'],
+  patients: ['patients'],
+  doctors: ['doctors'],
+  appointments: ['appointments'],
+  beds: ['beds'],
+  labs: ['lab', 'radiology'],
+  pharmacy: ['pharmacy'],
+  billing: ['billing'],
+  profile: ['profile'],
+  tenants: ['tenants'],
 };
 
 export function getUserPermissions(user = {}) {
@@ -86,6 +115,24 @@ export function hasPermission(user = {}, permission) {
   return userPermissions.includes(permission);
 }
 
-export function filterTabsByPermissions(user, tabs) {
-  return tabs.filter(([id]) => hasPermission(user, TAB_PERMISSIONS[id]));
+export function normalizeEnabledModules(enabledModules) {
+  if (!Array.isArray(enabledModules) || enabledModules.length === 0) {
+    return DEFAULT_ENABLED_MODULES;
+  }
+  return Array.from(new Set(enabledModules));
+}
+
+export function hasModuleAccess(enabledModules, moduleIds) {
+  const normalizedModules = normalizeEnabledModules(enabledModules);
+  const requiredModules = Array.isArray(moduleIds) ? moduleIds : [moduleIds];
+  if (!requiredModules.length) return true;
+  return requiredModules.some((moduleId) => normalizedModules.includes(moduleId));
+}
+
+export function filterTabsByPermissions(user, tabs, enabledModules) {
+  return tabs.filter(([id]) => {
+    const allowedByPermission = hasPermission(user, TAB_PERMISSIONS[id]);
+    const allowedByModule = hasModuleAccess(enabledModules, TAB_MODULES[id]);
+    return allowedByPermission && allowedByModule;
+  });
 }

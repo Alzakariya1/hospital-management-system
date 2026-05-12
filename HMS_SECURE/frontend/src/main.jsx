@@ -41,7 +41,7 @@ import {
   Pharmacy,
   TenantControl,
 } from "./pages";
-import { filterTabsByPermissions, hasPermission } from "./utils";
+import { DEFAULT_ENABLED_MODULES, filterTabsByPermissions, hasPermission } from "./utils";
 import "./style.css";
 
 
@@ -99,6 +99,7 @@ function App() {
     type: "hospital",
     plan: "enterprise",
     status: "active",
+    enabled_modules: DEFAULT_ENABLED_MODULES,
   });
   const [editingTenantId, setEditingTenantId] = useState(null);
   const [stats, setStats] = useState({});
@@ -626,7 +627,7 @@ function App() {
         toast.success("Hospital created successfully");
       }
 
-      setTenantForm({ hospital_code: "", name: "", type: "hospital", plan: "enterprise", status: "active" });
+      setTenantForm({ hospital_code: "", name: "", type: "hospital", plan: "enterprise", status: "active", enabled_modules: DEFAULT_ENABLED_MODULES });
       setEditingTenantId(null);
       const { data } = await tenantApi.list();
       setTenants(data);
@@ -643,6 +644,7 @@ function App() {
       type: row.type || "hospital",
       plan: row.plan || "enterprise",
       status: row.status || "active",
+      enabled_modules: Array.isArray(row.enabled_modules) && row.enabled_modules.length ? row.enabled_modules : DEFAULT_ENABLED_MODULES,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -675,7 +677,14 @@ function App() {
     ["tenants", "Hospitals", Building2],
   ];
 
-  const tabs = filterTabsByPermissions(user, allTabs);
+  const enabledModules = currentHospital?.enabled_modules || DEFAULT_ENABLED_MODULES;
+  const tabs = filterTabsByPermissions(user, allTabs, enabledModules);
+
+  useEffect(() => {
+    if (tabs.length && !tabs.some(([id]) => id === tab)) {
+      setTab(tabs[0][0]);
+    }
+  }, [tab, tabs]);
 
   const can = (permission) => hasPermission(user, permission);
 
@@ -965,6 +974,7 @@ function App() {
                 editTenant={editTenant}
                 toggleTenantStatus={toggleTenantStatus}
                 currentHospital={currentHospital}
+                enabledModules={enabledModules}
                 permissions={permissions}
               />
             )}

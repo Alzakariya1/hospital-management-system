@@ -883,3 +883,42 @@ td button {
 .actions-dropdown .danger-action:hover {
   background: #fee2e2;
 }
+
+.moduleConfigBox {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  margin: 14px 0;
+}
+
+.sectionTitleRow.compact {
+  margin-bottom: 12px;
+}
+
+.sectionTitleRow.compact h3 {
+  margin: 0 0 4px;
+}
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.moduleCheck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.moduleCheck input {
+  width: 16px;
+  height: 16px;
+}
