@@ -38,6 +38,7 @@ import {
   Patients,
   Pharmacy,
 } from "./pages";
+import { filterTabsByPermissions } from "./utils";
 import "./style.css";
 
 
@@ -591,40 +592,7 @@ function App() {
     ["profile", "Profile", UserCircle],
   ];
 
-  const roleTabs = {
-    super_admin: [
-      "dashboard",
-      "patients",
-      "doctors",
-      "appointments",
-      "beds",
-      "labs",
-      "pharmacy",
-      "billing",
-      "profile",
-    ],
-    admin: [
-      "dashboard",
-      "patients",
-      "doctors",
-      "appointments",
-      "beds",
-      "labs",
-      "pharmacy",
-      "billing",
-      "profile",
-    ],
-    doctor: ["dashboard", "patients", "appointments", "profile"],
-    nurse: ["dashboard", "patients", "beds", "profile"],
-    receptionist: ["dashboard", "patients", "appointments", "beds", "profile"],
-    pharmacist: ["dashboard", "pharmacy", "profile"],
-    lab_technician: ["dashboard", "labs", "profile"],
-    accountant: ["dashboard", "billing", "profile"],
-    patient: ["dashboard", "appointments", "billing", "profile"],
-  };
-
-  const allowedTabs = roleTabs[user.role] || ["dashboard", "profile"];
-  const tabs = allTabs.filter(([id]) => allowedTabs.includes(id));
+  const tabs = filterTabsByPermissions(user, allTabs);
 
   const filteredUsers = usersList.filter((u) => {
     const matchSearch =

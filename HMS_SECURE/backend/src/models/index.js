@@ -33,7 +33,9 @@ function makeModel(name, collection, extra = {}) {
 }
 const User = makeModel("User", "users", {
     email: { type: String, unique: true, index: true },
+    role: { type: String, default: "receptionist" },
     status: { type: String, default: "active" },
+    permissions: { type: [String], default: [] },
 });
 const Department = makeModel("Department", "departments");
 
