@@ -1,5 +1,5 @@
 import React from "react";
-import { DEFAULT_ENABLED_MODULES, MODULES } from "../utils";
+import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, FEATURE_FLAGS, MODULES, normalizeFeatureFlags } from "../utils";
 
 const TENANT_TYPES = ["hospital", "clinic", "diagnostic_center", "nursing_home"];
 const PLANS = ["clinic", "hospital", "enterprise"];
@@ -7,6 +7,10 @@ const STATUSES = ["active", "inactive"];
 
 function getModules(formModules) {
   return Array.isArray(formModules) && formModules.length ? formModules : DEFAULT_ENABLED_MODULES;
+}
+
+function getFeatureFlags(featureFlags) {
+  return normalizeFeatureFlags(featureFlags);
 }
 
 export default function TenantControl({
@@ -50,6 +54,29 @@ export default function TenantControl({
     setTenantForm({ ...tenantForm, enabled_modules: DEFAULT_ENABLED_MODULES });
   }
 
+  function toggleFeature(featureId) {
+    const currentFlags = getFeatureFlags(tenantForm.feature_flags);
+    setTenantForm({
+      ...tenantForm,
+      feature_flags: {
+        ...currentFlags,
+        [featureId]: !currentFlags[featureId],
+      },
+    });
+  }
+
+  function enableAllFeatures() {
+    const allFeatures = FEATURE_FLAGS.reduce((acc, feature) => {
+      acc[feature.id] = true;
+      return acc;
+    }, {});
+    setTenantForm({ ...tenantForm, feature_flags: allFeatures });
+  }
+
+  function resetFeatureFlags() {
+    setTenantForm({ ...tenantForm, feature_flags: DEFAULT_FEATURE_FLAGS });
+  }
+
   function resetForm() {
     setTenantForm({
       hospital_code: "",
@@ -58,11 +85,13 @@ export default function TenantControl({
       plan: "enterprise",
       status: "active",
       enabled_modules: DEFAULT_ENABLED_MODULES,
+      feature_flags: DEFAULT_FEATURE_FLAGS,
     });
     setEditingTenantId(null);
   }
 
   const selectedModules = getModules(tenantForm.enabled_modules);
+  const selectedFeatures = getFeatureFlags(tenantForm.feature_flags);
 
   return (
     <section>
@@ -151,6 +180,39 @@ export default function TenantControl({
             </div>
           </div>
 
+          <div className="moduleConfigBox">
+            <div className="sectionTitleRow compact">
+              <div>
+                <h3>Advanced Feature Flags</h3>
+                <p className="muted">Turn enterprise capabilities on or off per hospital without changing code.</p>
+              </div>
+              <div className="inlineActions">
+                <button type="button" className="ghostBtn" onClick={enableAllFeatures}>
+                  Enable All
+                </button>
+                <button type="button" className="ghostBtn" onClick={resetFeatureFlags}>
+                  Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            <div className="moduleGrid featureGrid">
+              {FEATURE_FLAGS.map((feature) => (
+                <label className="moduleCheck featureCheck" key={feature.id} title={feature.description}>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selectedFeatures[feature.id])}
+                    onChange={() => toggleFeature(feature.id)}
+                  />
+                  <span>
+                    <b>{feature.label}</b>
+                    <small>{feature.description}</small>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <button type="submit">{editingTenantId ? "Update Hospital" : "Create Hospital"}</button>
         </form>
       </div>
@@ -171,6 +233,7 @@ export default function TenantControl({
                   <th>Plan</th>
                   <th>Status</th>
                   <th>Modules</th>
+                  <th>Features</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -192,6 +255,11 @@ export default function TenantControl({
                       <td>
                         <span title={activeModules.join(", ")}>
                           {activeModules.length} enabled
+                        </span>
+                      </td>
+                      <td>
+                        <span title={Object.entries(getFeatureFlags(tenant.feature_flags)).filter(([, enabled]) => enabled).map(([key]) => key).join(", ") || "No advanced features enabled"}>
+                          {Object.values(getFeatureFlags(tenant.feature_flags)).filter(Boolean).length} enabled
                         </span>
                       </td>
                       <td>

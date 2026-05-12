@@ -41,7 +41,7 @@ import {
   Pharmacy,
   TenantControl,
 } from "./pages";
-import { DEFAULT_ENABLED_MODULES, filterTabsByPermissions, hasPermission } from "./utils";
+import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
 
 
@@ -100,6 +100,7 @@ function App() {
     plan: "enterprise",
     status: "active",
     enabled_modules: DEFAULT_ENABLED_MODULES,
+    feature_flags: DEFAULT_FEATURE_FLAGS,
   });
   const [editingTenantId, setEditingTenantId] = useState(null);
   const [stats, setStats] = useState({});
@@ -627,10 +628,16 @@ function App() {
         toast.success("Hospital created successfully");
       }
 
-      setTenantForm({ hospital_code: "", name: "", type: "hospital", plan: "enterprise", status: "active", enabled_modules: DEFAULT_ENABLED_MODULES });
+      setTenantForm({ hospital_code: "", name: "", type: "hospital", plan: "enterprise", status: "active", enabled_modules: DEFAULT_ENABLED_MODULES, feature_flags: DEFAULT_FEATURE_FLAGS });
       setEditingTenantId(null);
       const { data } = await tenantApi.list();
       setTenants(data);
+      try {
+        const { data: updatedHospital } = await tenantApi.me();
+        setCurrentHospital(updatedHospital);
+      } catch (_) {
+        // keep current hospital state unchanged if refresh fails
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || "Hospital save failed");
     }
@@ -645,6 +652,7 @@ function App() {
       plan: row.plan || "enterprise",
       status: row.status || "active",
       enabled_modules: Array.isArray(row.enabled_modules) && row.enabled_modules.length ? row.enabled_modules : DEFAULT_ENABLED_MODULES,
+      feature_flags: normalizeFeatureFlags(row.feature_flags),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -706,6 +714,7 @@ function App() {
     billingCreate: can("billing.create"),
     adminUsersManage: can("admin.users.manage"),
     hospitalManage: can("hospital.manage"),
+    featureFlags: normalizeFeatureFlags(currentHospital?.feature_flags),
   };
 
   const filteredUsers = usersList.filter((u) => {

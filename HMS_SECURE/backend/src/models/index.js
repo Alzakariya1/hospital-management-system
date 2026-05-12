@@ -45,7 +45,21 @@ const Hospital = makeModel("Hospital", "hospitals", {
     status: { type: String, default: "active" },
     plan: { type: String, default: "enterprise" },
     enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'] },
-    feature_flags: { type: Object, default: {} },
+    feature_flags: {
+        type: Object,
+        default: {
+            fhir: false,
+            hl7: false,
+            pacs: false,
+            biometric: false,
+            insurance_tpa: false,
+            erp: false,
+            whatsapp_sms: false,
+            abdm_abha: false,
+            two_factor_auth: false,
+            audit_compliance: true,
+        },
+    },
     branding: { type: Object, default: {} },
     settings: { type: Object, default: {} },
 });

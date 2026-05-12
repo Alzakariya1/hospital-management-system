@@ -26,7 +26,7 @@ async function ensureDefaultHospital() {
             status: 'active',
             plan: 'enterprise',
             enabled_modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile'],
-            feature_flags: { multiTenant: true },
+            feature_flags: { audit_compliance: true },
         });
     }
     return hospital;

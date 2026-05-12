@@ -75,6 +75,39 @@ export const MODULES = [
 
 export const DEFAULT_ENABLED_MODULES = MODULES.map((module) => module.id);
 
+
+export const FEATURE_FLAGS = [
+  { id: 'fhir', label: 'FHIR APIs', description: 'Enable interoperability-ready FHIR endpoints and UI controls.' },
+  { id: 'hl7', label: 'HL7 Ready', description: 'Enable HL7 integration readiness for enterprise hospital systems.' },
+  { id: 'pacs', label: 'PACS/DICOM', description: 'Enable PACS viewer URL and DICOM Study ID workflows.' },
+  { id: 'biometric', label: 'Biometric', description: 'Enable biometric attendance and identity verification readiness.' },
+  { id: 'insurance_tpa', label: 'Insurance/TPA', description: 'Enable insurance, TPA, and claim workflow readiness.' },
+  { id: 'erp', label: 'ERP/Tally', description: 'Enable accounting/ERP export and integration readiness.' },
+  { id: 'whatsapp_sms', label: 'WhatsApp/SMS', description: 'Enable reminder and notification integration readiness.' },
+  { id: 'abdm_abha', label: 'ABDM/ABHA', description: 'Enable ABHA/ABDM-ready patient identity fields and future integrations.' },
+  { id: 'two_factor_auth', label: '2FA Security', description: 'Enable two-factor authentication controls when security module is upgraded.' },
+  { id: 'audit_compliance', label: 'Audit Compliance', description: 'Enable enterprise audit/compliance dashboards and reports.' },
+];
+
+export const DEFAULT_FEATURE_FLAGS = FEATURE_FLAGS.reduce((acc, feature) => {
+  acc[feature.id] = feature.id === 'audit_compliance';
+  return acc;
+}, {});
+
+export function normalizeFeatureFlags(featureFlags) {
+  const safeFlags = { ...DEFAULT_FEATURE_FLAGS };
+  if (featureFlags && typeof featureFlags === 'object' && !Array.isArray(featureFlags)) {
+    for (const feature of FEATURE_FLAGS) {
+      if (feature.id in featureFlags) safeFlags[feature.id] = Boolean(featureFlags[feature.id]);
+    }
+  }
+  return safeFlags;
+}
+
+export function hasFeature(featureFlags, featureId) {
+  return Boolean(normalizeFeatureFlags(featureFlags)[featureId]);
+}
+
 export const TAB_PERMISSIONS = {
   dashboard: 'dashboard.view',
   patients: 'patient.view',
