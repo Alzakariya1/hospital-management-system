@@ -38,11 +38,13 @@ export default function Patients({
   bills,
   savedPatientDocs,
   activeView = "patients",
+  permissions = {},
 }) {
   return (
     <>
       {activeView === "patients" && (
               <section>
+                {(editingPatientId ? permissions.patientEdit : permissions.patientCreate) && (
                 <form
                   className="card form patient-complete-form"
                   onSubmit={addPatient}
@@ -143,6 +145,7 @@ export default function Patients({
                     )}
                   </div>
 
+                  {permissions.patientDocumentManage && (<>
                   <div className="patient-form-divider"></div>
 
                   <h2>Patient Documents</h2>
@@ -271,10 +274,13 @@ export default function Patients({
                     </div>
                   )}
 
+                  </>)}
+
                   <button type="submit" className="patient-save-btn">
                     {editingPatientId ? "Update Patient" : "Save Patient"}
                   </button>
                 </form>
+                )}
                 <div className="card">
                   <input
                     placeholder="Search patient by ID, name, phone or email..."
@@ -288,8 +294,8 @@ export default function Patients({
 
                   <Table
                     rows={paginatedPatients}
-                    onEdit={editPatient}
-                    onDelete={deletePatient}
+                    onEdit={permissions.patientEdit ? editPatient : null}
+                    onDelete={permissions.patientDelete ? deletePatient : null}
                     showProfile={true}
                     onProfile={(row) => {
                       const latestPatient =

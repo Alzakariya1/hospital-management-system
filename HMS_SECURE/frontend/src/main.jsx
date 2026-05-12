@@ -38,7 +38,7 @@ import {
   Patients,
   Pharmacy,
 } from "./pages";
-import { filterTabsByPermissions } from "./utils";
+import { filterTabsByPermissions, hasPermission } from "./utils";
 import "./style.css";
 
 
@@ -594,6 +594,27 @@ function App() {
 
   const tabs = filterTabsByPermissions(user, allTabs);
 
+  const can = (permission) => hasPermission(user, permission);
+
+  const permissions = {
+    patientCreate: can("patient.create"),
+    patientEdit: can("patient.edit"),
+    patientDelete: can("patient.delete"),
+    patientDocumentManage: can("patient.document.manage"),
+    doctorCreate: can("doctor.create"),
+    doctorEdit: can("doctor.edit"),
+    doctorDelete: can("doctor.delete"),
+    appointmentCreate: can("appointment.create"),
+    appointmentEdit: can("appointment.edit"),
+    appointmentDelete: can("appointment.delete"),
+    bedCreate: can("bed.create"),
+    labCreate: can("lab.create"),
+    radiologyCreate: can("radiology.create"),
+    pharmacyCreate: can("pharmacy.create"),
+    billingCreate: can("billing.create"),
+    adminUsersManage: can("admin.users.manage"),
+  };
+
   const filteredUsers = usersList.filter((u) => {
     const matchSearch =
       (u.full_name || "").toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -697,6 +718,7 @@ function App() {
                 appointments={appointments}
                 beds={beds}
                 bills={bills}
+                permissions={permissions}
               />
             )}
             {tab === "patients" && (
@@ -733,6 +755,7 @@ function App() {
                 appointments={appointments}
                 bills={bills}
                 savedPatientDocs={savedPatientDocs}
+                permissions={permissions}
                 activeView="patients"
               />
             )}
@@ -770,6 +793,7 @@ function App() {
                 appointments={appointments}
                 bills={bills}
                 savedPatientDocs={savedPatientDocs}
+                permissions={permissions}
                 activeView="patientProfile"
               />
             )}
@@ -786,6 +810,7 @@ function App() {
                 doctorPage={doctorPage}
                 setDoctorPage={setDoctorPage}
                 doctorTotalPages={doctorTotalPages}
+                permissions={permissions}
               />
             )}
             {tab === "appointments" && (
@@ -804,11 +829,12 @@ function App() {
                 appointmentPage={appointmentPage}
                 setAppointmentPage={setAppointmentPage}
                 appointmentTotalPages={appointmentTotalPages}
+                permissions={permissions}
               />
             )}
 
             {tab === "beds" && (
-              <Beds bed={bed} setBed={setBed} addBed={addBed} beds={beds} />
+              <Beds bed={bed} setBed={setBed} addBed={addBed} beds={beds} permissions={permissions} />
             )}
 
             {tab === "labs" && (
@@ -821,6 +847,7 @@ function App() {
                 setRad={setRad}
                 addRadiology={addRadiology}
                 rads={rads}
+                permissions={permissions}
               />
             )}
 
@@ -830,6 +857,7 @@ function App() {
                 setMed={setMed}
                 addMedicine={addMedicine}
                 meds={meds}
+                permissions={permissions}
               />
             )}
 
@@ -839,6 +867,7 @@ function App() {
                 setBill={setBill}
                 addBill={addBill}
                 bills={bills}
+                permissions={permissions}
               />
             )}
             {tab === "profile" && (
@@ -861,6 +890,7 @@ function App() {
                 filteredUsers={filteredUsers}
                 toggleUserStatus={toggleUserStatus}
                 deleteUser={deleteUser}
+                permissions={permissions}
               />
             )}
       </AppLayout>

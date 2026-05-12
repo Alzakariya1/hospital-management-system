@@ -16,15 +16,18 @@ export default function Appointments({
   appointmentPage,
   setAppointmentPage,
   appointmentTotalPages,
+  permissions = {},
 }) {
   return (
     <section>
-      <Form
-        title="Add Appointment"
-        data={appointment}
-        setData={setAppointment}
-        submit={addAppointment}
-      />
+      {permissions.appointmentCreate && (
+        <Form
+          title="Add Appointment"
+          data={appointment}
+          setData={setAppointment}
+          submit={addAppointment}
+        />
+      )}
 
       <div className="card">
         <h2>Appointment Calendar</h2>
@@ -126,8 +129,12 @@ export default function Appointments({
                       {a.status || "scheduled"}
                     </span>
 
-                    <button onClick={() => editAppointment(a)}>Edit</button>
-                    <button onClick={() => deleteAppointment(a)}>Delete</button>
+                    {permissions.appointmentEdit && (
+                      <button onClick={() => editAppointment(a)}>Edit</button>
+                    )}
+                    {permissions.appointmentDelete && (
+                      <button onClick={() => deleteAppointment(a)}>Delete</button>
+                    )}
                   </div>
                 </div>
               ))}

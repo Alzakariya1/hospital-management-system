@@ -13,15 +13,18 @@ export default function Doctors({
   doctorPage,
   setDoctorPage,
   doctorTotalPages,
+  permissions = {},
 }) {
   return (
     <section>
-      <Form
-        title="Add Doctor"
-        data={doctor}
-        setData={setDoctor}
-        submit={addDoctor}
-      />
+      {permissions.doctorCreate && (
+        <Form
+          title="Add Doctor"
+          data={doctor}
+          setData={setDoctor}
+          submit={addDoctor}
+        />
+      )}
       <div className="card">
         <input
           placeholder="Search doctor by ID, name, phone, email or specialization..."
@@ -35,8 +38,8 @@ export default function Doctors({
 
         <DataTable
           rows={paginatedDoctors}
-          onEdit={editDoctor}
-          onDelete={deleteDoctor}
+          onEdit={permissions.doctorEdit ? editDoctor : null}
+          onDelete={permissions.doctorDelete ? deleteDoctor : null}
         />
         <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
           <button

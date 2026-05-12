@@ -20,6 +20,7 @@ export default function AdminProfile({
   filteredUsers,
   toggleUserStatus,
   deleteUser,
+  permissions = {},
 }) {
   const canManageUsers = user.role === "super_admin" || user.role === "admin";
 
@@ -200,11 +201,17 @@ export default function AdminProfile({
                       <td>{u.email}</td>
                       <td>{u.role}</td>
                       <td>
-                        <button onClick={() => toggleUserStatus(u)}>{u.status}</button>
+                        {permissions.adminUsersManage && (
+                          <button onClick={() => toggleUserStatus(u)}>{u.status}</button>
+                        )}
                       </td>
                       <td>
                         {u.email !== user.email ? (
-                          <button onClick={() => deleteUser(u)}>Delete</button>
+                          permissions.adminUsersManage ? (
+                            <button onClick={() => deleteUser(u)}>Delete</button>
+                          ) : (
+                            <span className="muted">No access</span>
+                          )
                         ) : (
                           <button
                             disabled
