@@ -101,6 +101,10 @@ export const TAB_MODULES = {
   tenants: ['tenants'],
 };
 
+// Platform-level tabs are controlled by permission only.
+// They must not be hidden by hospital module ON/OFF settings.
+export const PLATFORM_TABS = ['tenants'];
+
 export function getUserPermissions(user = {}) {
   const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
   const customPermissions = Array.isArray(user.permissions) ? user.permissions : [];
@@ -132,6 +136,11 @@ export function hasModuleAccess(enabledModules, moduleIds) {
 export function filterTabsByPermissions(user, tabs, enabledModules) {
   return tabs.filter(([id]) => {
     const allowedByPermission = hasPermission(user, TAB_PERMISSIONS[id]);
+
+    if (PLATFORM_TABS.includes(id)) {
+      return allowedByPermission;
+    }
+
     const allowedByModule = hasModuleAccess(enabledModules, TAB_MODULES[id]);
     return allowedByPermission && allowedByModule;
   });
