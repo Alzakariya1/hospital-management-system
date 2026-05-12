@@ -218,7 +218,7 @@ function App() {
   useEffect(() => {
     load();
   }, [user]);
-  if (!user) return <Login onLogin={setUser} />;
+
   async function addPatient(e) {
     e.preventDefault();
 
@@ -702,6 +702,8 @@ function App() {
       setTab(tabs[0][0]);
     }
   }, [tab, tabs]);
+
+  if (!user) return <Login onLogin={setUser} />;
 
   const can = (permission) => hasPermission(user, permission);
 
