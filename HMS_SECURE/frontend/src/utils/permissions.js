@@ -11,7 +11,7 @@ export const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
-    'audit.view', 'security.manage'
+    'audit.view', 'security.manage', 'hospital.manage'
   ],
   doctor: [
     'dashboard.view',
@@ -69,6 +69,7 @@ export const TAB_PERMISSIONS = {
   pharmacy: 'pharmacy.view',
   billing: 'billing.view',
   profile: 'admin.profile.manage',
+  tenants: 'hospital.manage',
 };
 
 export function getUserPermissions(user = {}) {

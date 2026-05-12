@@ -4,6 +4,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import {
   Activity,
   Bed,
+  Building2,
   Calendar,
   Pill,
   ReceiptText,
@@ -38,6 +39,7 @@ import {
   Login,
   Patients,
   Pharmacy,
+  TenantControl,
 } from "./pages";
 import { filterTabsByPermissions, hasPermission } from "./utils";
 import "./style.css";
@@ -90,6 +92,15 @@ function App() {
   );
   const [tab, setTab] = useState("dashboard");
   const [currentHospital, setCurrentHospital] = useState(null);
+  const [tenants, setTenants] = useState([]);
+  const [tenantForm, setTenantForm] = useState({
+    hospital_code: "",
+    name: "",
+    type: "hospital",
+    plan: "enterprise",
+    status: "active",
+  });
+  const [editingTenantId, setEditingTenantId] = useState(null);
   const [stats, setStats] = useState({});
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
@@ -186,6 +197,14 @@ function App() {
     if (m.value) setMeds(m.value.data);
     if (bi.value) setBills(bi.value.data);
     if (u.value) setUsersList(u.value.data);
+    if (hasPermission(user, "hospital.manage")) {
+      try {
+        const { data: tenantRows } = await tenantApi.list();
+        setTenants(tenantRows);
+      } catch (_) {
+        setTenants([]);
+      }
+    }
   }
   useEffect(() => {
     load();
@@ -589,6 +608,56 @@ function App() {
       toast.error(err.response?.data?.message || "User delete failed");
     }
   }
+  async function saveTenant(e) {
+    e.preventDefault();
+    if (!tenantForm.name?.trim()) return toast.error("Hospital name is required");
+
+    try {
+      const payload = {
+        ...tenantForm,
+        hospital_code: tenantForm.hospital_code?.trim() || undefined,
+      };
+
+      if (editingTenantId) {
+        await tenantApi.update(editingTenantId, payload);
+        toast.success("Hospital updated successfully");
+      } else {
+        await tenantApi.create(payload);
+        toast.success("Hospital created successfully");
+      }
+
+      setTenantForm({ hospital_code: "", name: "", type: "hospital", plan: "enterprise", status: "active" });
+      setEditingTenantId(null);
+      const { data } = await tenantApi.list();
+      setTenants(data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Hospital save failed");
+    }
+  }
+
+  function editTenant(row) {
+    setEditingTenantId(row.id);
+    setTenantForm({
+      hospital_code: row.hospital_code || "",
+      name: row.name || "",
+      type: row.type || "hospital",
+      plan: row.plan || "enterprise",
+      status: row.status || "active",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function toggleTenantStatus(row) {
+    try {
+      await tenantApi.update(row.id, { status: row.status === "active" ? "inactive" : "active" });
+      const { data } = await tenantApi.list();
+      setTenants(data);
+      toast.success("Hospital status updated");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Status update failed");
+    }
+  }
+
   function logout() {
     localStorage.clear();
     setUser(null);
@@ -603,6 +672,7 @@ function App() {
     ["pharmacy", "Pharmacy", Pill],
     ["billing", "Billing", ReceiptText],
     ["profile", "Profile", UserCircle],
+    ["tenants", "Hospitals", Building2],
   ];
 
   const tabs = filterTabsByPermissions(user, allTabs);
@@ -626,6 +696,7 @@ function App() {
     pharmacyCreate: can("pharmacy.create"),
     billingCreate: can("billing.create"),
     adminUsersManage: can("admin.users.manage"),
+    hospitalManage: can("hospital.manage"),
   };
 
   const filteredUsers = usersList.filter((u) => {
@@ -880,6 +951,20 @@ function App() {
                 setBill={setBill}
                 addBill={addBill}
                 bills={bills}
+                permissions={permissions}
+              />
+            )}
+            {tab === "tenants" && (
+              <TenantControl
+                tenants={tenants}
+                tenantForm={tenantForm}
+                setTenantForm={setTenantForm}
+                editingTenantId={editingTenantId}
+                setEditingTenantId={setEditingTenantId}
+                saveTenant={saveTenant}
+                editTenant={editTenant}
+                toggleTenantStatus={toggleTenantStatus}
+                currentHospital={currentHospital}
                 permissions={permissions}
               />
             )}
