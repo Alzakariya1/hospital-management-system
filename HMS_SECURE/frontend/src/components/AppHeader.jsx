@@ -14,7 +14,7 @@ export default function AppHeader({ title, user, appointmentCount, lowStockCount
         <h1>{title}</h1>
 
         <p style={{ color: "#666", marginTop: 2 }}>
-          Welcome back, {user.full_name}
+          Welcome back, {user?.full_name || "User"}
         </p>
       </div>
 

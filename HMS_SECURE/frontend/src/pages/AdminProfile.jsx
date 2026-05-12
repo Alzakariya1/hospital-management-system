@@ -75,7 +75,7 @@ export default function AdminProfile({
                 textTransform: "uppercase",
               }}
             >
-              {profile.role || user.role}
+              {profile.role || user?.role || ""}
             </span>
           </div>
         </div>
@@ -207,7 +207,7 @@ export default function AdminProfile({
                         )}
                       </td>
                       <td>
-                        {u.email !== user.email ? (
+                        {u.email !== user?.email ? (
                           permissions.adminUsersManage ? (
                             <button onClick={() => deleteUser(u)}>Delete</button>
                           ) : (

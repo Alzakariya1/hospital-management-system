@@ -152,14 +152,15 @@ export const TAB_MODULES = {
 // They must not be hidden by hospital module ON/OFF settings.
 export const PLATFORM_TABS = ['tenants'];
 
-export function getUserPermissions(user = {}) {
-  const rolePermissions = ROLE_PERMISSIONS[user.role] || [];
-  const customPermissions = Array.isArray(user.permissions) ? user.permissions : [];
+export function getUserPermissions(user) {
+  if (!user || typeof user !== 'object') return [];
+  const rolePermissions = ROLE_PERMISSIONS[user?.role] || [];
+  const customPermissions = Array.isArray(user?.permissions) ? user.permissions : [];
   return Array.from(new Set([...rolePermissions, ...customPermissions]));
 }
 
-export function hasPermission(user = {}, permission) {
-  if (!permission) return false;
+export function hasPermission(user, permission) {
+  if (!user || !permission) return false;
   const userPermissions = getUserPermissions(user);
   if (userPermissions.includes('*')) return true;
   if (Array.isArray(permission)) return permission.some((p) => userPermissions.includes(p));
@@ -180,7 +181,8 @@ export function hasModuleAccess(enabledModules, moduleIds) {
   return requiredModules.some((moduleId) => normalizedModules.includes(moduleId));
 }
 
-export function filterTabsByPermissions(user, tabs, enabledModules) {
+export function filterTabsByPermissions(user, tabs = [], enabledModules) {
+  if (!user) return [];
   return tabs.filter(([id]) => {
     const allowedByPermission = hasPermission(user, TAB_PERMISSIONS[id]);
 

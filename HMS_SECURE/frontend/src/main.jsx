@@ -603,7 +603,7 @@ function App() {
     await load();
   }
   async function deleteUser(row) {
-    if (row.email === user.email) {
+    if (row.email === user?.email) {
       return toast.error("You cannot delete your own admin account");
     }
 

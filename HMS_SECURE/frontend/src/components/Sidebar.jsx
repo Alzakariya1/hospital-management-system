@@ -6,13 +6,13 @@ export default function Sidebar({ user, tabs, activeTab, onTabChange, onLogout }
     <aside>
       <h2>HMS</h2>
       <p>
-        {user.full_name}
+        {user?.full_name || "User"}
         <br />
-        <small>{user.role}</small>
-        {user.hospital_name ? (
+        <small>{user?.role || ""}</small>
+        {user?.hospital_name ? (
           <>
             <br />
-            <small>{user.hospital_name}</small>
+            <small>{user?.hospital_name}</small>
           </>
         ) : null}
       </p>
