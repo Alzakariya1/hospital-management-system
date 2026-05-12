@@ -5,7 +5,6 @@ import {
   Activity,
   Bed,
   Calendar,
-  LogOut,
   Pill,
   ReceiptText,
   Stethoscope,
@@ -37,6 +36,7 @@ import {
   pharmacyApi,
   radiologyApi,
 } from "./api";
+import { AppHeader, DataTable, Sidebar, StatCard } from "./components";
 import "./style.css";
 
 const emptyPatient = {
@@ -127,121 +127,6 @@ function Login({ onLogin }) {
           admin12345.
         </small>
       </form>
-    </div>
-  );
-}
-
-function Stat({ icon: Icon, title, value }) {
-  return (
-    <div className="stat">
-      <Icon size={22} />
-      <div>
-        <p>{title}</p>
-        <b>{value ?? 0}</b>
-      </div>
-    </div>
-  );
-}
-function Table({ rows, onEdit, onDelete, showProfile, onProfile }) {
-  const [openActionMenu, setOpenActionMenu] = useState(null);
-  if (!rows?.length) return <p className="muted">No records found.</p>;
-
-  const hiddenKeys = [
-    "_id",
-    "id",
-    "__v",
-    "created_at",
-    "updated_at",
-    "doctor_uid",
-    "opd_timing",
-    "ipd_timing",
-    "department_id",
-    "department_name",
-    "experience_years",
-    "status",
-  ];
-  const keys = Object.keys(rows[0])
-    .filter((k) => !hiddenKeys.includes(k))
-    .slice(0, 7);
-
-  return (
-    <div className="tableWrap">
-      <table>
-        <thead>
-          <tr>
-            {keys.map((k) => (
-              <th key={k}>{k.replaceAll("_", " ")}</th>
-            ))}
-            {(onEdit || onDelete) && <th>Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              {keys.map((k) => (
-                <td key={k}>{String(r[k] ?? "")}</td>
-              ))}
-              {(onEdit || onDelete) && (
-                <td className="actions-menu-cell">
-                  <button
-                    type="button"
-                    className="three-dot-btn"
-                    onClick={() =>
-                      setOpenActionMenu(openActionMenu === i ? null : i)
-                    }
-                  >
-                    <i className="bi bi-three-dots-vertical"></i>
-                  </button>
-
-                  {openActionMenu === i && (
-                    <div className="actions-dropdown">
-                      {showProfile && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onProfile(r);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <i className="bi bi-eye"></i>
-                          View Profile
-                        </button>
-                      )}
-
-                      {onEdit && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onEdit(r);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <i className="bi bi-pencil-square"></i>
-                          Edit
-                        </button>
-                      )}
-
-                      {onDelete && (
-                        <button
-                          type="button"
-                          className="danger-action"
-                          onClick={() => {
-                            onDelete(r);
-                            setOpenActionMenu(null);
-                          }}
-                        >
-                          <i className="bi bi-trash"></i>
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </td>
-              )}
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }
@@ -895,99 +780,42 @@ function App() {
         }}
       />
       <div className="app">
-        <aside>
-          <h2>HMS</h2>
-          <p>
-            {user.full_name}
-            <br />
-            <small>{user.role}</small>
-          </p>
-          {tabs.map(([id, label, Icon]) => (
-            <button
-              className={tab === id ? "active" : ""}
-              onClick={() => setTab(id)}
-              key={id}
-            >
-              <Icon size={17} />
-              {label}
-            </button>
-          ))}
-          <button onClick={logout}>
-            <LogOut size={17} />
-            Logout
-          </button>
-        </aside>
+        <Sidebar
+          user={user}
+          tabs={tabs}
+          activeTab={tab}
+          onTabChange={setTab}
+          onLogout={logout}
+        />
         <main>
           <div className="mainContent">
-            <header
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 20,
-              }}
-            >
-              <div>
-                <h1>{tabs.find((t) => t[0] === tab)?.[1]}</h1>
-
-                <p style={{ color: "#666", marginTop: 2 }}>
-                  Welcome back, {user.full_name}
-                </p>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                }}
-              >
-                <div
-                  style={{
-                    background: "#fff",
-                    padding: "10px 16px",
-                    borderRadius: 14,
-                    display: "flex",
-                    gap: 16,
-                    alignItems: "center",
-                    border: "1px solid #eee",
-                  }}
-                >
-                  <span>📅 {appointments.length} Appointments</span>
-
-                  <span>
-                    💊 {meds.filter((m) => Number(m.stock || 0) < 10).length}{" "}
-                    Low Stock
-                  </span>
-
-                  <span>
-                    💰 {bills.filter((b) => b.status === "pending").length}{" "}
-                    Pending Bills
-                  </span>
-                </div>
-
-                <button onClick={load}>Refresh</button>
-              </div>
-            </header>
+            <AppHeader
+              title={tabs.find((t) => t[0] === tab)?.[1]}
+              user={user}
+              appointmentCount={appointments.length}
+              lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
+              pendingBillCount={bills.filter((b) => b.status === "pending").length}
+              onRefresh={load}
+            />
             {tab === "dashboard" && (
               <section>
                 <div className="grid">
-                  <Stat
+                  <StatCard
                     icon={Users}
                     title="Total Patients"
                     value={stats.totalPatients}
                   />
-                  <Stat
+                  <StatCard
                     icon={Stethoscope}
                     title="Total Doctors"
                     value={stats.totalDoctors}
                   />
-                  <Stat
+                  <StatCard
                     icon={Calendar}
                     title="Appointments Today"
                     value={stats.appointmentsToday}
                   />
-                  <Stat
+                  <StatCard
                     icon={Bed}
                     title="Available Beds"
                     value={stats.availableBeds}
@@ -1052,7 +880,7 @@ function App() {
                   style={{ padding: 0, overflow: "hidden" }}
                 >
                   <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                    <Table rows={(stats.recentActivity || []).slice(0, 6)} />
+                    <DataTable rows={(stats.recentActivity || []).slice(0, 6)} />
                   </div>
                 </div>
               </section>
@@ -1860,7 +1688,7 @@ function App() {
                   setData={setBed}
                   submit={addBed}
                 />
-                <Table rows={beds} />
+                <DataTable rows={beds} />
               </section>
             )}
 
@@ -1872,14 +1700,14 @@ function App() {
                   setData={setLab}
                   submit={addLab}
                 />
-                <Table rows={labs} />
+                <DataTable rows={labs} />
                 <Form
                   title="Add Radiology Test"
                   data={rad}
                   setData={setRad}
                   submit={addRadiology}
                 />
-                <Table rows={rads} />
+                <DataTable rows={rads} />
               </section>
             )}
 
@@ -1891,7 +1719,7 @@ function App() {
                   setData={setMed}
                   submit={addMedicine}
                 />
-                <Table rows={meds} />
+                <DataTable rows={meds} />
               </section>
             )}
 
@@ -1903,7 +1731,7 @@ function App() {
                   setData={setBill}
                   submit={addBill}
                 />
-                <Table rows={bills} />
+                <DataTable rows={bills} />
               </section>
             )}
             {tab === "profile" && (
