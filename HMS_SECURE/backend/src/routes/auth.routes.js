@@ -8,7 +8,7 @@ const { verifyToken, allowRoles, requirePermission, getUserPermissions } = requi
 const { ROLE_PERMISSIONS } = require('../config/permissions');
 const { DEFAULT_HOSPITAL_ID, tenantFilter, tenantCreateData } = require('../middleware/tenant');
 const router = express.Router();
-const VALID_ROLES = ['super_admin', 'admin', 'doctor', 'nurse', 'receptionist', 'accountant', 'pharmacist', 'lab_technician', 'patient'];
+const VALID_ROLES = ['super_admin', 'admin', 'hospital_admin', 'doctor', 'nurse', 'receptionist', 'accountant', 'pharmacist', 'lab_technician', 'patient'];
 const VALID_STATUS = ['active', 'inactive'];
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
@@ -36,6 +36,11 @@ async function audit(userId, action, module_name = 'auth', hospital_id = DEFAULT
 const signToken = (user) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, hospital_id: Number(user.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1), permissions: getUserPermissions(user) }, process.env.JWT_SECRET || 'dev_secret_change_me', { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
 const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.hospital_id = Number(x.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); x.permissions = getUserPermissions(x); return x; };
 router.post('/login', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); const password = req.body.password; if (!email || !password) return res.status(400).json({ message: 'Email and password are required' }); await ensureDefaultHospital(); const user = await User.findOne({ email, status: 'active' }).lean(false); if (!user) return res.status(401).json({ message: 'Invalid email or password' }); const ok = await bcrypt.compare(String(password), user.password || ''); if (!ok) { await audit(user.id, `Failed login for ${email}`, 'security', user.hospital_id); return res.status(401).json({ message: 'Invalid email or password' }); } if (!user.hospital_id) user.hospital_id = DEFAULT_HOSPITAL_ID;
+  const hospital = await Hospital.findOne({ id: Number(user.hospital_id || DEFAULT_HOSPITAL_ID) });
+  if (user.role !== 'super_admin' && hospital && hospital.status === 'inactive') {
+    await audit(user.id, `Blocked login for inactive hospital ${hospital.name}`, 'security', user.hospital_id);
+    return res.status(403).json({ message: 'This hospital account is inactive. Contact platform admin.' });
+  }
   user.last_login_at = new Date(); await user.save(); await audit(user.id, 'User logged in', 'auth', user.hospital_id); res.json({ message: 'Login successful', token: signToken(user), user: publicUser(user) }); }));
 router.post('/register', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => createUser(req, res)));
 router.post('/forgot-password', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); if (!email) return res.status(400).json({ message: 'Email is required' }); const rawToken = crypto.randomBytes(32).toString('hex'); const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex'); await User.updateOne({ email, status: 'active' }, { $set: { reset_token: tokenHash, reset_token_expires: new Date(Date.now() + 30 * 60 * 1000) } }); res.json({ message: 'Reset token generated. Configure SMTP before production.', resetToken: rawToken }); }));

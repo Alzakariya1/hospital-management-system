@@ -7,4 +7,6 @@ export const tenantApi = {
   list: () => api.get('/tenants'),
   create: (payload) => api.post('/tenants', payload),
   update: (id, payload) => api.patch(`/tenants/${id}`, payload),
+  admins: (id) => api.get(`/tenants/${id}/admins`),
+  createAdmin: (id, payload) => api.post(`/tenants/${id}/admins`, payload),
 };

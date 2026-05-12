@@ -13,6 +13,20 @@ export const ROLE_PERMISSIONS = {
     'admin.profile.manage', 'admin.users.manage',
     'audit.view', 'security.manage', 'hospital.manage'
   ],
+  hospital_admin: [
+    'dashboard.view',
+    'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
+    'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'bed.view', 'bed.create', 'bed.status.update',
+    'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
+    'lab.view', 'lab.create',
+    'radiology.view', 'radiology.create',
+    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'billing.view', 'billing.create', 'billing.edit',
+    'admin.profile.manage', 'admin.users.manage',
+    'audit.view', 'security.manage'
+  ],
   doctor: [
     'dashboard.view',
     'patient.view',

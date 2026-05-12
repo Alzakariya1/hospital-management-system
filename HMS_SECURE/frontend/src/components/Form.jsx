@@ -34,7 +34,8 @@ export default function Form({ title, data, setData, submit }) {
               <option value="pharmacist">Pharmacist</option>
               <option value="lab_technician">Lab Technician</option>
               <option value="accountant">Accountant</option>
-              <option value="admin">Admin</option>
+              <option value="hospital_admin">Hospital Admin</option>
+              <option value="admin">Platform Admin</option>
             </select>
           ) : k === "status" ? (
             <select

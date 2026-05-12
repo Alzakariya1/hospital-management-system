@@ -22,7 +22,7 @@ export default function AdminProfile({
   deleteUser,
   permissions = {},
 }) {
-  const canManageUsers = user.role === "super_admin" || user.role === "admin";
+  const canManageUsers = Boolean(permissions.adminUsersManage);
 
   return (
     <section>
@@ -171,7 +171,8 @@ export default function AdminProfile({
               >
                 <option value="all">All Roles</option>
                 <option value="super_admin">Super Admin</option>
-                <option value="admin">Admin</option>
+                <option value="admin">Platform Admin</option>
+                <option value="hospital_admin">Hospital Admin</option>
                 <option value="doctor">Doctor</option>
                 <option value="receptionist">Receptionist</option>
                 <option value="pharmacist">Pharmacist</option>

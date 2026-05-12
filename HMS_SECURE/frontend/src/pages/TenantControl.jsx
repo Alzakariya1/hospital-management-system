@@ -38,6 +38,16 @@ export default function TenantControl({
     setTenantForm({ ...tenantForm, [key]: value });
   }
 
+  function updateInitialAdmin(key, value) {
+    setTenantForm({
+      ...tenantForm,
+      initial_admin: {
+        ...(tenantForm.initial_admin || {}),
+        [key]: value,
+      },
+    });
+  }
+
   function toggleModule(moduleId) {
     const currentModules = getModules(tenantForm.enabled_modules);
     const nextModules = currentModules.includes(moduleId)
@@ -86,6 +96,12 @@ export default function TenantControl({
       status: "active",
       enabled_modules: DEFAULT_ENABLED_MODULES,
       feature_flags: DEFAULT_FEATURE_FLAGS,
+      initial_admin: {
+        full_name: "",
+        email: "",
+        password: "",
+        phone: "",
+      },
     });
     setEditingTenantId(null);
   }
@@ -155,6 +171,46 @@ export default function TenantControl({
             </select>
           </div>
 
+          {!editingTenantId && (
+            <div className="moduleConfigBox">
+              <div className="sectionTitleRow compact">
+                <div>
+                  <h3>Initial Hospital Admin Login</h3>
+                  <p className="muted">
+                    Create the first admin user for this hospital. This user will login with the email and password below.
+                  </p>
+                </div>
+              </div>
+              <div className="formGrid">
+                <input
+                  placeholder="Admin full name"
+                  value={tenantForm.initial_admin?.full_name || ""}
+                  onChange={(e) => updateInitialAdmin("full_name", e.target.value)}
+                />
+                <input
+                  type="email"
+                  placeholder="Admin email / login email"
+                  value={tenantForm.initial_admin?.email || ""}
+                  onChange={(e) => updateInitialAdmin("email", e.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Admin password"
+                  value={tenantForm.initial_admin?.password || ""}
+                  onChange={(e) => updateInitialAdmin("password", e.target.value)}
+                />
+                <input
+                  placeholder="Admin phone"
+                  value={tenantForm.initial_admin?.phone || ""}
+                  onChange={(e) => updateInitialAdmin("phone", e.target.value)}
+                />
+              </div>
+              <p className="muted">
+                Tip: password must match your backend PASSWORD_MIN_LENGTH setting. Default minimum is 8 characters.
+              </p>
+            </div>
+          )}
+
           <div className="moduleConfigBox">
             <div className="sectionTitleRow compact">
               <div>
@@ -213,12 +269,13 @@ export default function TenantControl({
             </div>
           </div>
 
-          <button type="submit">{editingTenantId ? "Update Hospital" : "Create Hospital"}</button>
+          <button type="submit">{editingTenantId ? "Update Hospital" : "Create Hospital + Admin"}</button>
         </form>
       </div>
 
       <div className="card">
         <h2>Hospital List</h2>
+        <p className="muted">New hospitals can login using the initial admin email/password created above. Existing hospital admins can add more users from their Profile/User Management area.</p>
         {!tenants?.length ? (
           <p className="muted">No hospitals found.</p>
         ) : (

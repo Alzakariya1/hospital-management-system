@@ -93,7 +93,7 @@ function App() {
   const [tab, setTab] = useState("dashboard");
   const [currentHospital, setCurrentHospital] = useState(null);
   const [tenants, setTenants] = useState([]);
-  const [tenantForm, setTenantForm] = useState({
+  const emptyTenantForm = {
     hospital_code: "",
     name: "",
     type: "hospital",
@@ -101,7 +101,14 @@ function App() {
     status: "active",
     enabled_modules: DEFAULT_ENABLED_MODULES,
     feature_flags: DEFAULT_FEATURE_FLAGS,
-  });
+    initial_admin: {
+      full_name: "",
+      email: "",
+      password: "",
+      phone: "",
+    },
+  };
+  const [tenantForm, setTenantForm] = useState(emptyTenantForm);
   const [editingTenantId, setEditingTenantId] = useState(null);
   const [stats, setStats] = useState({});
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -621,14 +628,15 @@ function App() {
       };
 
       if (editingTenantId) {
-        await tenantApi.update(editingTenantId, payload);
+        const { initial_admin, ...hospitalOnlyPayload } = payload;
+        await tenantApi.update(editingTenantId, hospitalOnlyPayload);
         toast.success("Hospital updated successfully");
       } else {
         await tenantApi.create(payload);
-        toast.success("Hospital created successfully");
+        toast.success(payload.initial_admin?.email ? "Hospital and admin login created successfully" : "Hospital created successfully");
       }
 
-      setTenantForm({ hospital_code: "", name: "", type: "hospital", plan: "enterprise", status: "active", enabled_modules: DEFAULT_ENABLED_MODULES, feature_flags: DEFAULT_FEATURE_FLAGS });
+      setTenantForm(emptyTenantForm);
       setEditingTenantId(null);
       const { data } = await tenantApi.list();
       setTenants(data);
@@ -646,6 +654,7 @@ function App() {
   function editTenant(row) {
     setEditingTenantId(row.id);
     setTenantForm({
+      ...emptyTenantForm,
       hospital_code: row.hospital_code || "",
       name: row.name || "",
       type: row.type || "hospital",
