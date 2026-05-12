@@ -36,7 +36,8 @@ import {
   pharmacyApi,
   radiologyApi,
 } from "./api";
-import { AppHeader, DataTable, Sidebar, StatCard } from "./components";
+import { DataTable, StatCard } from "./components";
+import { AppLayout } from "./layouts";
 import Login from "./pages/Login";
 import "./style.css";
 
@@ -733,24 +734,18 @@ function App() {
           },
         }}
       />
-      <div className="app">
-        <Sidebar
-          user={user}
-          tabs={tabs}
-          activeTab={tab}
-          onTabChange={setTab}
-          onLogout={logout}
-        />
-        <main>
-          <div className="mainContent">
-            <AppHeader
-              title={tabs.find((t) => t[0] === tab)?.[1]}
-              user={user}
-              appointmentCount={appointments.length}
-              lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
-              pendingBillCount={bills.filter((b) => b.status === "pending").length}
-              onRefresh={load}
-            />
+      <AppLayout
+        user={user}
+        tabs={tabs}
+        activeTab={tab}
+        onTabChange={setTab}
+        onLogout={logout}
+        headerTitle={tabs.find((t) => t[0] === tab)?.[1]}
+        appointmentCount={appointments.length}
+        lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
+        pendingBillCount={bills.filter((b) => b.status === "pending").length}
+        onRefresh={load}
+      >
             {tab === "dashboard" && (
               <section>
                 <div className="grid">
@@ -1916,9 +1911,7 @@ function App() {
                 )}
               </section>
             )}
-          </div>
-        </main>
-      </div>
+      </AppLayout>
     </>
   );
 }
