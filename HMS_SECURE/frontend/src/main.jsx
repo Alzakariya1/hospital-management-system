@@ -25,7 +25,18 @@ import {
   Cell,
 } from "recharts";
 import { Toaster, toast } from "react-hot-toast";
-import api from "./api/client";
+import {
+  appointmentApi,
+  authApi,
+  bedApi,
+  billingApi,
+  dashboardApi,
+  doctorApi,
+  labApi,
+  patientApi,
+  pharmacyApi,
+  radiologyApi,
+} from "./api";
 import "./style.css";
 
 const emptyPatient = {
@@ -81,7 +92,7 @@ function Login({ onLogin }) {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.post("/auth/login", form);
+      const { data } = await authApi.login(form);
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       onLogin(data.user);
@@ -303,16 +314,16 @@ function App() {
   async function load() {
     if (!localStorage.getItem("token")) return;
     const calls = [
-      api.get("/dashboard/stats"),
-      api.get("/patients"),
-      api.get("/doctors"),
-      api.get("/appointments"),
-      api.get("/beds"),
-      api.get("/lab/tests"),
-      api.get("/radiology/tests"),
-      api.get("/pharmacy/medicines"),
-      api.get("/billing/all"),
-      api.get("/auth/users"),
+      dashboardApi.getStats(),
+      patientApi.list(),
+      doctorApi.list(),
+      appointmentApi.list(),
+      bedApi.list(),
+      labApi.list(),
+      radiologyApi.list(),
+      pharmacyApi.list(),
+      billingApi.list(),
+      authApi.getUsers(),
     ];
     const [s, p, d, a, b, l, r, m, bi, u] = await Promise.allSettled(calls);
     if (s.value) setStats(s.value.data);
@@ -337,10 +348,10 @@ function App() {
       let savedPatientId = editingPatientId;
 
       if (editingPatientId) {
-        await api.put(`/patients/${editingPatientId}`, patient);
+        await patientApi.update(editingPatientId, patient);
         toast.success("Patient updated successfully");
       } else {
-        const { data } = await api.post("/patients", patient);
+        const { data } = await patientApi.create(patient);
         savedPatientId = data.id;
         toast.success("Patient added successfully");
       }
@@ -349,32 +360,7 @@ function App() {
 
         imageFormData.append("profile_image", patientProfileImage);
 
-        const imageUploadResponse = await api.post(
-          `/patients/${savedPatientId}/profile-image`,
-          imageFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          },
-        );
-
-        patient.profile_image_url = imageUploadResponse.data.profile_image_url;
-      }
-      if (patientProfileImage && savedPatientId) {
-        const imageFormData = new FormData();
-
-        imageFormData.append("profile_image", patientProfileImage);
-
-        const imageUploadResponse = await api.post(
-          `/patients/${savedPatientId}/profile-image`,
-          imageFormData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          },
-        );
+        const imageUploadResponse = await patientApi.uploadProfileImage(savedPatientId, imageFormData);
 
         patient.profile_image_url = imageUploadResponse.data.profile_image_url;
       }
@@ -395,15 +381,7 @@ function App() {
         formData.append("document_type", doc.document_type);
         formData.append("notes", doc.notes || "");
 
-        const { data } = await api.post(
-          `/patients/${savedPatientId}/documents`,
-          formData,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          },
-        );
+        const { data } = await patientApi.uploadDocument(savedPatientId, formData);
 
         if (data.document) {
           uploadedDocs.push(data.document);
@@ -436,11 +414,11 @@ function App() {
 
     try {
       if (editingDoctorId) {
-        await api.put(`/doctors/${editingDoctorId}`, doctor);
+        await doctorApi.update(editingDoctorId, doctor);
         toast.success("Doctor updated successfully");
         setEditingDoctorId(null);
       } else {
-        await api.post("/doctors", doctor);
+        await doctorApi.create(doctor);
         toast.success("Doctor added successfully");
       }
 
@@ -482,7 +460,7 @@ function App() {
     if (!confirm("Delete this patient?")) return;
 
     try {
-      await api.delete(`/patients/${row.id || row._id}`);
+      await patientApi.delete(row.id || row._id);
       await load();
       toast.success("Patient deleted successfully");
     } catch (err) {
@@ -596,7 +574,7 @@ function App() {
     if (!confirm("Delete this doctor?")) return;
 
     try {
-      await api.delete(`/doctors/${row.id || row._id}`);
+      await doctorApi.delete(row.id || row._id);
       await load();
       toast.success("Doctor deleted successfully");
     } catch (err) {
@@ -608,11 +586,11 @@ function App() {
 
     try {
       if (editingAppointmentId) {
-        await api.put(`/appointments/${editingAppointmentId}`, appointment);
+        await appointmentApi.update(editingAppointmentId, appointment);
         toast.success("Appointment updated successfully");
         setEditingAppointmentId(null);
       } else {
-        await api.post("/appointments", appointment);
+        await appointmentApi.create(appointment);
         toast.success("Appointment added successfully");
       }
 
@@ -640,7 +618,7 @@ function App() {
     if (!confirm("Delete this appointment?")) return;
 
     try {
-      await api.delete(`/appointments/${row.id || row._id}`);
+      await appointmentApi.delete(row.id || row._id);
       await load();
       toast.success("Appointment deleted successfully");
     } catch (err) {
@@ -650,35 +628,35 @@ function App() {
 
   async function addBed(e) {
     e.preventDefault();
-    await api.post("/beds", bed);
+    await bedApi.create(bed);
     setBed(emptyBed);
     await load();
   }
 
   async function addLab(e) {
     e.preventDefault();
-    await api.post("/lab/tests", lab);
+    await labApi.create(lab);
     setLab(emptyLab);
     await load();
   }
 
   async function addRadiology(e) {
     e.preventDefault();
-    await api.post("/radiology/tests", rad);
+    await radiologyApi.create(rad);
     setRad(emptyRad);
     await load();
   }
 
   async function addMedicine(e) {
     e.preventDefault();
-    await api.post("/pharmacy/medicines", med);
+    await pharmacyApi.create(med);
     setMed(emptyMed);
     await load();
   }
 
   async function addBill(e) {
     e.preventDefault();
-    await api.post("/billing", bill);
+    await billingApi.create(bill);
     setBill(emptyBill);
     await load();
   }
@@ -701,7 +679,7 @@ function App() {
   async function updateProfile(e) {
     e.preventDefault();
     try {
-      const { data } = await api.put("/auth/me", profile);
+      const { data } = await authApi.updateProfile(profile);
       localStorage.setItem("user", JSON.stringify(data.user));
       setUser(data.user);
       toast.success("Profile updated successfully");
@@ -713,7 +691,7 @@ function App() {
   async function changePassword(e) {
     e.preventDefault();
     try {
-      await api.put("/auth/change-password", passwordForm);
+      await authApi.changePassword(passwordForm);
       toast.success("Password changed. Please login again.");
       localStorage.clear();
       setUser(null);
@@ -725,7 +703,7 @@ function App() {
   async function addUser(e) {
     e.preventDefault();
     try {
-      await api.post("/auth/users", newUser);
+      await authApi.createUser(newUser);
       setNewUser({
         full_name: "",
         email: "",
@@ -742,9 +720,7 @@ function App() {
   }
 
   async function toggleUserStatus(row) {
-    await api.patch(`/auth/users/${row.id}`, {
-      status: row.status === "active" ? "inactive" : "active",
-    });
+    await authApi.updateUserStatus(row.id, row.status === "active" ? "inactive" : "active");
 
     await load();
   }
@@ -756,7 +732,7 @@ function App() {
     if (!confirm("Delete this user?")) return;
 
     try {
-      await api.delete(`/auth/users/${row.id}`);
+      await authApi.deleteUser(row.id);
       await load();
       toast.success("User deleted successfully");
     } catch (err) {
