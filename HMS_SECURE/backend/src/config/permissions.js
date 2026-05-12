@@ -6,6 +6,7 @@ const ROLE_PERMISSIONS = {
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
+    'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
@@ -17,6 +18,7 @@ const ROLE_PERMISSIONS = {
     'dashboard.view',
     'patient.view',
     'appointment.view', 'appointment.status.update',
+    'opd.view', 'opd.create', 'ipd.view',
     'lab.view', 'radiology.view',
     'admin.profile.manage'
   ],
@@ -25,6 +27,7 @@ const ROLE_PERMISSIONS = {
     'patient.view', 'patient.edit',
     'bed.view', 'bed.status.update',
     'appointment.view',
+    'opd.view', 'ipd.view', 'ipd.create',
     'admin.profile.manage'
   ],
   receptionist: [
@@ -32,6 +35,7 @@ const ROLE_PERMISSIONS = {
     'patient.view', 'patient.create', 'patient.edit', 'patient.document.manage',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete',
     'bed.view',
+    'opd.view', 'opd.create',
     'billing.view', 'billing.create',
     'admin.profile.manage'
   ],

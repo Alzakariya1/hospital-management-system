@@ -2,10 +2,11 @@ const express = require("express");
 const { Patient } = require("../models");
 const asyncHandler = require("../utils/asyncHandler");
 const { verifyToken, requirePermission } = require("../middleware/auth");
+const { attachTenant, tenantFilter, tenantCreateData } = require("../middleware/tenant");
 const router = express.Router();
 const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
-router.use(verifyToken);
+router.use(verifyToken, attachTenant);
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
@@ -16,14 +17,14 @@ router.get(
     "/",
     requirePermission("patient.view"),
     asyncHandler(async (req, res) =>
-        res.json(await Patient.find().sort({ id: -1 })),
+        res.json(await Patient.find(tenantFilter(req)).sort({ id: -1 })),
     ),
 );
 router.get(
     "/:id",
     requirePermission("patient.view"),
     asyncHandler(async (req, res) => {
-        const r = await Patient.findOne({ id: Number(req.params.id) });
+        const r = await Patient.findOne(tenantFilter(req, { id: Number(req.params.id) }));
         if (!r) return res.status(404).json({ message: "Patient not found" });
         res.json(r);
     }),
@@ -33,7 +34,7 @@ router.post(
     requirePermission("patient.create"),
     asyncHandler(async (req, res) => {
         const uid = req.body.patient_uid || `PAT-${Date.now()}`;
-        const r = await Patient.create({ ...req.body, patient_uid: uid });
+        const r = await Patient.create(tenantCreateData(req, { ...req.body, patient_uid: uid }));
         res
             .status(201)
             .json({ message: "Patient created", id: r.id, patient_uid: uid });
@@ -67,7 +68,7 @@ router.put(
         });
         if (!Object.keys(update).length)
             return res.status(400).json({ message: "No valid fields to update" });
-        await Patient.updateOne({ id: Number(req.params.id) }, { $set: update });
+        await Patient.updateOne(tenantFilter(req, { id: Number(req.params.id) }), { $set: update });
         res.json({ message: "Patient updated" });
     }),
 );
@@ -76,7 +77,7 @@ router.post(
     requirePermission("patient.document.manage"),
     upload.single("document"),
     asyncHandler(async (req, res) => {
-        const patient = await Patient.findOne({ id: Number(req.params.id) });
+        const patient = await Patient.findOne(tenantFilter(req, { id: Number(req.params.id) }));
 
         if (!patient) {
             return res.status(404).json({ message: "Patient not found" });
@@ -131,7 +132,7 @@ router.post(
     requirePermission("patient.document.manage"),
     upload.single("profile_image"),
     asyncHandler(async (req, res) => {
-        const patient = await Patient.findOne({ id: Number(req.params.id) });
+        const patient = await Patient.findOne(tenantFilter(req, { id: Number(req.params.id) }));
 
         if (!patient) {
             return res.status(404).json({ message: "Patient not found" });
@@ -184,7 +185,7 @@ router.delete(
     "/:id/documents/:docIndex",
     requirePermission("patient.document.manage"),
     asyncHandler(async (req, res) => {
-        const patient = await Patient.findOne({ id: Number(req.params.id) });
+        const patient = await Patient.findOne(tenantFilter(req, { id: Number(req.params.id) }));
 
         if (!patient) {
             return res.status(404).json({ message: "Patient not found" });
@@ -216,7 +217,7 @@ router.delete(
     "/:id",
     requirePermission("patient.delete"),
     asyncHandler(async (req, res) => {
-        await Patient.deleteOne({ id: Number(req.params.id) });
+        await Patient.deleteOne(tenantFilter(req, { id: Number(req.params.id) }));
         res.json({ message: "Patient deleted" });
     }),
 );

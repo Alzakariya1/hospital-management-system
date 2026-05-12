@@ -14,11 +14,45 @@ function attachTenant(req, _res, next) {
   return next();
 }
 
+function tenantFilter(req, extra = {}) {
+  const hospitalId = Number(req.hospital_id || resolveHospitalId(req));
+  const base = { ...extra };
+
+  // Backward compatibility: old records created before tenant support may not have hospital_id.
+  // Keep those visible only to the default hospital so existing deployments don't lose data.
+  if (hospitalId === DEFAULT_HOSPITAL_ID) {
+    return {
+      ...base,
+      $or: [
+        { hospital_id: hospitalId },
+        { hospital_id: { $exists: false } },
+        { hospital_id: null },
+      ],
+    };
+  }
+
+  return { ...base, hospital_id: hospitalId };
+}
+
+function tenantCreateData(req, data = {}) {
+  return {
+    ...data,
+    hospital_id: Number(data.hospital_id || req.hospital_id || resolveHospitalId(req)),
+  };
+}
+
 function withTenantCreate(req, _res, next) {
   if (req.body && typeof req.body === 'object' && !Array.isArray(req.body)) {
-    req.body.hospital_id = Number(req.body.hospital_id || req.hospital_id || DEFAULT_HOSPITAL_ID);
+    req.body = tenantCreateData(req, req.body);
   }
   return next();
 }
 
-module.exports = { DEFAULT_HOSPITAL_ID, resolveHospitalId, attachTenant, withTenantCreate };
+module.exports = {
+  DEFAULT_HOSPITAL_ID,
+  resolveHospitalId,
+  attachTenant,
+  tenantFilter,
+  tenantCreateData,
+  withTenantCreate,
+};
