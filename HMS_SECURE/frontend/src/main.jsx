@@ -12,17 +12,6 @@ import {
   Users,
   UserCircle,
 } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts";
 import { Toaster, toast } from "react-hot-toast";
 import {
   appointmentApi,
@@ -36,9 +25,10 @@ import {
   pharmacyApi,
   radiologyApi,
 } from "./api";
-import { DataTable, Form, StatCard } from "./components";
+import { DataTable, Form } from "./components";
 import { AppLayout } from "./layouts";
 import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
 import "./style.css";
 
 // Temporary compatibility alias during Phase 2 refactor.
@@ -698,27 +688,6 @@ function App() {
   const appointmentTotalPages = Math.ceil(
     filteredAppointments.length / pageSize,
   );
-  const appointmentChartData = [
-    { name: "Patients", value: patients.length },
-    { name: "Doctors", value: doctors.length },
-    { name: "Appointments", value: appointments.length },
-    { name: "Beds", value: beds.length },
-  ];
-
-  const billingChartData = [
-    {
-      name: "Paid",
-      value: bills.filter((b) => b.status === "paid").length || 1,
-    },
-    {
-      name: "Pending",
-      value: bills.filter((b) => b.status === "pending").length || 1,
-    },
-    {
-      name: "Unpaid",
-      value: bills.filter((b) => b.status === "unpaid").length || 1,
-    },
-  ];
   return (
     <>
       <Toaster
@@ -747,92 +716,14 @@ function App() {
         onRefresh={load}
       >
             {tab === "dashboard" && (
-              <section>
-                <div className="grid">
-                  <StatCard
-                    icon={Users}
-                    title="Total Patients"
-                    value={stats.totalPatients}
-                  />
-                  <StatCard
-                    icon={Stethoscope}
-                    title="Total Doctors"
-                    value={stats.totalDoctors}
-                  />
-                  <StatCard
-                    icon={Calendar}
-                    title="Appointments Today"
-                    value={stats.appointmentsToday}
-                  />
-                  <StatCard
-                    icon={Bed}
-                    title="Available Beds"
-                    value={stats.availableBeds}
-                  />
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 20,
-                    marginTop: 24,
-                  }}
-                >
-                  <div className="card" style={{ padding: 24 }}>
-                    <h2>Hospital Overview</h2>
-                    <div style={{ width: "100%", height: 320 }}>
-                      <ResponsiveContainer>
-                        <BarChart data={appointmentChartData}>
-                          <XAxis dataKey="name" />
-                          <YAxis />
-                          <Tooltip />
-                          <Bar dataKey="value" radius={[8, 8, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-
-                  <div className="card" style={{ padding: 24 }}>
-                    <h2>Billing Status</h2>
-                    <div style={{ width: "100%", height: 320 }}>
-                      <ResponsiveContainer>
-                        <PieChart>
-                          <Pie
-                            data={billingChartData}
-                            dataKey="value"
-                            nameKey="name"
-                            outerRadius={90}
-                            label
-                          >
-                            {billingChartData.map((entry, index) => (
-                              <Cell key={index} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </div>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <h2>Recent Activity</h2>
-                  <small className="muted">Latest 6 activities</small>
-                </div>
-                <div
-                  className="card"
-                  style={{ padding: 0, overflow: "hidden" }}
-                >
-                  <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                    <DataTable rows={(stats.recentActivity || []).slice(0, 6)} />
-                  </div>
-                </div>
-              </section>
+              <Dashboard
+                stats={stats}
+                patients={patients}
+                doctors={doctors}
+                appointments={appointments}
+                beds={beds}
+                bills={bills}
+              />
             )}
             {tab === "patients" && (
               <section>
