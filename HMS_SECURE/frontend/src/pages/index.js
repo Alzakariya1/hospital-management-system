@@ -1,0 +1,10 @@
+export { default as AdminProfile } from "./AdminProfile";
+export { default as Appointments } from "./Appointments";
+export { default as Beds } from "./Beds";
+export { default as Billing } from "./Billing";
+export { default as Dashboard } from "./Dashboard";
+export { default as Doctors } from "./Doctors";
+export { default as Labs } from "./Labs";
+export { default as Login } from "./Login";
+export { default as Patients } from "./Patients";
+export { default as Pharmacy } from "./Pharmacy";
