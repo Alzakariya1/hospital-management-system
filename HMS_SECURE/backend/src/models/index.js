@@ -33,13 +33,26 @@ function makeModel(name, collection, extra = {}) {
 }
 const User = makeModel("User", "users", {
     email: { type: String, unique: true, index: true },
+    hospital_id: { type: Number, default: 1, index: true },
     role: { type: String, default: "receptionist" },
     status: { type: String, default: "active" },
     permissions: { type: [String], default: [] },
 });
-const Department = makeModel("Department", "departments");
+const Hospital = makeModel("Hospital", "hospitals", {
+    hospital_code: { type: String, unique: true, sparse: true, index: true },
+    name: { type: String, default: "Default Hospital" },
+    type: { type: String, default: "hospital" },
+    status: { type: String, default: "active" },
+    plan: { type: String, default: "enterprise" },
+    enabled_modules: { type: [String], default: [] },
+    feature_flags: { type: Object, default: {} },
+    branding: { type: Object, default: {} },
+    settings: { type: Object, default: {} },
+});
+const Department = makeModel("Department", "departments", { hospital_id: { type: Number, default: 1, index: true } });
 
 const Patient = makeModel("Patient", "patients", {
+    hospital_id: { type: Number, default: 1, index: true },
     patient_id: { type: String, unique: true, index: true },
 
     full_name: String,
@@ -79,9 +92,11 @@ const Patient = makeModel("Patient", "patients", {
 });
 
 const Doctor = makeModel("Doctor", "doctors", {
+    hospital_id: { type: Number, default: 1, index: true },
     doctor_id: { type: String, unique: true, index: true },
 });
 const Appointment = makeModel("Appointment", "appointments", {
+    hospital_id: { type: Number, default: 1, index: true },
     patient_id: String,
     doctor_id: String,
     appointment_date: String,
@@ -89,22 +104,24 @@ const Appointment = makeModel("Appointment", "appointments", {
     status: String,
     notes: String,
 });
-const Bed = makeModel("Bed", "beds");
-const OpdRecord = makeModel("OpdRecord", "opd_records");
-const IpdAdmission = makeModel("IpdAdmission", "ipd_admissions");
-const NursingNote = makeModel("NursingNote", "nursing_notes");
-const LabTest = makeModel("LabTest", "lab_tests");
-const RadiologyTest = makeModel("RadiologyTest", "radiology_tests");
-const Medicine = makeModel("Medicine", "medicines");
-const PharmacySale = makeModel("PharmacySale", "pharmacy_sales");
-const Billing = makeModel("Billing", "billing");
-const AuditLog = makeModel("AuditLog", "audit_logs");
+const Bed = makeModel("Bed", "beds", { hospital_id: { type: Number, default: 1, index: true } });
+const OpdRecord = makeModel("OpdRecord", "opd_records", { hospital_id: { type: Number, default: 1, index: true } });
+const IpdAdmission = makeModel("IpdAdmission", "ipd_admissions", { hospital_id: { type: Number, default: 1, index: true } });
+const NursingNote = makeModel("NursingNote", "nursing_notes", { hospital_id: { type: Number, default: 1, index: true } });
+const LabTest = makeModel("LabTest", "lab_tests", { hospital_id: { type: Number, default: 1, index: true } });
+const RadiologyTest = makeModel("RadiologyTest", "radiology_tests", { hospital_id: { type: Number, default: 1, index: true } });
+const Medicine = makeModel("Medicine", "medicines", { hospital_id: { type: Number, default: 1, index: true } });
+const PharmacySale = makeModel("PharmacySale", "pharmacy_sales", { hospital_id: { type: Number, default: 1, index: true } });
+const Billing = makeModel("Billing", "billing", { hospital_id: { type: Number, default: 1, index: true } });
+const AuditLog = makeModel("AuditLog", "audit_logs", { hospital_id: { type: Number, default: 1, index: true } });
 const SecuritySetting = makeModel("SecuritySetting", "security_settings", {
+    hospital_id: { type: Number, default: 1, index: true },
     setting_key: { type: String, unique: true, index: true },
 });
 module.exports = {
     Counter,
     User,
+    Hospital,
     Department,
     Patient,
     Doctor,

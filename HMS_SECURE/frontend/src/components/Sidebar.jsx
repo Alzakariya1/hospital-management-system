@@ -9,6 +9,12 @@ export default function Sidebar({ user, tabs, activeTab, onTabChange, onLogout }
         {user.full_name}
         <br />
         <small>{user.role}</small>
+        {user.hospital_name ? (
+          <>
+            <br />
+            <small>{user.hospital_name}</small>
+          </>
+        ) : null}
       </p>
       {tabs.map(([id, label, Icon]) => (
         <button

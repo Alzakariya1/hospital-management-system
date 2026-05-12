@@ -57,6 +57,7 @@ app.get("/api/health", async (req, res, next) => {
     }
 });
 app.use("/api/auth", require("./routes/auth.routes"));
+app.use("/api", require("./routes/tenant.routes"));
 app.use("/api/patients", require("./routes/patient.routes"));
 app.use("/api", require("./routes/core.routes"));
 app.use("/api", require("./routes/opd-ipd.routes"));

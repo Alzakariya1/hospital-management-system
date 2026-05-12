@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { User, AuditLog } = require('../models');
+const { User, Hospital, AuditLog } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, allowRoles, requirePermission, getUserPermissions } = require('../middleware/auth');
 const { ROLE_PERMISSIONS } = require('../config/permissions');
@@ -12,10 +12,30 @@ const VALID_STATUS = ['active', 'inactive'];
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
 const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
 function validatePassword(password) { const min = Number(process.env.PASSWORD_MIN_LENGTH || 8); return (!password || String(password).length < min) ? `Password must be at least ${min} characters` : null; }
+
+async function ensureDefaultHospital() {
+    const defaultId = Number(process.env.DEFAULT_HOSPITAL_ID || 1);
+    let hospital = await Hospital.findOne({ id: defaultId });
+    if (!hospital) {
+        hospital = await Hospital.create({
+            id: defaultId,
+            hospital_code: 'DEFAULT',
+            name: process.env.DEFAULT_HOSPITAL_NAME || 'Default Hospital',
+            type: 'hospital',
+            status: 'active',
+            plan: 'enterprise',
+            enabled_modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile'],
+            feature_flags: { multiTenant: true },
+        });
+    }
+    return hospital;
+}
+
 async function audit(userId, action, module_name = 'auth') { try { await AuditLog.create({ user_id: userId || null, action, module_name }); } catch (_) { } }
-const signToken = (user) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, permissions: getUserPermissions(user) }, process.env.JWT_SECRET || 'dev_secret_change_me', { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
-const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.permissions = getUserPermissions(x); return x; };
-router.post('/login', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); const password = req.body.password; if (!email || !password) return res.status(400).json({ message: 'Email and password are required' }); const user = await User.findOne({ email, status: 'active' }).lean(false); if (!user) return res.status(401).json({ message: 'Invalid email or password' }); const ok = await bcrypt.compare(String(password), user.password || ''); if (!ok) { await audit(user.id, `Failed login for ${email}`, 'security'); return res.status(401).json({ message: 'Invalid email or password' }); } user.last_login_at = new Date(); await user.save(); await audit(user.id, 'User logged in', 'auth'); res.json({ message: 'Login successful', token: signToken(user), user: publicUser(user) }); }));
+const signToken = (user) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, hospital_id: Number(user.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1), permissions: getUserPermissions(user) }, process.env.JWT_SECRET || 'dev_secret_change_me', { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
+const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.hospital_id = Number(x.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); x.permissions = getUserPermissions(x); return x; };
+router.post('/login', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); const password = req.body.password; if (!email || !password) return res.status(400).json({ message: 'Email and password are required' }); await ensureDefaultHospital(); const user = await User.findOne({ email, status: 'active' }).lean(false); if (!user) return res.status(401).json({ message: 'Invalid email or password' }); const ok = await bcrypt.compare(String(password), user.password || ''); if (!ok) { await audit(user.id, `Failed login for ${email}`, 'security'); return res.status(401).json({ message: 'Invalid email or password' }); } if (!user.hospital_id) user.hospital_id = Number(process.env.DEFAULT_HOSPITAL_ID || 1);
+  user.last_login_at = new Date(); await user.save(); await audit(user.id, 'User logged in', 'auth'); res.json({ message: 'Login successful', token: signToken(user), user: publicUser(user) }); }));
 router.post('/register', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => createUser(req, res)));
 router.post('/forgot-password', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); if (!email) return res.status(400).json({ message: 'Email is required' }); const rawToken = crypto.randomBytes(32).toString('hex'); const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex'); await User.updateOne({ email, status: 'active' }, { $set: { reset_token: tokenHash, reset_token_expires: new Date(Date.now() + 30 * 60 * 1000) } }); res.json({ message: 'Reset token generated. Configure SMTP before production.', resetToken: rawToken }); }));
 router.post('/reset-password', asyncHandler(async (req, res) => { const { token, password } = req.body; if (!token || !password) return res.status(400).json({ message: 'Token and password are required' }); const err = validatePassword(password); if (err) return res.status(400).json({ message: err }); const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex'); const user = await User.findOne({ reset_token: tokenHash, reset_token_expires: { $gt: new Date() }, status: 'active' }); if (!user) return res.status(400).json({ message: 'Invalid or expired token' }); user.password = await bcrypt.hash(String(password), BCRYPT_ROUNDS); user.reset_token = null; user.reset_token_expires = null; user.password_changed_at = new Date(); await user.save(); res.json({ message: 'Password reset successfully' }); }));
@@ -68,8 +88,8 @@ router.put('/change-password', verifyToken, asyncHandler(async (req, res) => {
 }));
 router.get('/users', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => res.json((await User.find().sort({ id: -1 })).map(publicUser))));
 async function createUser(req, res) {
-    const { full_name, password, role = 'receptionist', phone, status = 'active', profile_image, bio, permissions } = req.body; const email = normalizeEmail(req.body.email); if (!full_name || !email || !password) return res.status(400).json({ message: 'full_name, email and password are required' }); const err = validatePassword(password); if (err) return res.status(400).json({ message: err }); if (!VALID_ROLES.includes(role)) return res.status(400).json({ message: 'Invalid role' }); if (!VALID_STATUS.includes(status)) return res.status(400).json({ message: 'Invalid status' }); if (await User.findOne({ email })) return res.status(409).json({ message: 'Email already exists' }); const u = await User.create({
-        full_name, email, password: await bcrypt.hash(String(password), BCRYPT_ROUNDS), role, phone: phone || null, status, profile_image: profile_image || '',
+    const { full_name, password, role = 'receptionist', phone, status = 'active', profile_image, bio, permissions } = req.body; const hospital_id = Number(req.body.hospital_id || req.user?.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); const email = normalizeEmail(req.body.email); if (!full_name || !email || !password) return res.status(400).json({ message: 'full_name, email and password are required' }); const err = validatePassword(password); if (err) return res.status(400).json({ message: err }); if (!VALID_ROLES.includes(role)) return res.status(400).json({ message: 'Invalid role' }); if (!VALID_STATUS.includes(status)) return res.status(400).json({ message: 'Invalid status' }); if (await User.findOne({ email })) return res.status(409).json({ message: 'Email already exists' }); const u = await User.create({
+        full_name, email, hospital_id, password: await bcrypt.hash(String(password), BCRYPT_ROUNDS), role, phone: phone || null, status, profile_image: profile_image || '',
         bio: bio || '', permissions: Array.isArray(permissions) ? permissions : [], password_changed_at: new Date()
     }); if (req.user) await audit(req.user.id, `Created user ${email}`, 'users'); res.status(201).json({ message: 'User registered successfully', userId: u.id });
 }

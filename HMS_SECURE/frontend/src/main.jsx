@@ -24,6 +24,7 @@ import {
   patientApi,
   pharmacyApi,
   radiologyApi,
+  tenantApi,
 } from "./api";
 import { AppLayout } from "./layouts";
 import {
@@ -88,6 +89,7 @@ function App() {
     JSON.parse(localStorage.getItem("user") || "null"),
   );
   const [tab, setTab] = useState("dashboard");
+  const [currentHospital, setCurrentHospital] = useState(null);
   const [stats, setStats] = useState({});
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
@@ -150,6 +152,17 @@ function App() {
   const [editingAppointmentId, setEditingAppointmentId] = useState(null);
   async function load() {
     if (!localStorage.getItem("token")) return;
+    try {
+      const { data: hospital } = await tenantApi.me();
+      setCurrentHospital(hospital);
+      if (hospital?.name && (!user?.hospital_name || user.hospital_name !== hospital.name)) {
+        const enrichedUser = { ...user, hospital_id: hospital.id, hospital_name: hospital.name };
+        setUser(enrichedUser);
+        localStorage.setItem("user", JSON.stringify(enrichedUser));
+      }
+    } catch (_) {
+      // Tenant endpoint is backward-compatible; ignore if current server has not deployed it yet.
+    }
     const calls = [
       dashboardApi.getStats(),
       patientApi.list(),
