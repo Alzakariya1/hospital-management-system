@@ -42,13 +42,6 @@ router.put('/doctors/:id', allowRoles('super_admin', 'admin'), asyncHandler(asyn
     const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'specialization', 'qualification', 'consultation_fee'];
     const update = {}; allowed.forEach(k => { if (k in req.body) update[k] = req.body[k] }); if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' }); await Doctor.updateOne({ id: Number(req.params.id) }, { $set: update }); res.json({ message: 'Doctor updated' });
 }));
-
-router.delete('/doctors/:id', allowRoles('super_admin', 'admin'), asyncHandler(async (req, res) => {
-    const result = await Doctor.deleteOne({ id: Number(req.params.id) });
-    if (!result.deletedCount) return res.status(404).json({ message: 'Doctor not found' });
-    res.json({ message: 'Doctor deleted' });
-}));
-
 router.get('/departments', asyncHandler(async (req, res) => res.json(await Department.find().sort({ department_name: 1 }))));
 router.post('/departments', allowRoles('super_admin', 'admin'), asyncHandler(async (req, res) => { const r = await Department.create({ department_name: req.body.department_name, description: req.body.description || null }); res.status(201).json({ message: 'Department created', id: r.id }); }));
 router.get('/appointments', asyncHandler(async (req, res) => res.json(await withNames(await Appointment.find().sort({ appointment_date: -1, appointment_time: -1 })))));
