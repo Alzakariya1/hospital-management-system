@@ -1,7 +1,7 @@
 const express = require("express");
 const { Patient } = require("../models");
 const asyncHandler = require("../utils/asyncHandler");
-const { verifyToken, allowRoles } = require("../middleware/auth");
+const { verifyToken, requirePermission } = require("../middleware/auth");
 const router = express.Router();
 const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
@@ -14,12 +14,14 @@ const upload = multer({
 });
 router.get(
     "/",
+    requirePermission("patient.view"),
     asyncHandler(async (req, res) =>
         res.json(await Patient.find().sort({ id: -1 })),
     ),
 );
 router.get(
     "/:id",
+    requirePermission("patient.view"),
     asyncHandler(async (req, res) => {
         const r = await Patient.findOne({ id: Number(req.params.id) });
         if (!r) return res.status(404).json({ message: "Patient not found" });
@@ -28,7 +30,7 @@ router.get(
 );
 router.post(
     "/",
-    allowRoles("super_admin", "admin", "receptionist"),
+    requirePermission("patient.create"),
     asyncHandler(async (req, res) => {
         const uid = req.body.patient_uid || `PAT-${Date.now()}`;
         const r = await Patient.create({ ...req.body, patient_uid: uid });
@@ -39,7 +41,7 @@ router.post(
 );
 router.put(
     "/:id",
-    allowRoles("super_admin", "admin", "receptionist"),
+    requirePermission("patient.edit"),
     asyncHandler(async (req, res) => {
         const allowed = [
             "patient_id",
@@ -71,7 +73,7 @@ router.put(
 );
 router.post(
     "/:id/documents",
-    allowRoles("super_admin", "admin", "receptionist"),
+    requirePermission("patient.document.manage"),
     upload.single("document"),
     asyncHandler(async (req, res) => {
         const patient = await Patient.findOne({ id: Number(req.params.id) });
@@ -126,7 +128,7 @@ router.post(
 );
 router.post(
     "/:id/profile-image",
-    allowRoles("super_admin", "admin", "receptionist"),
+    requirePermission("patient.document.manage"),
     upload.single("profile_image"),
     asyncHandler(async (req, res) => {
         const patient = await Patient.findOne({ id: Number(req.params.id) });
@@ -180,7 +182,7 @@ router.post(
 );
 router.delete(
     "/:id/documents/:docIndex",
-    allowRoles("super_admin", "admin", "receptionist"),
+    requirePermission("patient.document.manage"),
     asyncHandler(async (req, res) => {
         const patient = await Patient.findOne({ id: Number(req.params.id) });
 
@@ -212,7 +214,7 @@ router.delete(
 );
 router.delete(
     "/:id",
-    allowRoles("super_admin", "admin"),
+    requirePermission("patient.delete"),
     asyncHandler(async (req, res) => {
         await Patient.deleteOne({ id: Number(req.params.id) });
         res.json({ message: "Patient deleted" });
