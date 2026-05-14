@@ -56,19 +56,60 @@ router.get('/doctors', requirePermission('doctor.view'), asyncHandler(async (req
     res.json(rows.map(d => ({ ...d, department_name: dm[d.department_id] })));
 }));
 
+function cleanDoctorId(value) {
+    return String(value || '').trim();
+}
+
+async function findDuplicateDoctorId(req, doctorId, currentDoctorNumericId = null) {
+    const cleanId = cleanDoctorId(doctorId);
+    if (!cleanId) return null;
+
+    // The live database currently has a global unique index named doctor_id_1.
+    // So this check is intentionally global-safe, not tenant-only, to prevent
+    // MongoDB E11000 crashes during both create and update.
+    const query = { doctor_id: cleanId };
+    if (currentDoctorNumericId) query.id = { $ne: Number(currentDoctorNumericId) };
+    return Doctor.findOne(query).lean();
+}
+
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
+    const doctorId = cleanDoctorId(req.body.doctor_id);
+    if (!doctorId) return res.status(400).json({ message: 'Doctor ID is required' });
+
+    const duplicate = await findDuplicateDoctorId(req, doctorId);
+    if (duplicate) {
+        return res.status(409).json({ message: `Doctor ID already exists: ${doctorId}`, field: 'doctor_id', value: doctorId });
+    }
+
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
-    const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_uid: uid, status: req.body.status || 'active' }));
+    const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_id: doctorId, doctor_uid: uid, status: req.body.status || 'active' }));
     res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
 }));
 
 router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
-    const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'gender', 'specialization', 'qualification', 'consultation_fee', 'experience_years', 'department', 'registration_number', 'license_number', 'address', 'availability', 'bio', 'status', 'documents'];
+    const doctorNumericId = Number(req.params.id);
+    const existingDoctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId }));
+    if (!existingDoctor) return res.status(404).json({ message: 'Doctor not found' });
+
+    const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'gender', 'specialization', 'qualification', 'consultation_fee', 'experience_years', 'department', 'registration_number', 'license_number', 'address', 'availability', 'bio', 'status'];
     const update = {};
     allowed.forEach(k => { if (k in req.body) update[k] = req.body[k]; });
+
+    if ('doctor_id' in update) {
+        update.doctor_id = cleanDoctorId(update.doctor_id);
+        if (!update.doctor_id) return res.status(400).json({ message: 'Doctor ID is required' });
+
+        const duplicate = await findDuplicateDoctorId(req, update.doctor_id, doctorNumericId);
+        if (duplicate) {
+            return res.status(409).json({ message: `Doctor ID already exists: ${update.doctor_id}`, field: 'doctor_id', value: update.doctor_id });
+        }
+    }
+
     if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' });
-    await Doctor.updateOne(tenantFilter(req, { id: Number(req.params.id) }), { $set: update });
-    res.json({ message: 'Doctor updated' });
+
+    Object.assign(existingDoctor, update);
+    await existingDoctor.save();
+    res.json({ message: 'Doctor updated', id: existingDoctor.id });
 }));
 
 router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async (req, res) => {
