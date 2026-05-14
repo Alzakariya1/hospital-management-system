@@ -9,4 +9,6 @@ export const tenantApi = {
   update: (id, payload) => api.patch(`/tenants/${id}`, payload),
   admins: (id) => api.get(`/tenants/${id}/admins`),
   createAdmin: (id, payload) => api.post(`/tenants/${id}/admins`, payload),
+  uploadLogo: (id, formData) => api.post(`/tenants/${id}/logo`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  archive: (id) => api.delete(`/tenants/${id}`),
 };

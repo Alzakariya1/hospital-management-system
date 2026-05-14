@@ -101,6 +101,27 @@ function App() {
     status: "active",
     enabled_modules: DEFAULT_ENABLED_MODULES,
     feature_flags: DEFAULT_FEATURE_FLAGS,
+    branding: {
+      logo_url: "",
+      logo_public_id: "",
+      primary_color: "#0f172a",
+      secondary_color: "#2563eb",
+    },
+    settings: {
+      address: "",
+      city: "",
+      state: "",
+      country: "India",
+      phone: "",
+      email: "",
+      website: "",
+      gst_number: "",
+      registration_number: "",
+      uhid_prefix: "",
+      bill_prefix: "",
+      prescription_prefix: "",
+      lab_report_prefix: "",
+    },
     initial_admin: {
       full_name: "",
       email: "",
@@ -662,18 +683,71 @@ function App() {
       status: row.status || "active",
       enabled_modules: Array.isArray(row.enabled_modules) && row.enabled_modules.length ? row.enabled_modules : DEFAULT_ENABLED_MODULES,
       feature_flags: normalizeFeatureFlags(row.feature_flags),
+      branding: {
+        logo_url: row.branding?.logo_url || "",
+        logo_public_id: row.branding?.logo_public_id || "",
+        primary_color: row.branding?.primary_color || "#0f172a",
+        secondary_color: row.branding?.secondary_color || "#2563eb",
+      },
+      settings: {
+        address: row.settings?.address || "",
+        city: row.settings?.city || "",
+        state: row.settings?.state || "",
+        country: row.settings?.country || "India",
+        phone: row.settings?.phone || "",
+        email: row.settings?.email || "",
+        website: row.settings?.website || "",
+        gst_number: row.settings?.gst_number || "",
+        registration_number: row.settings?.registration_number || "",
+        uhid_prefix: row.settings?.uhid_prefix || "",
+        bill_prefix: row.settings?.bill_prefix || "",
+        prescription_prefix: row.settings?.prescription_prefix || "",
+        lab_report_prefix: row.settings?.lab_report_prefix || "",
+      },
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function toggleTenantStatus(row) {
     try {
-      await tenantApi.update(row.id, { status: row.status === "active" ? "inactive" : "active" });
+      const nextStatus = row.status === "active" ? "inactive" : "active";
+      await tenantApi.update(row.id, { status: nextStatus });
       const { data } = await tenantApi.list();
       setTenants(data);
       toast.success("Hospital status updated");
     } catch (err) {
       toast.error(err.response?.data?.message || "Status update failed");
+    }
+  }
+
+  async function uploadTenantLogo(hospitalId, file) {
+    if (!file) return toast.error("Please choose a logo file");
+    try {
+      const formData = new FormData();
+      formData.append("logo", file);
+      await tenantApi.uploadLogo(hospitalId, formData);
+      const { data } = await tenantApi.list();
+      setTenants(data);
+      try {
+        const { data: updatedHospital } = await tenantApi.me();
+        setCurrentHospital(updatedHospital);
+      } catch (_) { }
+      toast.success("Hospital logo uploaded");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Logo upload failed");
+    }
+  }
+
+  async function archiveTenant(row) {
+    if (!row?.id) return;
+    if (!confirm(`Archive ${row.name}? Existing data will stay safe, but hospital login will be blocked.`)) return;
+    try {
+      await tenantApi.archive(row.id);
+      const { data } = await tenantApi.list();
+      setTenants(data);
+      toast.success("Hospital archived safely");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Hospital archive failed");
     }
   }
 
@@ -993,7 +1067,10 @@ function App() {
                 saveTenant={saveTenant}
                 editTenant={editTenant}
                 toggleTenantStatus={toggleTenantStatus}
+                uploadTenantLogo={uploadTenantLogo}
+                archiveTenant={archiveTenant}
                 currentHospital={currentHospital}
+                user={user}
                 enabledModules={enabledModules}
                 permissions={permissions}
               />

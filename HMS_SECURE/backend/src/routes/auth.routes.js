@@ -37,9 +37,9 @@ const signToken = (user) => jwt.sign({ id: user.id, email: user.email, role: use
 const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.hospital_id = Number(x.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); x.permissions = getUserPermissions(x); return x; };
 router.post('/login', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); const password = req.body.password; if (!email || !password) return res.status(400).json({ message: 'Email and password are required' }); await ensureDefaultHospital(); const user = await User.findOne({ email, status: 'active' }).lean(false); if (!user) return res.status(401).json({ message: 'Invalid email or password' }); const ok = await bcrypt.compare(String(password), user.password || ''); if (!ok) { await audit(user.id, `Failed login for ${email}`, 'security', user.hospital_id); return res.status(401).json({ message: 'Invalid email or password' }); } if (!user.hospital_id) user.hospital_id = DEFAULT_HOSPITAL_ID;
   const hospital = await Hospital.findOne({ id: Number(user.hospital_id || DEFAULT_HOSPITAL_ID) });
-  if (user.role !== 'super_admin' && hospital && hospital.status === 'inactive') {
+  if (user.role !== 'super_admin' && hospital && hospital.status !== 'active') {
     await audit(user.id, `Blocked login for inactive hospital ${hospital.name}`, 'security', user.hospital_id);
-    return res.status(403).json({ message: 'This hospital account is inactive. Contact platform admin.' });
+    return res.status(403).json({ message: 'This hospital account is inactive or archived. Contact platform admin.' });
   }
   user.last_login_at = new Date(); await user.save(); await audit(user.id, 'User logged in', 'auth', user.hospital_id); res.json({ message: 'Login successful', token: signToken(user), user: publicUser(user) }); }));
 router.post('/register', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => createUser(req, res)));

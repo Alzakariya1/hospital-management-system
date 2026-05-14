@@ -1,6 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { Hospital, User, AuditLog } = require('../models');
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
@@ -14,9 +16,14 @@ const DEFAULT_FEATURE_FLAGS = FEATURE_FLAGS.reduce((acc, key) => { acc[key] = ke
 
 const VALID_TENANT_TYPES = ['hospital', 'clinic', 'diagnostic_center', 'nursing_home'];
 const VALID_PLANS = ['clinic', 'hospital', 'enterprise'];
-const VALID_STATUSES = ['active', 'inactive'];
+const VALID_STATUSES = ['active', 'inactive', 'archived'];
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
 const PASSWORD_MIN_LENGTH = Number(process.env.PASSWORD_MIN_LENGTH || 8);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
+const ALLOWED_LOGO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -98,7 +105,30 @@ function publicHospital(hospital) {
   if (!Array.isArray(x.enabled_modules) || !x.enabled_modules.length) x.enabled_modules = DEFAULT_MODULES;
   x.feature_flags = sanitizeFeatureFlags(x.feature_flags);
   if (!x.branding) x.branding = {};
+  x.branding = {
+    logo_url: '',
+    logo_public_id: '',
+    primary_color: '#0f172a',
+    secondary_color: '#2563eb',
+    ...(x.branding || {}),
+  };
   if (!x.settings) x.settings = {};
+  x.settings = {
+    address: '',
+    city: '',
+    state: '',
+    country: 'India',
+    phone: '',
+    email: '',
+    website: '',
+    gst_number: '',
+    registration_number: '',
+    uhid_prefix: '',
+    bill_prefix: '',
+    prescription_prefix: '',
+    lab_report_prefix: '',
+    ...(x.settings || {}),
+  };
   return x;
 }
 
@@ -237,7 +267,7 @@ router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), 
 
 router.get('/tenants/:id/admins', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
   const hospitalId = Number(req.params.id);
-  const admins = await User.find({ hospital_id: hospitalId, role: 'admin' }).sort({ id: -1 });
+  const admins = await User.find({ hospital_id: hospitalId, role: { $in: ['hospital_admin', 'admin'] } }).sort({ id: -1 });
   res.json(admins.map(publicUser));
 }));
 
@@ -258,6 +288,76 @@ router.post('/tenants/:id/admins', verifyToken, requirePermission('hospital.mana
   });
 
   res.status(201).json({ message: 'Hospital admin created successfully', admin_user: publicUser(adminUser) });
+}));
+
+router.post('/tenants/:id/logo', verifyToken, requirePermission('hospital.manage'), upload.single('logo'), asyncHandler(async (req, res) => {
+  const hospitalId = Number(req.params.id);
+  const hospital = await Hospital.findOne({ id: hospitalId });
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  if (!req.file) return res.status(400).json({ message: 'Logo file is required' });
+  if (!ALLOWED_LOGO_TYPES.includes(req.file.mimetype)) {
+    return res.status(400).json({ message: 'Only JPG, PNG, WEBP, and SVG logos are allowed' });
+  }
+
+  const currentBranding = hospital.branding || {};
+  if (currentBranding.logo_public_id) {
+    try { await cloudinary.uploader.destroy(currentBranding.logo_public_id, { resource_type: 'image' }); } catch (_) { }
+  }
+
+  const result = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: `hms/hospital-logos/${hospitalId}`,
+        resource_type: 'image',
+        public_id: `logo-${Date.now()}`,
+      },
+      (error, uploadResult) => error ? reject(error) : resolve(uploadResult),
+    );
+    stream.end(req.file.buffer);
+  });
+
+  hospital.branding = {
+    ...(hospital.branding || {}),
+    logo_url: result.secure_url,
+    logo_public_id: result.public_id,
+  };
+  await hospital.save();
+
+  await AuditLog.create({
+    hospital_id: Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID),
+    user_id: req.user.id,
+    action: `Updated logo for hospital ${hospital.name}`,
+    module_name: 'tenants',
+  });
+
+  res.json({ message: 'Hospital logo uploaded successfully', hospital: publicHospital(hospital) });
+}));
+
+router.delete('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
+  const hospitalId = Number(req.params.id);
+  if (hospitalId === DEFAULT_HOSPITAL_ID) {
+    return res.status(400).json({ message: 'Default hospital cannot be archived' });
+  }
+  if (req.user.role !== 'super_admin') {
+    return res.status(403).json({ message: 'Only super admin can archive hospitals' });
+  }
+  const hospital = await Hospital.findOne({ id: hospitalId });
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+
+  hospital.status = 'archived';
+  hospital.is_deleted = true;
+  hospital.archived_at = new Date();
+  hospital.archived_by = req.user.id;
+  await hospital.save();
+
+  await AuditLog.create({
+    hospital_id: Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID),
+    user_id: req.user.id,
+    action: `Archived hospital ${hospital.name}`,
+    module_name: 'tenants',
+  });
+
+  res.json({ message: 'Hospital archived safely', hospital: publicHospital(hospital) });
 }));
 
 module.exports = router;
