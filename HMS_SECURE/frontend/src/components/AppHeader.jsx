@@ -1,15 +1,43 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Bell, RefreshCcw, Search } from "lucide-react";
 
-export default function AppHeader({ title, user, appointmentCount, lowStockCount, pendingBillCount, onRefresh }) {
+export default function AppHeader({ title, user, appointmentCount, lowStockCount, pendingBillCount, onRefresh, onGlobalSearch }) {
+  const [query, setQuery] = useState("");
+  const searchRef = useRef(null);
+
+  useEffect(() => {
+    function handleShortcut(event) {
+      if (event.altKey && String(event.key).toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  function submitSearch(event) {
+    event.preventDefault();
+    const cleanQuery = query.trim();
+    if (cleanQuery && typeof onGlobalSearch === "function") {
+      onGlobalSearch(cleanQuery);
+    }
+  }
+
   return (
     <header className="appHeader">
       <div className="topBar">
-        <div className="topBarSearch" aria-label="Global search">
+        <form className="topBarSearch" aria-label="Global search" onSubmit={submitSearch}>
           <Search size={17} />
-          <span>Search patients, doctors or actions...</span>
+          <input
+            ref={searchRef}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search patients, doctors or actions..."
+            aria-label="Search patients, doctors or actions"
+          />
           <kbd>Alt + K</kbd>
-        </div>
+        </form>
         <div className="topBarActions">
           <button type="button" className="iconBtn" aria-label="Notifications">
             <Bell size={18} />

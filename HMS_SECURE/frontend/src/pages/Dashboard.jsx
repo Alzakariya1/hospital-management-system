@@ -14,6 +14,8 @@ import {
 import { DataTable, StatCard } from "../components";
 
 export default function Dashboard({ stats = {}, patients = [], doctors = [], appointments = [], beds = [], bills = [] }) {
+  const chartColors = ["#5b3fb4", "#46b6c9", "#f59e0b", "#22c55e", "#ec4899"];
+
   const appointmentChartData = [
     { name: "Patients", value: patients.length },
     { name: "Doctors", value: doctors.length },
@@ -62,7 +64,7 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="#5b3fb4" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -78,7 +80,7 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
               <PieChart>
                 <Pie data={billingChartData} dataKey="value" nameKey="name" outerRadius={90} label>
                   {billingChartData.map((entry, index) => (
-                    <Cell key={index} />
+                    <Cell key={index} fill={chartColors[index % chartColors.length]} />
                   ))}
                 </Pie>
                 <Tooltip />

@@ -12,6 +12,7 @@ export default function AppLayout({
   lowStockCount,
   pendingBillCount,
   onRefresh,
+  onGlobalSearch,
   children,
 }) {
   return (
@@ -32,6 +33,7 @@ export default function AppLayout({
             lowStockCount={lowStockCount}
             pendingBillCount={pendingBillCount}
             onRefresh={onRefresh}
+            onGlobalSearch={onGlobalSearch}
           />
           {children}
         </div>

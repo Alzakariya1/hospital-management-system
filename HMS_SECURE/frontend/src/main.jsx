@@ -751,6 +751,59 @@ function App() {
     }
   }
 
+
+  function handleGlobalSearch(query) {
+    const q = String(query || "").trim().toLowerCase();
+    if (!q) return;
+
+    const actionMatches = [
+      ["dashboard", ["dashboard", "home", "overview", "command"]],
+      ["patients", ["patient", "patients", "uhid", "profile"]],
+      ["doctors", ["doctor", "doctors", "physician"]],
+      ["appointments", ["appointment", "appointments", "schedule", "token"]],
+      ["beds", ["bed", "beds", "ward"]],
+      ["labs", ["lab", "laboratory", "radiology", "scan", "test"]],
+      ["pharmacy", ["pharmacy", "medicine", "medicines", "stock"]],
+      ["billing", ["bill", "billing", "invoice", "payment"]],
+      ["profile", ["profile", "user", "password"]],
+      ["tenants", ["hospital", "hospitals", "tenant", "tenants", "module", "feature"]],
+    ];
+
+    const patientMatch = patients.find((patientRow) =>
+      [patientRow.full_name, patientRow.patient_id, patientRow.phone, patientRow.email]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q)),
+    );
+    if (patientMatch && tabs.some(([id]) => id === "patients")) {
+      setPatientSearch(query);
+      setPatientPage(1);
+      setTab("patients");
+      return;
+    }
+
+    const doctorMatch = doctors.find((doctorRow) =>
+      [doctorRow.full_name, doctorRow.doctor_id, doctorRow.specialization, doctorRow.phone, doctorRow.email]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(q)),
+    );
+    if (doctorMatch && tabs.some(([id]) => id === "doctors")) {
+      setDoctorSearch(query);
+      setDoctorPage(1);
+      setTab("doctors");
+      return;
+    }
+
+    const directAction = actionMatches.find(([id, keywords]) =>
+      tabs.some(([tabId]) => tabId === id) && keywords.some((keyword) => keyword.includes(q) || q.includes(keyword)),
+    );
+    if (directAction) {
+      setTab(directAction[0]);
+      return;
+    }
+
+    toast.error("No matching patient, doctor or action found");
+  }
+
   function logout() {
     localStorage.clear();
     setUser(null);
@@ -896,6 +949,7 @@ function App() {
         lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
         pendingBillCount={bills.filter((b) => b.status === "pending").length}
         onRefresh={load}
+        onGlobalSearch={handleGlobalSearch}
       >
             {tab === "dashboard" && (
               <Dashboard

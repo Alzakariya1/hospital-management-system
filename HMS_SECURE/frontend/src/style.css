@@ -518,3 +518,166 @@ section h2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Phase 3 Step 11A: Keka-style UI polish + usability fixes */
+html,
+body,
+#root {
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.sidebarShell,
+aside {
+  width: 236px;
+  padding: 16px 14px;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+.brandBlock {
+  grid-template-columns: 46px 1fr;
+  place-items: center start;
+  text-align: left;
+  min-height: 58px;
+}
+.brandBlock small,
+.sidebarUser small {
+  display: block;
+}
+aside h2 {
+  text-align: left;
+  font-size: 17px;
+  letter-spacing: 0;
+}
+.sidebarUser {
+  grid-template-columns: 42px 1fr;
+  place-items: center start;
+  padding: 10px 4px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+}
+.sidebarUser b {
+  max-width: 150px;
+  text-align: left;
+  font-size: 13px;
+}
+.sidebarUser small {
+  max-width: 150px;
+  color: #9fb3c0;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sideNav {
+  gap: 5px;
+}
+aside button,
+.sideNav button,
+.logoutBtn {
+  min-height: 44px;
+  grid-template-columns: 24px 1fr;
+  place-items: center start;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+aside button span,
+.sideNav button span,
+.logoutBtn span {
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+aside button.active {
+  box-shadow: inset 4px 0 0 #79d4e2, 0 10px 18px rgba(0, 0, 0, 0.08);
+}
+main {
+  margin-left: 236px;
+  width: calc(100% - 236px);
+}
+.topBarSearch {
+  width: min(620px, 52vw);
+  padding: 0 12px;
+}
+.topBarSearch input {
+  flex: 1;
+  min-width: 120px;
+  border: 0;
+  padding: 0;
+  box-shadow: none;
+  background: transparent;
+  font-size: 13px;
+}
+.topBarSearch input:focus {
+  border: 0;
+  box-shadow: none;
+}
+.card,
+.tableWrap,
+.stat,
+.quickPanel {
+  border-radius: 18px;
+}
+.quickPanel {
+  background: linear-gradient(135deg, #6b4bd8 0%, #bf62c7 100%);
+}
+.recharts-wrapper text {
+  fill: #667085;
+  font-size: 12px;
+}
+.recharts-tooltip-wrapper {
+  border-radius: 12px;
+}
+.tableWrap table,
+.card table {
+  table-layout: auto;
+}
+td,
+th {
+  word-break: normal;
+}
+@media (max-width: 980px) {
+  .sidebarShell,
+  aside {
+    width: 88px;
+    padding: 14px 9px;
+  }
+  .brandBlock,
+  .sidebarUser,
+  aside button,
+  .sideNav button,
+  .logoutBtn {
+    grid-template-columns: 1fr;
+    place-items: center;
+    text-align: center;
+  }
+  .brandBlock small,
+  .sidebarUser small,
+  aside button span,
+  .sideNav button span,
+  .logoutBtn span {
+    display: none;
+  }
+  aside h2 {
+    text-align: center;
+    font-size: 12px;
+  }
+  main {
+    margin-left: 88px;
+    width: calc(100% - 88px);
+  }
+}
+@media (max-width: 760px) {
+  .sidebarShell,
+  aside {
+    width: 78px;
+  }
+  main {
+    margin-left: 78px;
+    width: calc(100% - 78px);
+  }
+}
