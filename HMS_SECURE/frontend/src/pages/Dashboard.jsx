@@ -38,24 +38,25 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
 
   return (
     <section>
-      <div className="grid">
+      <div className="quickPanel">
+        <h2>Welcome to your hospital command center</h2>
+        <p>Quickly monitor appointments, beds, billing, pharmacy stock and recent operational activity.</p>
+      </div>
+
+      <div className="grid" style={{ marginTop: 18 }}>
         <StatCard icon={Users} title="Total Patients" value={stats.totalPatients} />
         <StatCard icon={Stethoscope} title="Total Doctors" value={stats.totalDoctors} />
         <StatCard icon={Calendar} title="Appointments Today" value={stats.appointmentsToday} />
         <StatCard icon={Bed} title="Available Beds" value={stats.availableBeds} />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 20,
-          marginTop: 24,
-        }}
-      >
-        <div className="card" style={{ padding: 24 }}>
-          <h2>Hospital Overview</h2>
-          <div style={{ width: "100%", height: 320 }}>
+      <div className="dashboardTwoCol">
+        <div className="card" style={{ padding: 22 }}>
+          <div className="kekaPanelTitle">
+            <h2>Hospital Overview</h2>
+            <small className="muted">Live operational count</small>
+          </div>
+          <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer>
               <BarChart data={appointmentChartData}>
                 <XAxis dataKey="name" />
@@ -67,9 +68,12 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
           </div>
         </div>
 
-        <div className="card" style={{ padding: 24 }}>
-          <h2>Billing Status</h2>
-          <div style={{ width: "100%", height: 320 }}>
+        <div className="card" style={{ padding: 22 }}>
+          <div className="kekaPanelTitle">
+            <h2>Billing Status</h2>
+            <small className="muted">Paid vs pending</small>
+          </div>
+          <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer>
               <PieChart>
                 <Pie data={billingChartData} dataKey="value" nameKey="name" outerRadius={90} label>
@@ -84,18 +88,11 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h2>Recent Activity</h2>
-        <small className="muted">Latest 6 activities</small>
-      </div>
-
       <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+        <div className="kekaPanelTitle" style={{ padding: "18px 20px", margin: 0 }}>
+          <h2>Recent Activity</h2>
+          <small className="muted">Latest 6 activities</small>
+        </div>
         <div style={{ maxHeight: 320, overflowY: "auto" }}>
           <DataTable rows={(stats.recentActivity || []).slice(0, 6)} />
         </div>
