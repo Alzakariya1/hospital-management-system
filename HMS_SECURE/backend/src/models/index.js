@@ -107,7 +107,7 @@ const Patient = makeModel("Patient", "patients", {
 
 const Doctor = makeModel("Doctor", "doctors", {
     hospital_id: { type: Number, default: 1, index: true },
-    doctor_id: { type: String, unique: true, index: true },
+    doctor_id: { type: String, index: true },
     full_name: String,
     email: String,
     phone: String,

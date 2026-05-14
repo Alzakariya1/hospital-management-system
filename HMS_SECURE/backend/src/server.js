@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const { connectDB, mongoose } = require("./config/db");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
+const { ensureTenantIndexes } = require("./config/indexes");
 const app = express();
 const PORT = process.env.PORT || 5000;
 app.set("trust proxy", 1);
@@ -68,9 +69,10 @@ app.use("/api", require("./routes/audit-security.routes"));
 app.use(notFound);
 app.use(errorHandler);
 connectDB()
-    .then(() =>
-        app.listen(PORT, () => console.log(`API running on port ${PORT}`)),
-    )
+    .then(async () => {
+        await ensureTenantIndexes(mongoose);
+        app.listen(PORT, () => console.log(`API running on port ${PORT}`));
+    })
     .catch((err) => {
         console.error("MongoDB connection failed:", err.message);
         process.exit(1);

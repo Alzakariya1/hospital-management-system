@@ -64,10 +64,7 @@ async function findDuplicateDoctorId(req, doctorId, currentDoctorNumericId = nul
     const cleanId = cleanDoctorId(doctorId);
     if (!cleanId) return null;
 
-    // The live database currently has a global unique index named doctor_id_1.
-    // So this check is intentionally global-safe, not tenant-only, to prevent
-    // MongoDB E11000 crashes during both create and update.
-    const query = { doctor_id: cleanId };
+    const query = tenantFilter(req, { doctor_id: cleanId });
     if (currentDoctorNumericId) query.id = { $ne: Number(currentDoctorNumericId) };
     return Doctor.findOne(query).lean();
 }
@@ -82,8 +79,15 @@ router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (
     }
 
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
-    const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_id: doctorId, doctor_uid: uid, status: req.body.status || 'active' }));
-    res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
+    try {
+        const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_id: doctorId, doctor_uid: uid, status: req.body.status || 'active' }));
+        res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
+    } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ message: `Doctor ID already exists in this hospital: ${doctorId}`, field: 'doctor_id', value: doctorId });
+        }
+        throw error;
+    }
 }));
 
 router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
@@ -99,17 +103,26 @@ router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async 
         update.doctor_id = cleanDoctorId(update.doctor_id);
         if (!update.doctor_id) return res.status(400).json({ message: 'Doctor ID is required' });
 
-        const duplicate = await findDuplicateDoctorId(req, update.doctor_id, doctorNumericId);
-        if (duplicate) {
-            return res.status(409).json({ message: `Doctor ID already exists: ${update.doctor_id}`, field: 'doctor_id', value: update.doctor_id });
+        if (update.doctor_id !== cleanDoctorId(existingDoctor.doctor_id)) {
+            const duplicate = await findDuplicateDoctorId(req, update.doctor_id, doctorNumericId);
+            if (duplicate) {
+                return res.status(409).json({ message: `Doctor ID already exists in this hospital: ${update.doctor_id}`, field: 'doctor_id', value: update.doctor_id });
+            }
         }
     }
 
     if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' });
 
     Object.assign(existingDoctor, update);
-    await existingDoctor.save();
-    res.json({ message: 'Doctor updated', id: existingDoctor.id });
+    try {
+        await existingDoctor.save();
+        res.json({ message: 'Doctor updated', id: existingDoctor.id });
+    } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ message: `Doctor ID already exists in this hospital: ${update.doctor_id || existingDoctor.doctor_id}`, field: 'doctor_id', value: update.doctor_id || existingDoctor.doctor_id });
+        }
+        throw error;
+    }
 }));
 
 router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async (req, res) => {

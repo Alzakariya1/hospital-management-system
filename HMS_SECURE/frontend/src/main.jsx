@@ -915,7 +915,7 @@ function App() {
   const tabs = filterTabsByPermissions(user, allTabs, enabledModules);
 
   useEffect(() => {
-    const internalViews = ["patientProfile"];
+    const internalViews = ["patientProfile", "doctorProfile"];
     if (internalViews.includes(tab)) return;
     if (tabs.length && !tabs.some(([id]) => id === tab)) {
       setTab(tabs[0][0]);
