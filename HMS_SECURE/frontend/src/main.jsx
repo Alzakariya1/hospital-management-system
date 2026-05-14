@@ -772,6 +772,8 @@ function App() {
   const tabs = filterTabsByPermissions(user, allTabs, enabledModules);
 
   useEffect(() => {
+    const internalViews = ["patientProfile"];
+    if (internalViews.includes(tab)) return;
     if (tabs.length && !tabs.some(([id]) => id === tab)) {
       setTab(tabs[0][0]);
     }
@@ -891,7 +893,7 @@ function App() {
         activeTab={tab}
         onTabChange={setTab}
         onLogout={logout}
-        headerTitle={tabs.find((t) => t[0] === tab)?.[1]}
+        headerTitle={tab === "patientProfile" ? "Patient Profile" : tabs.find((t) => t[0] === tab)?.[1]}
         appointmentCount={appointments.length}
         lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
         pendingBillCount={bills.filter((b) => b.status === "pending").length}
