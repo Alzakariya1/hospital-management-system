@@ -1327,3 +1327,274 @@ section > .card {
     padding: 18px;
   }
 }
+
+/* Doctor enterprise profile and document UI */
+.doctor-complete-form {
+  display: grid;
+  gap: 22px;
+}
+.doctorFormTopGrid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 22px;
+  align-items: stretch;
+}
+.doctorUploadCard {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  background: linear-gradient(180deg, #fff 0%, #faf9ff 100%);
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.doctorImagePreview {
+  width: 118px;
+  height: 118px;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--purple-soft);
+  border: 1px solid #ddd6fe;
+  color: var(--purple);
+  font-size: 58px;
+}
+.doctorImagePreview img,
+.doctorProfileAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.doctorUploadCard p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 12px;
+}
+.doctorUploadBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #101828;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.doctorSectionFields,
+.formSectionBlock {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px;
+  background: #fff;
+}
+.doctorSectionFields h3,
+.formSectionBlock h3,
+.profileInfoCard h2 {
+  margin: 0 0 14px;
+}
+.formSectionBlock textarea {
+  margin-top: 12px;
+  resize: vertical;
+}
+.documentUploadBlock {
+  background: #fbfcff;
+}
+.profilePage {
+  display: grid;
+  gap: 18px;
+}
+.backBtn {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #101828;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.profileHeroCard {
+  background: linear-gradient(135deg, #ffffff 0%, #f6f2ff 100%);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.profileHeroLeft {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.doctorProfileAvatar {
+  width: 112px;
+  height: 112px;
+  flex: 0 0 auto;
+  border-radius: 28px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--purple-soft);
+  border: 1px solid #ddd6fe;
+  color: var(--purple);
+  font-size: 56px;
+}
+.profileHeroCard h1 {
+  margin: 0 0 6px;
+  font-size: 32px;
+}
+.eyebrowText {
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--purple);
+  font-weight: 900;
+  font-size: 12px;
+  margin: 0 0 6px;
+}
+.profileBadgeRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.softBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 12px;
+  font-weight: 800;
+}
+.profileHeroActions button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.doctorSummaryGrid,
+.profileTwoColumnGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.profileTwoColumnGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.profileInfoCard {
+  display: grid;
+  gap: 14px;
+}
+.profileInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.profileField {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  background: #fafafa;
+}
+.profileField span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.profileField b {
+  word-break: break-word;
+}
+.profileBioText {
+  color: #475467;
+  line-height: 1.7;
+  margin: 0;
+}
+.documentCardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.documentTile {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 14px;
+  background: #fff;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.documentTileIcon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+.documentTileBody h4,
+.documentTileBody p {
+  margin: 0;
+}
+.documentTileBody p,
+.documentTileBody small {
+  color: var(--muted);
+}
+.documentTileActions {
+  display: flex;
+  gap: 8px;
+}
+.documentTileActions button,
+.documentTileActions a {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #f8fafc;
+  color: #101828;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  padding: 0;
+}
+.documentTileActions .dangerLite {
+  color: #b42318;
+  background: #fff5f5;
+}
+.compactEmptyState {
+  padding: 24px !important;
+}
+.paginationRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+@media (max-width: 980px) {
+  .doctorFormTopGrid,
+  .profileTwoColumnGrid,
+  .profileInfoGrid {
+    grid-template-columns: 1fr;
+  }
+  .doctorSummaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .profileHeroCard,
+  .profileHeroLeft {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 640px) {
+  .doctorSummaryGrid {
+    grid-template-columns: 1fr;
+  }
+}

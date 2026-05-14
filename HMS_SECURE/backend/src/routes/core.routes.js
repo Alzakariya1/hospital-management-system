@@ -3,8 +3,14 @@ const { Doctor, Department, Appointment, Patient, Bed, Billing, AuditLog } = req
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
 
 const router = express.Router();
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
 router.use(verifyToken, attachTenant);
 
 async function withNames(req, rows) {
@@ -57,12 +63,110 @@ router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (
 }));
 
 router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
-    const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'specialization', 'qualification', 'consultation_fee'];
+    const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'gender', 'specialization', 'qualification', 'consultation_fee', 'experience_years', 'department', 'registration_number', 'license_number', 'address', 'availability', 'bio', 'status', 'documents'];
     const update = {};
     allowed.forEach(k => { if (k in req.body) update[k] = req.body[k]; });
     if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' });
     await Doctor.updateOne(tenantFilter(req, { id: Number(req.params.id) }), { $set: update });
     res.json({ message: 'Doctor updated' });
+}));
+
+router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async (req, res) => {
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+    res.json(doctor);
+}));
+
+router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), upload.single('profile_image'), asyncHandler(async (req, res) => {
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+    if (!req.file) return res.status(400).json({ message: 'Profile image is required' });
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: 'Only JPG, PNG, and WEBP images are allowed' });
+    }
+
+    if (doctor.profile_image_public_id) {
+        await cloudinary.uploader.destroy(doctor.profile_image_public_id);
+    }
+
+    const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder: 'hms/doctor-profile-images', resource_type: 'image' },
+            (error, uploadResult) => error ? reject(error) : resolve(uploadResult)
+        );
+        stream.end(req.file.buffer);
+    });
+
+    doctor.profile_image_url = result.secure_url;
+    doctor.profile_image_public_id = result.public_id;
+    await doctor.save();
+
+    res.json({
+        message: 'Doctor profile image uploaded successfully',
+        profile_image_url: doctor.profile_image_url,
+        profile_image_public_id: doctor.profile_image_public_id,
+    });
+}));
+
+router.post('/doctors/:id/documents', requirePermission('doctor.edit'), upload.single('document'), asyncHandler(async (req, res) => {
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+    if (!req.file) return res.status(400).json({ message: 'Document file is required' });
+
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: 'Only PDF, JPG, PNG, and WEBP files are allowed' });
+    }
+
+    const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            { folder: 'hms/doctor-documents', resource_type: 'auto' },
+            (error, uploadResult) => error ? reject(error) : resolve(uploadResult)
+        );
+        stream.end(req.file.buffer);
+    });
+
+    const newDoc = {
+        title: req.body.title || req.file.originalname,
+        category: req.body.category || 'professional',
+        document_type: req.body.document_type || 'Certificate',
+        notes: req.body.notes || '',
+        file_name: req.file.originalname,
+        file_type: req.file.mimetype,
+        file_size: req.file.size,
+        file_url: result.secure_url,
+        file_public_id: result.public_id,
+        uploaded_at: new Date(),
+    };
+
+    doctor.documents = doctor.documents || [];
+    doctor.documents.push(newDoc);
+    await doctor.save();
+
+    res.status(201).json({
+        message: 'Doctor document uploaded successfully',
+        document: newDoc,
+        documents: doctor.documents,
+    });
+}));
+
+router.delete('/doctors/:id/documents/:docIndex', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+    const docIndex = Number(req.params.docIndex);
+    const doc = doctor.documents?.[docIndex];
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    if (doc.file_public_id) {
+        await cloudinary.uploader.destroy(doc.file_public_id, { resource_type: 'auto' });
+    }
+
+    doctor.documents.splice(docIndex, 1);
+    await doctor.save();
+    res.json({ message: 'Doctor document deleted successfully', documents: doctor.documents });
 }));
 
 router.delete('/doctors/:id', requirePermission('doctor.delete'), asyncHandler(async (req, res) => {
