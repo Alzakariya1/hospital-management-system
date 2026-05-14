@@ -318,8 +318,12 @@ export default function Doctors({
           showProfile={true}
           onProfile={(row) => {
             const latestDoctor = doctors.find((d) => d.id === row.id || d.doctor_id === row.doctor_id) || row;
-            setSelectedDoctor(latestDoctor);
-            setTab("doctorProfile");
+            if (openDoctorProfile) {
+              openDoctorProfile(latestDoctor);
+            } else {
+              setSelectedDoctor(latestDoctor);
+              setTab("doctorProfile");
+            }
           }}
           onEdit={permissions.doctorEdit ? (row) => {
             const latestDoctor = doctors.find((d) => d.id === row.id || d.doctor_id === row.doctor_id) || row;

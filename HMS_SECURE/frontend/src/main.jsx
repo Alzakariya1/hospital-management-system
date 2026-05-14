@@ -360,7 +360,18 @@ function App() {
         await doctorApi.uploadDocument(savedDoctorId, formData);
       }
 
+      if (savedDoctorId) {
+        try {
+          const { data: freshDoctor } = await doctorApi.get(savedDoctorId);
+          setDoctors((prev) => prev.map((d) => (d.id === savedDoctorId ? freshDoctor : d)));
+          setSelectedDoctor((prev) => (prev?.id === savedDoctorId ? freshDoctor : prev));
+        } catch (_) {
+          // Fresh profile fetch is best-effort; list reload below remains the source of truth.
+        }
+      }
+
       setDoctor(emptyDoctor);
+      setEditingDoctorId(null);
       setDoctorProfileImage(null);
       setDoctorProfilePreview("");
       setPendingDoctorDocs([]);
@@ -503,6 +514,21 @@ function App() {
     setPendingPatientDocs((prev) => prev.filter((doc) => doc.id !== docId));
     toast.success("Document removed");
   }
+  async function openDoctorProfile(row) {
+    const doctorId = row?.id || row?._id;
+    if (!doctorId) {
+      toast.error("Doctor record not found");
+      return;
+    }
+    try {
+      const { data } = await doctorApi.get(doctorId);
+      setSelectedDoctor(data);
+      setTab("doctorProfile");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not open doctor profile");
+    }
+  }
+
   function editDoctor(row) {
     setDoctor({
       doctor_id: row.doctor_id || "",
@@ -1172,6 +1198,7 @@ function App() {
                 deleteDoctor={deleteDoctor}
                 selectedDoctor={selectedDoctor}
                 setSelectedDoctor={setSelectedDoctor}
+                openDoctorProfile={openDoctorProfile}
                 setTab={setTab}
                 doctorPage={doctorPage}
                 setDoctorPage={setDoctorPage}
@@ -1208,6 +1235,7 @@ function App() {
                 deleteDoctor={deleteDoctor}
                 selectedDoctor={selectedDoctor}
                 setSelectedDoctor={setSelectedDoctor}
+                openDoctorProfile={openDoctorProfile}
                 setTab={setTab}
                 doctorPage={doctorPage}
                 setDoctorPage={setDoctorPage}

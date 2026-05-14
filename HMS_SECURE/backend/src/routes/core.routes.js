@@ -69,13 +69,23 @@ async function findDuplicateDoctorId(req, doctorId, currentDoctorNumericId = nul
     return Doctor.findOne(query).lean();
 }
 
+function duplicateDoctorResponse(res, duplicate, doctorId) {
+    return res.status(409).json({
+        message: `Doctor ID already exists${duplicate?.full_name ? ` for ${duplicate.full_name}` : ''}: ${doctorId}`,
+        field: 'doctor_id',
+        value: doctorId,
+        duplicate_id: duplicate?.id,
+        duplicate_name: duplicate?.full_name,
+    });
+}
+
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
     const doctorId = cleanDoctorId(req.body.doctor_id);
     if (!doctorId) return res.status(400).json({ message: 'Doctor ID is required' });
 
     const duplicate = await findDuplicateDoctorId(req, doctorId);
     if (duplicate) {
-        return res.status(409).json({ message: `Doctor ID already exists: ${doctorId}`, field: 'doctor_id', value: doctorId });
+        return duplicateDoctorResponse(res, duplicate, doctorId);
     }
 
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
@@ -84,7 +94,8 @@ router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (
         res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
     } catch (error) {
         if (error?.code === 11000) {
-            return res.status(409).json({ message: `Doctor ID already exists in this hospital: ${doctorId}`, field: 'doctor_id', value: doctorId });
+            const duplicate = await findDuplicateDoctorId(req, doctorId);
+            return duplicateDoctorResponse(res, duplicate, doctorId);
         }
         throw error;
     }
@@ -106,7 +117,7 @@ router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async 
         if (update.doctor_id !== cleanDoctorId(existingDoctor.doctor_id)) {
             const duplicate = await findDuplicateDoctorId(req, update.doctor_id, doctorNumericId);
             if (duplicate) {
-                return res.status(409).json({ message: `Doctor ID already exists in this hospital: ${update.doctor_id}`, field: 'doctor_id', value: update.doctor_id });
+                return duplicateDoctorResponse(res, duplicate, update.doctor_id);
             }
         }
     }
@@ -119,7 +130,8 @@ router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async 
         res.json({ message: 'Doctor updated', id: existingDoctor.id });
     } catch (error) {
         if (error?.code === 11000) {
-            return res.status(409).json({ message: `Doctor ID already exists in this hospital: ${update.doctor_id || existingDoctor.doctor_id}`, field: 'doctor_id', value: update.doctor_id || existingDoctor.doctor_id });
+            const duplicate = await findDuplicateDoctorId(req, update.doctor_id || existingDoctor.doctor_id, doctorNumericId);
+            return duplicateDoctorResponse(res, duplicate, update.doctor_id || existingDoctor.doctor_id);
         }
         throw error;
     }
