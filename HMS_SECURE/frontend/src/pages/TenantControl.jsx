@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tenantApi } from "../api";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, FEATURE_FLAGS, MODULES, normalizeFeatureFlags } from "../utils";
 
@@ -63,6 +63,8 @@ export default function TenantControl({
   permissions,
 }) {
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const actionMenuRef = useRef(null);
   const [detailsTenant, setDetailsTenant] = useState(null);
   const [logoTenant, setLogoTenant] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
@@ -71,6 +73,40 @@ export default function TenantControl({
   const [tenantAdmins, setTenantAdmins] = useState([]);
   const [adminsLoading, setAdminsLoading] = useState(false);
   const isSuperAdmin = user?.role === "super_admin";
+
+  useEffect(() => {
+    function closeMenu(e) {
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    }
+    function closeOnScroll() {
+      setOpenMenuId(null);
+    }
+    document.addEventListener("mousedown", closeMenu);
+    window.addEventListener("scroll", closeOnScroll, true);
+    window.addEventListener("resize", closeOnScroll);
+    return () => {
+      document.removeEventListener("mousedown", closeMenu);
+      window.removeEventListener("scroll", closeOnScroll, true);
+      window.removeEventListener("resize", closeOnScroll);
+    };
+  }, []);
+
+  function toggleRowMenu(tenantId, event) {
+    event.stopPropagation();
+    if (openMenuId === tenantId) {
+      setOpenMenuId(null);
+      return;
+    }
+    const rect = event.currentTarget.getBoundingClientRect();
+    const menuWidth = 230;
+    setMenuPosition({
+      top: rect.bottom + 8,
+      left: Math.max(12, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 12)),
+    });
+    setOpenMenuId(tenantId);
+  }
 
   if (!permissions?.hospitalManage) {
     return (
@@ -415,18 +451,20 @@ export default function TenantControl({
                       <td><span title={Object.entries(getFeatureFlags(tenant.feature_flags)).filter(([, enabled]) => enabled).map(([key]) => key).join(", ") || "No advanced features enabled"}>{countEnabledFeatures(tenant.feature_flags)} enabled</span></td>
                       <td>
                         <div className="actionMenuWrap">
-                          <button type="button" className="kebabBtn" onClick={() => setOpenMenuId(openMenuId === tenant.id ? null : tenant.id)}>⋮</button>
+                          <button type="button" className="kebabBtn" aria-label="Open hospital actions" onClick={(event) => toggleRowMenu(tenant.id, event)}>
+                            <i className="bi bi-three-dots-vertical"></i>
+                          </button>
                           {openMenuId === tenant.id && (
-                            <div className="actionMenu">
-                              <button type="button" onClick={() => handleAction("view", tenant)}>View Details</button>
-                              <button type="button" onClick={() => handleAction("edit", tenant)}>Edit Hospital</button>
-                              <button type="button" onClick={() => handleAction("logo", tenant)}>Upload Logo</button>
-                              <button type="button" onClick={() => handleAction("modules", tenant)}>Manage Modules</button>
-                              <button type="button" onClick={() => handleAction("features", tenant)}>Manage Features</button>
-                              <button type="button" onClick={() => handleAction("admins", tenant)}>Manage Admin Users</button>
-                              <button type="button" onClick={() => handleAction("toggle", tenant)}>{tenant.status === "active" ? "Disable" : "Enable"}</button>
+                            <div ref={actionMenuRef} className="actionMenu floatingTenantMenu" style={{ top: menuPosition.top, left: menuPosition.left }}>
+                              <button type="button" onClick={() => handleAction("view", tenant)}><i className="bi bi-eye"></i> View Details</button>
+                              <button type="button" onClick={() => handleAction("edit", tenant)}><i className="bi bi-pencil-square"></i> Edit Hospital</button>
+                              <button type="button" onClick={() => handleAction("logo", tenant)}><i className="bi bi-image"></i> Upload Logo</button>
+                              <button type="button" onClick={() => handleAction("modules", tenant)}><i className="bi bi-grid"></i> Manage Modules</button>
+                              <button type="button" onClick={() => handleAction("features", tenant)}><i className="bi bi-sliders"></i> Manage Features</button>
+                              <button type="button" onClick={() => handleAction("admins", tenant)}><i className="bi bi-people"></i> Manage Admin Users</button>
+                              <button type="button" onClick={() => handleAction("toggle", tenant)}><i className={tenant.status === "active" ? "bi bi-pause-circle" : "bi bi-play-circle"}></i> {tenant.status === "active" ? "Disable" : "Enable"}</button>
                               {isSuperAdmin && Number(tenant.id) !== 1 && tenant.status !== "archived" && (
-                                <button type="button" className="dangerAction" onClick={() => handleAction("archive", tenant)}>Archive Hospital</button>
+                                <button type="button" className="dangerAction" onClick={() => handleAction("archive", tenant)}><i className="bi bi-archive"></i> Archive Hospital</button>
                               )}
                             </div>
                           )}
