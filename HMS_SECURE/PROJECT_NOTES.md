@@ -869,3 +869,11 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added SaaS Control sidebar tab gated by `hospital.manage` permission and tenant module access.
 - Frontend build passed.
 - Backend syntax checks passed.
+
+## V23 - Tenant Lifecycle + Billing Control
+- Added tenant lifecycle backend endpoint: activate, trial, suspend, cancel.
+- Added plan change control from SaaS Control Center.
+- Added billing metadata display: billing cycle, renewal/next billing date, trial end.
+- Extended subscription fields for trial, suspension, cancellation, and next billing date.
+- Added audit logging for tenant lifecycle actions.
+- Frontend build passed and backend syntax checks passed.

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Building2, Crown, Download, Gauge, IndianRupee, ShieldAlert, Users } from 'lucide-react';
+import { Building2, Crown, Download, Gauge, IndianRupee, ShieldAlert, Users, PlayCircle, PauseCircle, XCircle } from 'lucide-react';
 import { saasApi } from '../api';
 
 const money = (value = 0) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
@@ -57,6 +57,26 @@ export default function SaasControl() {
       return matchesSearch && matchesPlan && matchesStatus;
     });
   }, [data.tenants, query, planFilter, statusFilter]);
+
+  async function tenantAction(tenant, action) {
+    try {
+      await saasApi.lifecycle(tenant.id, { action });
+      toast.success(`Tenant ${action} updated`);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Tenant action failed');
+    }
+  }
+
+  async function changePlan(tenant, plan) {
+    try {
+      await saasApi.updateSubscription(tenant.id, { plan });
+      toast.success('Plan updated');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Plan update failed');
+    }
+  }
 
   async function exportCsv() {
     try {
@@ -155,6 +175,20 @@ export default function SaasControl() {
                   <p>{tenant.hospital_code || `HOSP-${tenant.id}`} · {tenant.type || 'hospital'}</p>
                 </div>
                 <div className="tenantTags"><PlanBadge plan={tenant.plan} /><span className="statusPill mutedPill">{tenant.subscription?.status || tenant.status}</span></div>
+              </div>
+              <div className="tenantLifecyclePanel">
+                <select value={tenant.plan || 'clinic'} onChange={(e) => changePlan(tenant, e.target.value)}>
+                  {(data.plans || []).map((plan) => <option key={plan.id} value={plan.id}>{plan.name}</option>)}
+                </select>
+                <button type="button" className="ghostBtn" onClick={() => tenantAction(tenant, 'activate')}><PlayCircle size={14} /> Activate</button>
+                <button type="button" className="ghostBtn" onClick={() => tenantAction(tenant, 'trial')}><Crown size={14} /> Trial</button>
+                <button type="button" className="ghostBtn" onClick={() => tenantAction(tenant, 'suspend')}><PauseCircle size={14} /> Suspend</button>
+                <button type="button" className="ghostBtn dangerText" onClick={() => tenantAction(tenant, 'cancel')}><XCircle size={14} /> Cancel</button>
+              </div>
+              <div className="billingMeta">
+                <span>Billing: {tenant.subscription?.billing_cycle || 'monthly'}</span>
+                <span>Renewal: {tenant.subscription?.renewal_date || tenant.subscription?.next_billing_date || 'Not set'}</span>
+                <span>Trial ends: {tenant.subscription?.trial_end_date || '—'}</span>
               </div>
               <div className="usageGrid">
                 <UsageBar label="Users" item={tenant.limitHealth?.users} />

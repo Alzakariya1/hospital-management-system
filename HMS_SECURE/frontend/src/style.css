@@ -3419,3 +3419,6 @@ body.dark .pharmacyActionGrid .card {
 :root[data-theme="dark"] .warningBox { color:#fbbf24; }
 @media (max-width: 1100px) { .usageGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .saasPanels.twoCol { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .filterRow { grid-template-columns: 1fr; } .usageGrid { grid-template-columns: 1fr; } .tenantUsageHead, .tenantFooter { flex-direction:column; } .tenantTags { justify-content:flex-start; } }
+
+
+.tenantLifecyclePanel{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 10px}.tenantLifecyclePanel select{min-width:150px}.dangerText{color:#dc2626!important}.billingMeta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;color:var(--muted);font-size:12px}.billingMeta span{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface-soft)}
