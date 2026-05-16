@@ -435,6 +435,30 @@ const SaaSPaymentIntent = makeModel("SaaSPaymentIntent", "saas_payment_intents",
 SaaSPaymentIntent.schema.index({ hospital_id: 1, invoice_id: 1, status: 1 }, { name: "saas_payment_intent_invoice_lookup" });
 
 
+
+const CommunicationLog = makeModel("CommunicationLog", "communication_logs", {
+    hospital_id: { type: Number, default: 1, index: true },
+    channel: { type: String, default: "in_app", index: true }, // in_app, email, sms, whatsapp
+    recipient_type: { type: String, default: "patient" },
+    recipient_id: String,
+    recipient_name: String,
+    recipient_contact: String,
+    title: String,
+    message: String,
+    module: { type: String, default: "system", index: true },
+    entity_type: String,
+    entity_id: String,
+    status: { type: String, default: "queued", index: true }, // queued, sent, failed, skipped
+    provider: String,
+    provider_message_id: String,
+    error_message: String,
+    scheduled_for: String,
+    sent_at: Date,
+    created_by: Number,
+});
+CommunicationLog.schema.index({ hospital_id: 1, created_at: -1 }, { name: "communication_hospital_recent_lookup" });
+CommunicationLog.schema.index({ hospital_id: 1, channel: 1, status: 1 }, { name: "communication_channel_status_lookup" });
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -479,4 +503,5 @@ module.exports = {
     SaaSInvoice,
     SaaSPayment,
     SaaSPaymentIntent,
+    CommunicationLog,
 };

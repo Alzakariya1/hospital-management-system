@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Crown,
+  MessageCircle,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -50,6 +51,7 @@ import {
   AuditSecurity,
   Configuration,
   SaasControl,
+  Communications,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1012,6 +1014,7 @@ function App() {
     ["profile", "Profile", UserCircle],
     ["auditSecurity", "Security", ShieldCheck],
     ["configuration", "Configuration", SlidersHorizontal],
+    ["communications", "Communications", MessageCircle],
     ["saasControl", "SaaS Control", Crown],
     ["tenants", "Hospitals", Building2],
   ];
@@ -1423,6 +1426,9 @@ function App() {
             )}
             {tab === "configuration" && (
               <Configuration permissions={permissions} />
+            )}
+            {tab === "communications" && (
+              <Communications />
             )}
             {tab === "profile" && (
               <AdminProfile

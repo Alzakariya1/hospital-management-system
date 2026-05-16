@@ -12,7 +12,7 @@ const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
-    'notification.view', 'notification.manage',
+    'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
     'audit.view', 'security.manage', 'configuration.manage', 'hospital.manage'
   ],
   hospital_admin: [
@@ -27,7 +27,7 @@ const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
-    'notification.view', 'notification.manage',
+    'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
     'audit.view', 'security.manage', 'configuration.manage'
   ],
   doctor: [
@@ -37,7 +37,7 @@ const ROLE_PERMISSIONS = {
     'opd.view', 'opd.create', 'ipd.view',
     'lab.view', 'radiology.view',
     'admin.profile.manage',
-    'notification.view'
+    'notification.view', 'communication.view'
   ],
   nurse: [
     'dashboard.view',
@@ -46,7 +46,7 @@ const ROLE_PERMISSIONS = {
     'appointment.view',
     'opd.view', 'ipd.view', 'ipd.create',
     'admin.profile.manage',
-    'notification.view'
+    'notification.view', 'communication.view'
   ],
   receptionist: [
     'dashboard.view',
@@ -56,26 +56,26 @@ const ROLE_PERMISSIONS = {
     'opd.view', 'opd.create',
     'billing.view', 'billing.create',
     'admin.profile.manage',
-    'notification.view'
+    'notification.view', 'communication.view'
   ],
   pharmacist: [
     'dashboard.view',
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'admin.profile.manage',
-    'notification.view'
+    'notification.view', 'communication.view'
   ],
   lab_technician: [
     'dashboard.view',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
     'admin.profile.manage',
-    'notification.view'
+    'notification.view', 'communication.view'
   ],
   accountant: [
     'dashboard.view',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage',
-    'notification.view'
+    'notification.view', 'communication.view'
   ],
   patient: [
     'dashboard.view',

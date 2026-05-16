@@ -3429,3 +3429,84 @@ body.dark .pharmacyActionGrid .card {
 .statusPill-created, .statusPill-pending { background: rgba(37, 99, 235, .12); color: #2563eb; }
 .statusPill-paid { background: rgba(22, 163, 74, .12); color: #16a34a; }
 .statusPill-failed, .statusPill-expired, .statusPill-cancelled, .statusPill-overdue { background: rgba(220, 38, 38, .12); color: #dc2626; }
+
+/* V26 Communications */
+.communicationsPage .twoCol,
+.grid.twoCol {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+.formStack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.formGrid.two {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.channelPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.channelPicker button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--card, #fff);
+  color: var(--text, #111827);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.channelPicker button.selected {
+  border-color: var(--primary, #2563eb);
+  background: color-mix(in srgb, var(--primary, #2563eb) 10%, transparent);
+  color: var(--primary, #2563eb);
+}
+.channelPicker small {
+  opacity: .7;
+  font-size: 11px;
+}
+.providerStatus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.providerStatus span {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border, #e5e7eb);
+}
+.providerStatus .ok {
+  background: rgba(34, 197, 94, .12);
+  color: #15803d;
+}
+.providerStatus .warn {
+  background: rgba(245, 158, 11, .14);
+  color: #b45309;
+}
+.tableToolbar,
+.filtersInline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.filtersInline select {
+  min-width: 150px;
+}
+.statusPill-skipped { background: rgba(245, 158, 11, .14); color: #b45309; }
+.statusPill-queued { background: rgba(59, 130, 246, .14); color: #1d4ed8; }
+.statusPill-sent { background: rgba(34, 197, 94, .14); color: #15803d; }
+.statusPill-failed { background: rgba(239, 68, 68, .14); color: #b91c1c; }
+@media (max-width: 980px) {
+  .communicationsPage .twoCol,
+  .grid.twoCol,
+  .formGrid.two { grid-template-columns: 1fr; }
+}

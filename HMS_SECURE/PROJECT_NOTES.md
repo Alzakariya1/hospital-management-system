@@ -901,3 +901,16 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added payment gateway readiness panel showing latest payment link intents.
 - Payment gateway is foundation-ready: real Razorpay/Stripe/PayU webhook keys can be integrated later without changing the invoice workflow.
 - Tests performed: frontend npm install + build passed; backend syntax checks passed; DB check attempted but requires local/Render `MONGODB_URI` because `.env` is intentionally excluded.
+
+## V26 - Communications + Reminder Automation Foundation
+- Added database-backed communication logs.
+- Added communication channels: in-app, email, SMS, WhatsApp-ready.
+- Added safe provider readiness checks using env placeholders.
+- Added manual communication queue UI.
+- Added appointment reminder automation for selected date.
+- Added communication status flow: queued, sent, failed, skipped.
+- Added communication CSV export.
+- Added backend APIs under `/api/communications/*`.
+- Added frontend Communications tab with channel/status filters.
+- Added audit logs for communication actions.
+- External email/SMS/WhatsApp sending is intentionally provider-ready only; when env keys are missing, logs are saved as skipped instead of failing.
