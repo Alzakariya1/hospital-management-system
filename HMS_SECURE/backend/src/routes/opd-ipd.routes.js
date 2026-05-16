@@ -3,6 +3,7 @@ const { OpdRecord, IpdAdmission, NursingNote, Patient, Doctor, Bed, Appointment,
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
+const { createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 router.use(verifyToken, attachTenant);
@@ -146,6 +147,43 @@ router.post('/opd/consultations', requirePermission('opd.create'), asyncHandler(
       ? { status: 'completed', completed_at: new Date(), opd_id: r.id, prescription_id: prescription?.id || null, billing_id: bill?.id || null }
       : { status: 'in_consultation', consultation_started_at: new Date(), opd_id: r.id };
     await Appointment.updateOne(tenantFilter(req, { id: appointmentId }), { $set: set });
+  }
+
+  await createNotification(req, {
+    title: 'OPD consultation saved',
+    message: `Consultation saved for patient ${patientId}.`,
+    type: 'opd',
+    severity: 'success',
+    module: 'opd',
+    entity_type: 'opd_record',
+    entity_id: r.id,
+    target_path: '/appointments',
+  });
+
+  if (prescription) {
+    await createNotification(req, {
+      title: 'Prescription generated',
+      message: `Prescription ${prescription.prescription_number} generated.`,
+      type: 'prescription',
+      severity: 'info',
+      module: 'pharmacy',
+      entity_type: 'prescription',
+      entity_id: prescription.id,
+      target_path: '/pharmacy',
+    });
+  }
+
+  if (bill) {
+    await createNotification(req, {
+      title: 'Billing generated',
+      message: `Invoice ${bill.invoice_number} generated for ₹${bill.total_amount || 0}.`,
+      type: 'billing',
+      severity: 'info',
+      module: 'billing',
+      entity_type: 'billing',
+      entity_id: bill.id,
+      target_path: '/billing',
+    });
   }
 
   res.status(201).json({

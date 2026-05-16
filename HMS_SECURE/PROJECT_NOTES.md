@@ -675,3 +675,47 @@ Packaging:
 - .env excluded.
 - node_modules excluded.
 - frontend dist excluded.
+
+
+## V15 - Lab/Radiology Workflow Rebuild from V14
+- Added enterprise Lab/Radiology workflow foundation.
+- Added lab status flow: ordered, sample_collected, processing, completed, cancelled.
+- Added radiology status flow: ordered, scheduled, scanned, reported, cancelled.
+- Added backend OPD clinical order endpoint: POST /api/opd/:id/orders.
+- Added tenant-filtered lab/radiology list, status update, and report upload endpoints.
+- Improved frontend Lab/Radiology page with professional workflow UI, stats, status badges, report fields, and patient/doctor selectors.
+- Frontend build passed.
+- Backend syntax checks passed.
+- DB live check requires MONGODB_URI in local/Render because .env is excluded from ZIP.
+
+## V16_REBUILT - Notification Engine
+
+### Backend
+- Added `Notification` model with tenant/hospital filtering, read tracking through `read_by`, module/type/severity metadata, and recent lookup index.
+- Added `/api/notifications` routes:
+  - `GET /api/notifications`
+  - `POST /api/notifications`
+  - `PATCH /api/notifications/:id/read`
+  - `PATCH /api/notifications/read-all`
+  - `DELETE /api/notifications/:id`
+- Added notification helpers in `backend/src/utils/notifications.js`.
+- Added notification permissions for supported roles.
+- Appointment creation/status changes now create in-app notifications.
+- OPD consultation, prescription, and billing generation now create notifications.
+- Lab/radiology order and report status changes now create notifications.
+- Pharmacy sales/dispensing and low-stock events now create notifications.
+
+### Frontend
+- Added `notificationApi`.
+- Navbar notification dropdown now loads real database notifications.
+- Added unread count indicator, mark one read, and mark all read.
+- Preserved fallback operational alerts if backend notification route is unavailable during deploy transition.
+
+### QA
+- Frontend `npm install` passed.
+- Frontend `npm run build` passed.
+- Backend syntax checks passed for models, notification route, workflow routes, and server.
+- DB check attempted; local ZIP does not include `.env`, so `MONGODB_URI` is required on local/Render.
+
+### Packaging
+- `.env`, `node_modules`, and `dist` are excluded from the ZIP.

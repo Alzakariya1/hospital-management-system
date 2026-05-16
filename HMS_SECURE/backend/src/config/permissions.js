@@ -12,6 +12,7 @@ const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
+    'notification.view', 'notification.manage',
     'audit.view', 'security.manage', 'hospital.manage'
   ],
   hospital_admin: [
@@ -26,6 +27,7 @@ const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
+    'notification.view', 'notification.manage',
     'audit.view', 'security.manage'
   ],
   doctor: [
@@ -34,7 +36,8 @@ const ROLE_PERMISSIONS = {
     'appointment.view', 'appointment.status.update',
     'opd.view', 'opd.create', 'ipd.view',
     'lab.view', 'radiology.view',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ],
   nurse: [
     'dashboard.view',
@@ -42,7 +45,8 @@ const ROLE_PERMISSIONS = {
     'bed.view', 'bed.status.update',
     'appointment.view',
     'opd.view', 'ipd.view', 'ipd.create',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ],
   receptionist: [
     'dashboard.view',
@@ -51,29 +55,34 @@ const ROLE_PERMISSIONS = {
     'bed.view',
     'opd.view', 'opd.create',
     'billing.view', 'billing.create',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ],
   pharmacist: [
     'dashboard.view',
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ],
   lab_technician: [
     'dashboard.view',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ],
   accountant: [
     'dashboard.view',
     'billing.view', 'billing.create', 'billing.edit',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ],
   patient: [
     'dashboard.view',
     'appointment.view',
     'billing.view',
-    'admin.profile.manage'
+    'admin.profile.manage',
+    'notification.view'
   ]
 };
 

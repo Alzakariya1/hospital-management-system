@@ -99,8 +99,8 @@ const emptyAppointment = {
   notes: "",
 };
 const emptyBed = { ward: "", bed_number: "", status: "available" };
-const emptyLab = { name: "", price: "" };
-const emptyRad = { name: "", price: "" };
+const emptyLab = { patient_id: "", doctor_id: "", test_name: "", test_category: "General", priority: "routine", notes: "" };
+const emptyRad = { patient_id: "", doctor_id: "", scan_name: "", scan_category: "General", priority: "routine", notes: "" };
 const emptyMed = { name: "", generic_name: "", category: "", batch_number: "", vendor: "", expiry_date: "", quantity: "", low_stock_threshold: 10, cost_price: "", selling_price: "", unit: "pcs", status: "active" };
 const emptyBill = { patient_id: "", amount: "", status: "unpaid" };
 
@@ -741,6 +741,7 @@ function App() {
     e.preventDefault();
     await labApi.create(lab);
     setLab(emptyLab);
+    toast.success("Lab order created");
     await load();
   }
 
@@ -748,6 +749,31 @@ function App() {
     e.preventDefault();
     await radiologyApi.create(rad);
     setRad(emptyRad);
+    toast.success("Radiology order created");
+    await load();
+  }
+
+  async function updateLabStatus(id, status) {
+    await labApi.updateStatus(id, status);
+    toast.success("Lab status updated");
+    await load();
+  }
+
+  async function uploadLabReport(id, payload) {
+    await labApi.uploadReport(id, payload);
+    toast.success("Lab report uploaded");
+    await load();
+  }
+
+  async function updateRadiologyStatus(id, status) {
+    await radiologyApi.updateStatus(id, status);
+    toast.success("Radiology status updated");
+    await load();
+  }
+
+  async function uploadRadiologyReport(id, payload) {
+    await radiologyApi.uploadReport(id, payload);
+    toast.success("Radiology report uploaded");
     await load();
   }
 
@@ -1317,6 +1343,12 @@ function App() {
                 setRad={setRad}
                 addRadiology={addRadiology}
                 rads={rads}
+                patients={patients}
+                doctors={doctors}
+                updateLabStatus={updateLabStatus}
+                uploadLabReport={uploadLabReport}
+                updateRadiologyStatus={updateRadiologyStatus}
+                uploadRadiologyReport={uploadRadiologyReport}
                 permissions={permissions}
               />
             )}

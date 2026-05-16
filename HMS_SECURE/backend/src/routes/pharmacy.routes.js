@@ -3,6 +3,7 @@ const { Medicine, PharmacySale, Prescription } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
+const { createLowStockNotification, createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 router.use(verifyToken, attachTenant);
@@ -99,6 +100,7 @@ router.patch('/medicines/:id/stock', requirePermission('pharmacy.stock.manage'),
   med.last_stock_note = req.body.note || '';
   med.last_stock_updated_at = new Date();
   await med.save();
+  await createLowStockNotification(req, med);
   res.json({ message: 'Stock updated', medicine: publicMedicine(med) });
 }));
 
@@ -136,6 +138,8 @@ async function createSale(req, res) {
   med.quantity = current - qty;
   med.stock = med.quantity;
   await med.save();
+  await createLowStockNotification(req, med);
+  await createNotification(req, { title: 'Pharmacy sale completed', message: `${qty} ${med.unit || 'unit'} of ${med.name} sold.`, type: 'pharmacy', severity: 'success', module: 'pharmacy', entity_type: 'pharmacy_sale', entity_id: r.id, target_path: '/pharmacy' });
   res.status(201).json({ message: 'Sale completed', saleId: r.id, total_amount: total, remaining_stock: med.quantity });
 }
 
@@ -181,10 +185,12 @@ router.post('/dispense-prescription', requirePermission('pharmacy.stock.manage')
     med.quantity = current - qty;
     med.stock = med.quantity;
     await med.save();
+    await createLowStockNotification(req, med);
     created.push(sale);
   }
 
   await Prescription.updateOne(tenantFilter(req, { id: prescription.id }), { $set: { pharmacy_status: 'dispensed', dispensed_at: new Date() } });
+  await createNotification(req, { title: 'Prescription dispensed', message: `${created.length} medicine item(s) dispensed.`, type: 'pharmacy', severity: 'success', module: 'pharmacy', entity_type: 'prescription', entity_id: prescription.id, target_path: '/pharmacy' });
   res.status(201).json({ message: 'Prescription dispensed', sales: created.length, total_amount: created.reduce((s, x) => s + number(x.total_amount), 0) });
 }));
 

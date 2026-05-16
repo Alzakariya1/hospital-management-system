@@ -5,6 +5,7 @@ const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
 const multer = require('multer');
 const { cloudinary, hasCloudinaryConfig } = require('../config/cloudinary');
+const { createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 const upload = multer({
@@ -770,6 +771,16 @@ router.post('/appointments', requirePermission('appointment.create'), asyncHandl
         token_number,
     }));
 
+    await createNotification(req, {
+        title: 'Appointment created',
+        message: `Appointment ${token_number} scheduled for ${payload.appointment_date} at ${payload.appointment_time}.`,
+        type: 'appointment',
+        severity: payload.appointment_type === 'emergency' ? 'critical' : 'info',
+        module: 'appointments',
+        entity_type: 'appointment',
+        entity_id: r.id,
+        target_path: '/appointments',
+    });
     res.status(201).json({ message: 'Appointment created', id: r.id, appointment_uid: uid, token_number });
 }));
 
@@ -794,6 +805,16 @@ router.patch('/appointments/:id/status', requirePermission('appointment.status.u
         { new: true },
     ).lean();
 
+    await createNotification(req, {
+        title: 'Appointment status updated',
+        message: `Appointment ${updated?.token_number || updated?.id} marked as ${status.replace('_', ' ')}.`,
+        type: 'appointment',
+        severity: ['cancelled', 'no_show'].includes(status) ? 'warning' : 'info',
+        module: 'appointments',
+        entity_type: 'appointment',
+        entity_id: appointmentId,
+        target_path: '/appointments',
+    });
     res.json({ message: 'Appointment status updated', appointment: updated });
 }));
 

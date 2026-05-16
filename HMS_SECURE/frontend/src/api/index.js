@@ -12,3 +12,4 @@ export { pharmacyApi } from "./pharmacyApi";
 export { billingApi } from "./billingApi";
 
 export { tenantApi } from './tenantApi';
+export { notificationApi } from './notificationApi';

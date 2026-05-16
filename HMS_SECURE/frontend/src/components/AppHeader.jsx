@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { notificationApi } from "../api/notificationApi";
 import { Bell, Building2, Check, ChevronDown, LogOut, Moon, Palette, RefreshCcw, Search, Sun, UserCircle, X } from "lucide-react";
 
 function safeText(value) {
@@ -40,6 +41,9 @@ export default function AppHeader({
   const [open, setOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationLoading, setNotificationLoading] = useState(false);
   const [mode, setMode] = useState(() => localStorage.getItem("nexora-theme-mode") || "light");
   const [accent, setAccent] = useState(() => localStorage.getItem("nexora-accent") || "#5b3fb4");
   const inputRef = useRef(null);
@@ -83,6 +87,13 @@ export default function AppHeader({
     };
   }, []);
 
+  useEffect(() => {
+    loadNotifications();
+    const timer = window.setInterval(loadNotifications, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+
   const results = useMemo(() => {
     const q = safeText(query).trim();
     const patients = searchData?.patients || [];
@@ -100,15 +111,50 @@ export default function AppHeader({
     };
   }, [query, searchData]);
 
-  const notifications = [
-    { id: "appointments", title: `${appointmentCount || 0} appointments`, text: "Review today's appointment queue." },
-    { id: "stock", title: `${lowStockCount || 0} low stock items`, text: "Check medicines that need restocking." },
-    { id: "billing", title: `${pendingBillCount || 0} pending bills`, text: "Follow up on unpaid billing records." },
+  const fallbackNotifications = [
+    { id: "appointments", title: `${appointmentCount || 0} appointments`, message: "Review today's appointment queue.", is_read: true, severity: "info" },
+    { id: "stock", title: `${lowStockCount || 0} low stock items`, message: "Check medicines that need restocking.", is_read: true, severity: "warning" },
+    { id: "billing", title: `${pendingBillCount || 0} pending bills`, message: "Follow up on unpaid billing records.", is_read: true, severity: "info" },
   ];
+  const visibleNotifications = notifications.length ? notifications : fallbackNotifications;
 
   const hasResults = results.patients.length || results.doctors.length || results.actions.length;
   const selectedAccent = themeColors.find((color) => color.value === accent) || themeColors[0];
   const hospitalName = user?.hospital_name || user?.hospital?.name || user?.tenant_name || "Hospital";
+
+  async function loadNotifications() {
+    try {
+      setNotificationLoading(true);
+      const { data } = await notificationApi.list({ limit: 25 });
+      setNotifications(Array.isArray(data?.notifications) ? data.notifications : []);
+      setUnreadCount(Number(data?.unread_count || 0));
+    } catch (error) {
+      // Keep header usable even if older backend deployment does not have notification routes yet.
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setNotificationLoading(false);
+    }
+  }
+
+  async function markNotificationRead(item) {
+    if (!item?.id || String(item.id).startsWith("appointments") || item.is_read) return;
+    try {
+      await notificationApi.markRead(item.id);
+      await loadNotifications();
+    } catch (error) {
+      console.warn("Notification read failed", error);
+    }
+  }
+
+  async function markAllNotificationsRead() {
+    try {
+      await notificationApi.markAllRead();
+      await loadNotifications();
+    } catch (error) {
+      console.warn("Mark all notifications failed", error);
+    }
+  }
 
   function choose(type, item) {
     setOpen(false);
@@ -189,26 +235,32 @@ export default function AppHeader({
               type="button"
               className="iconBtn notificationBtn"
               aria-label="Notifications"
-              onClick={() => setNotificationOpen((value) => !value)}
+              onClick={() => { setNotificationOpen((value) => !value); loadNotifications(); }}
             >
               <Bell size={18} />
-              {(pendingBillCount || lowStockCount || appointmentCount) ? <span className="notifyDot" /> : null}
+              {unreadCount ? <span className="notifyDot" title={`${unreadCount} unread`} /> : null}
             </button>
             {notificationOpen ? (
               <div className="notificationDropdown">
                 <div className="dropdownTitle">
-                  <b>Notifications</b>
-                  <small>Operational alerts</small>
+                  <div>
+                    <b>Notifications</b>
+                    <small>{unreadCount ? `${unreadCount} unread alert${unreadCount > 1 ? "s" : ""}` : "Operational alerts"}</small>
+                  </div>
+                  <button type="button" className="dropdownSmallBtn" onClick={markAllNotificationsRead}>Mark all read</button>
                 </div>
-                {notifications.map((item) => (
-                  <div className="notificationItem" key={item.id}>
-                    <span />
+                {notificationLoading ? <div className="notificationEmpty">Loading notifications...</div> : null}
+                {!notificationLoading && visibleNotifications.length ? visibleNotifications.map((item) => (
+                  <button type="button" className={`notificationItem ${item.is_read ? "read" : "unread"}`} key={item.id} onClick={() => markNotificationRead(item)}>
+                    <span className={`notificationSeverity ${item.severity || "info"}`} />
                     <div>
                       <b>{item.title}</b>
-                      <small>{item.text}</small>
+                      <small>{item.message || item.text || "No details"}</small>
+                      {item.created_at ? <em>{new Date(item.created_at).toLocaleString()}</em> : null}
                     </div>
-                  </div>
-                ))}
+                  </button>
+                )) : null}
+                {!notificationLoading && !visibleNotifications.length ? <div className="notificationEmpty">No notifications yet</div> : null}
               </div>
             ) : null}
           </div>

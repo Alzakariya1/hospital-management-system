@@ -200,8 +200,38 @@ const Bed = makeModel("Bed", "beds", { hospital_id: { type: Number, default: 1, 
 const OpdRecord = makeModel("OpdRecord", "opd_records", { hospital_id: { type: Number, default: 1, index: true } });
 const IpdAdmission = makeModel("IpdAdmission", "ipd_admissions", { hospital_id: { type: Number, default: 1, index: true } });
 const NursingNote = makeModel("NursingNote", "nursing_notes", { hospital_id: { type: Number, default: 1, index: true } });
-const LabTest = makeModel("LabTest", "lab_tests", { hospital_id: { type: Number, default: 1, index: true } });
-const RadiologyTest = makeModel("RadiologyTest", "radiology_tests", { hospital_id: { type: Number, default: 1, index: true } });
+const LabTest = makeModel("LabTest", "lab_tests", {
+    hospital_id: { type: Number, default: 1, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    doctor_id: { type: String, trim: true, index: true },
+    appointment_id: Number,
+    opd_id: Number,
+    test_name: String,
+    test_category: String,
+    priority: { type: String, default: "routine" },
+    test_status: { type: String, default: "ordered" },
+    sample_collected_at: Date,
+    completed_at: Date,
+    report_file: String,
+    report_notes: String,
+});
+const RadiologyTest = makeModel("RadiologyTest", "radiology_tests", {
+    hospital_id: { type: Number, default: 1, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    doctor_id: { type: String, trim: true, index: true },
+    appointment_id: Number,
+    opd_id: Number,
+    scan_name: String,
+    scan_category: String,
+    priority: { type: String, default: "routine" },
+    status: { type: String, default: "ordered" },
+    scheduled_at: Date,
+    scanned_at: Date,
+    reported_at: Date,
+    image_file: String,
+    report_file: String,
+    report_notes: String,
+});
 const Medicine = makeModel("Medicine", "medicines", {
     hospital_id: { type: Number, default: 1, index: true },
     name: { type: String, trim: true, index: true },
@@ -250,6 +280,22 @@ const SecuritySetting = makeModel("SecuritySetting", "security_settings", {
     hospital_id: { type: Number, default: 1, index: true },
     setting_key: { type: String, unique: true, index: true },
 });
+const Notification = makeModel("Notification", "notifications", {
+    hospital_id: { type: Number, default: 1, index: true },
+    title: { type: String, required: true },
+    message: { type: String, default: "" },
+    type: { type: String, default: "system", index: true },
+    severity: { type: String, default: "info" },
+    module: { type: String, default: "system", index: true },
+    entity_type: String,
+    entity_id: String,
+    target_path: String,
+    user_id: Number,
+    role: String,
+    read_by: { type: [Number], default: [] },
+    is_active: { type: Boolean, default: true },
+});
+Notification.schema.index({ hospital_id: 1, created_at: -1 }, { name: "notification_hospital_recent_lookup" });
 module.exports = {
     Counter,
     User,
@@ -271,4 +317,5 @@ module.exports = {
     Prescription,
     AuditLog,
     SecuritySetting,
+    Notification,
 };

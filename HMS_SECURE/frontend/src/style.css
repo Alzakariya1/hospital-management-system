@@ -3094,3 +3094,82 @@ body.dark .pharmacyActionGrid .card {
     flex-direction: column;
   }
 }
+
+
+/* V15 Lab/Radiology workflow polish */
+.labWorkflowPage { display: grid; gap: 18px; }
+.pageHero { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; padding: 22px; border: 1px solid var(--border, #e5e7eb); border-radius: 22px; background: var(--card, #fff); box-shadow: var(--shadow-sm, 0 8px 24px rgba(15,23,42,.06)); }
+.pageHero h1 { margin: 4px 0 6px; font-size: 26px; }
+.eyebrow { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--primary, #2563eb); font-weight: 800; }
+.muted { color: var(--muted, #64748b); }
+.segmented { display: inline-flex; gap: 6px; padding: 6px; border-radius: 16px; background: var(--soft, #f1f5f9); }
+.segmented button { border: 0; background: transparent; color: var(--text, #0f172a); padding: 10px 14px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+.segmented button.active { background: var(--primary, #2563eb); color: #fff; }
+.statsGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.statCard { padding: 18px; border-radius: 18px; background: var(--card, #fff); border: 1px solid var(--border, #e5e7eb); box-shadow: var(--shadow-sm, 0 8px 24px rgba(15,23,42,.06)); }
+.statCard span { display: block; color: var(--muted, #64748b); font-size: 13px; margin-bottom: 6px; }
+.statCard strong { font-size: 28px; color: var(--text, #0f172a); }
+.enterpriseForm, .workflowTableCard { padding: 20px; border-radius: 22px; background: var(--card, #fff); border: 1px solid var(--border, #e5e7eb); box-shadow: var(--shadow-sm, 0 8px 24px rgba(15,23,42,.06)); }
+.enterpriseForm h3, .workflowTableCard h3 { margin: 0 0 14px; }
+.formGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.formGrid input, .formGrid select, .workflowTableCard select, .miniReportBox input, .miniReportBox textarea { width: 100%; border: 1px solid var(--border, #e5e7eb); background: var(--input, #fff); color: var(--text, #0f172a); border-radius: 12px; padding: 10px 12px; }
+.enterpriseForm button, .miniBtn, .rowActions button { border: 0; background: var(--primary, #2563eb); color: #fff; border-radius: 12px; padding: 10px 14px; font-weight: 800; cursor: pointer; }
+.ghostBtn { background: var(--soft, #f1f5f9) !important; color: var(--text, #0f172a) !important; }
+.workflowTableCard { overflow-x: auto; }
+.workflowTableCard table { width: 100%; border-collapse: collapse; }
+.workflowTableCard th { text-align: left; color: var(--muted, #64748b); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; padding: 12px; border-bottom: 1px solid var(--border, #e5e7eb); }
+.workflowTableCard td { padding: 12px; border-bottom: 1px solid var(--border, #e5e7eb); vertical-align: top; }
+.statusPill { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 10px; font-size: 12px; font-weight: 800; text-transform: capitalize; background: rgba(37,99,235,.12); color: var(--primary, #2563eb); }
+.statusPill-completed, .statusPill-reported { background: rgba(22,163,74,.12); color: #16a34a; }
+.statusPill-cancelled { background: rgba(220,38,38,.12); color: #dc2626; }
+.statusPill-processing, .statusPill-scheduled, .statusPill-scanned { background: rgba(245,158,11,.14); color: #d97706; }
+.miniReportBox { display: grid; gap: 8px; min-width: 220px; margin-top: 8px; }
+.rowActions { display: flex; gap: 8px; }
+.emptyCell { text-align: center; color: var(--muted, #64748b); padding: 28px !important; }
+@media (max-width: 900px) {
+  .pageHero { flex-direction: column; }
+  .statsGrid, .formGrid { grid-template-columns: 1fr; }
+}
+
+.notificationItem {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.notificationItem.unread {
+  background: color-mix(in srgb, var(--purple-soft) 55%, transparent);
+}
+.notificationItem.read {
+  opacity: .78;
+}
+.notificationItem em {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: var(--muted);
+  font-style: normal;
+}
+.notificationSeverity.info { background: var(--purple); }
+.notificationSeverity.success { background: #16a34a; }
+.notificationSeverity.warning { background: #f59e0b; }
+.notificationSeverity.critical { background: #dc2626; }
+.dropdownSmallBtn {
+  border: 0;
+  background: var(--purple-soft);
+  color: var(--purple);
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.dropdownSmallBtn:hover { transform: none; filter: brightness(.98); }
+.notificationEmpty {
+  padding: 18px 12px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
