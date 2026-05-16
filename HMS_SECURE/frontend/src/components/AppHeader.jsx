@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, Check, ChevronDown, LogOut, Moon, Palette, RefreshCcw, Search, Sun, UserCircle, X } from "lucide-react";
+import { Bell, Building2, Check, ChevronDown, LogOut, Moon, Palette, RefreshCcw, Search, Sun, UserCircle, X } from "lucide-react";
 
 function safeText(value) {
   return String(value || "").toLowerCase();
@@ -108,6 +108,7 @@ export default function AppHeader({
 
   const hasResults = results.patients.length || results.doctors.length || results.actions.length;
   const selectedAccent = themeColors.find((color) => color.value === accent) || themeColors[0];
+  const hospitalName = user?.hospital_name || user?.hospital?.name || user?.tenant_name || "Hospital";
 
   function choose(type, item) {
     setOpen(false);
@@ -123,6 +124,11 @@ export default function AppHeader({
   return (
     <header className="appHeader">
       <div className="topBar">
+        <div className="topBarLeft">
+          <div className="hospitalContextChip" title={hospitalName}>
+            <Building2 size={18} />
+            <span>{hospitalName}</span>
+          </div>
         <div className="topBarSearch" ref={wrapRef}>
           <Search size={17} />
           <input
@@ -175,6 +181,7 @@ export default function AppHeader({
               {!hasResults ? <div className="searchEmpty">No matching result</div> : null}
             </div>
           ) : null}
+        </div>
         </div>
         <div className="topBarActions">
           <div className="notificationWrap" ref={notificationRef}>
