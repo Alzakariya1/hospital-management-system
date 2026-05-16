@@ -36,6 +36,9 @@ export default function AppLayout({
             onRefresh={onRefresh}
             searchData={searchData}
             onSearchNavigate={onSearchNavigate}
+            onOpenProfile={() => onTabChange("profile")}
+            onChangePassword={() => onTabChange("profile")}
+            onLogout={onLogout}
           />
           {children}
         </div>

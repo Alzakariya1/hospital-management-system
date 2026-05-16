@@ -1,9 +1,27 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Bell, RefreshCcw, Search, X } from "lucide-react";
+import { Bell, Check, ChevronDown, LogOut, Moon, Palette, RefreshCcw, Search, Sun, UserCircle, X } from "lucide-react";
 
 function safeText(value) {
   return String(value || "").toLowerCase();
 }
+
+function getInitials(name = "User") {
+  return String(name)
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+}
+
+const themeColors = [
+  { name: "Purple", value: "#5b3fb4", dark: "#49339a", soft: "#f0ecff" },
+  { name: "Blue", value: "#2563eb", dark: "#1d4ed8", soft: "#eaf1ff" },
+  { name: "Teal", value: "#0f766e", dark: "#115e59", soft: "#e6fffb" },
+  { name: "Green", value: "#16a34a", dark: "#15803d", soft: "#ecfdf3" },
+  { name: "Rose", value: "#e11d48", dark: "#be123c", soft: "#fff1f2" },
+  { name: "Indigo", value: "#4f46e5", dark: "#4338ca", soft: "#eef2ff" },
+];
 
 export default function AppHeader({
   title,
@@ -14,11 +32,30 @@ export default function AppHeader({
   onRefresh,
   searchData,
   onSearchNavigate,
+  onOpenProfile,
+  onChangePassword,
+  onLogout,
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [mode, setMode] = useState(() => localStorage.getItem("nexora-theme-mode") || "light");
+  const [accent, setAccent] = useState(() => localStorage.getItem("nexora-accent") || "#5b3fb4");
   const inputRef = useRef(null);
   const wrapRef = useRef(null);
+  const menuRef = useRef(null);
+  const notificationRef = useRef(null);
+
+  useEffect(() => {
+    const selected = themeColors.find((color) => color.value === accent) || themeColors[0];
+    document.documentElement.dataset.theme = mode;
+    document.documentElement.style.setProperty("--purple", selected.value);
+    document.documentElement.style.setProperty("--purple-dark", selected.dark);
+    document.documentElement.style.setProperty("--purple-soft", selected.soft);
+    localStorage.setItem("nexora-theme-mode", mode);
+    localStorage.setItem("nexora-accent", selected.value);
+  }, [mode, accent]);
 
   useEffect(() => {
     function onKeyDown(event) {
@@ -27,10 +64,16 @@ export default function AppHeader({
         inputRef.current?.focus();
         setOpen(true);
       }
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        setProfileOpen(false);
+        setNotificationOpen(false);
+      }
     }
     function onClick(event) {
       if (wrapRef.current && !wrapRef.current.contains(event.target)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(event.target)) setProfileOpen(false);
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) setNotificationOpen(false);
     }
     window.addEventListener("keydown", onKeyDown);
     document.addEventListener("mousedown", onClick);
@@ -57,12 +100,24 @@ export default function AppHeader({
     };
   }, [query, searchData]);
 
+  const notifications = [
+    { id: "appointments", title: `${appointmentCount || 0} appointments`, text: "Review today's appointment queue." },
+    { id: "stock", title: `${lowStockCount || 0} low stock items`, text: "Check medicines that need restocking." },
+    { id: "billing", title: `${pendingBillCount || 0} pending bills`, text: "Follow up on unpaid billing records." },
+  ];
+
   const hasResults = results.patients.length || results.doctors.length || results.actions.length;
+  const selectedAccent = themeColors.find((color) => color.value === accent) || themeColors[0];
 
   function choose(type, item) {
     setOpen(false);
     setQuery("");
     onSearchNavigate?.(type, item);
+  }
+
+  function menuAction(action) {
+    setProfileOpen(false);
+    action?.();
   }
 
   return (
@@ -122,10 +177,81 @@ export default function AppHeader({
           ) : null}
         </div>
         <div className="topBarActions">
-          <button type="button" className="iconBtn" aria-label="Notifications"><Bell size={18} /></button>
-          <div className="userChip">
-            <span>{(user?.full_name || "User").slice(0, 1).toUpperCase()}</span>
-            <div><b>{user?.full_name || "User"}</b><small>{user?.hospital_name || "Hospital"}</small></div>
+          <div className="notificationWrap" ref={notificationRef}>
+            <button
+              type="button"
+              className="iconBtn notificationBtn"
+              aria-label="Notifications"
+              onClick={() => setNotificationOpen((value) => !value)}
+            >
+              <Bell size={18} />
+              {(pendingBillCount || lowStockCount || appointmentCount) ? <span className="notifyDot" /> : null}
+            </button>
+            {notificationOpen ? (
+              <div className="notificationDropdown">
+                <div className="dropdownTitle">
+                  <b>Notifications</b>
+                  <small>Operational alerts</small>
+                </div>
+                {notifications.map((item) => (
+                  <div className="notificationItem" key={item.id}>
+                    <span />
+                    <div>
+                      <b>{item.title}</b>
+                      <small>{item.text}</small>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="profileMenuWrap" ref={menuRef}>
+            <button type="button" className="userChip profileChip" onClick={() => setProfileOpen((value) => !value)}>
+              <span>{getInitials(user?.full_name || "User")}</span>
+              <div><b>{user?.full_name || "User"}</b><small>{user?.hospital_name || "Hospital"}</small></div>
+              <ChevronDown size={15} />
+            </button>
+            {profileOpen ? (
+              <div className="profileDropdown">
+                <div className="profileDropdownHead">
+                  <span>{getInitials(user?.full_name || "User")}</span>
+                  <div>
+                    <b>{user?.full_name || "User"}</b>
+                    <small>{user?.email || user?.role || "Signed in"}</small>
+                  </div>
+                </div>
+
+                <button type="button" onClick={() => menuAction(onOpenProfile)}><UserCircle size={16} /> View Profile</button>
+                <button type="button" onClick={() => menuAction(onChangePassword)}><Check size={16} /> Change Password</button>
+
+                <div className="dropdownDivider" />
+                <div className="themeModeRow">
+                  <span><Palette size={15} /> Appearance</span>
+                  <div className="modeToggle">
+                    <button type="button" className={mode === "light" ? "active" : ""} onClick={() => setMode("light")}><Sun size={14} /> Light</button>
+                    <button type="button" className={mode === "dark" ? "active" : ""} onClick={() => setMode("dark")}><Moon size={14} /> Dark</button>
+                  </div>
+                </div>
+                <div className="themeColorGrid" aria-label="Theme color">
+                  {themeColors.map((color) => (
+                    <button
+                      type="button"
+                      key={color.name}
+                      className={selectedAccent.value === color.value ? "active" : ""}
+                      style={{ background: color.value }}
+                      title={color.name}
+                      onClick={() => setAccent(color.value)}
+                    >
+                      {selectedAccent.value === color.value ? <Check size={13} /> : null}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="dropdownDivider" />
+                <button type="button" className="logoutMenuBtn" onClick={() => menuAction(onLogout)}><LogOut size={16} /> Logout</button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
