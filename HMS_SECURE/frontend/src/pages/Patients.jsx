@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DataTable } from "../components";
+import { patientApi } from "../api/patientApi";
 
 // Compatibility alias while remaining pages are being split safely.
 const Table = DataTable;
@@ -40,6 +41,35 @@ export default function Patients({
   activeView = "patients",
   permissions = {},
 }) {
+  const [patientTimeline, setPatientTimeline] = useState(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+  const [timelineError, setTimelineError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadTimeline() {
+      if (activeView !== "patientProfile" || !selectedPatient?.id) {
+        setPatientTimeline(null);
+        return;
+      }
+      setTimelineLoading(true);
+      setTimelineError("");
+      try {
+        const { data } = await patientApi.timeline(selectedPatient.id);
+        if (mounted) setPatientTimeline(data);
+      } catch (err) {
+        if (mounted) setTimelineError(err?.response?.data?.message || "Unable to load patient timeline.");
+      } finally {
+        if (mounted) setTimelineLoading(false);
+      }
+    }
+    loadTimeline();
+    return () => { mounted = false; };
+  }, [activeView, selectedPatient?.id]);
+
+  const timelineSummary = patientTimeline?.summary || {};
+  const timelineRows = patientTimeline?.timeline || [];
+
   return (
     <>
       {activeView === "patients" && (
@@ -455,7 +485,7 @@ export default function Patients({
                       <i className="bi bi-file-earmark-medical"></i>
                       <div>
                         <span>Documents</span>
-                        <h3>{selectedPatient.documents?.length || 0}</h3>
+                        <h3>{timelineSummary.documents ?? selectedPatient.documents?.length ?? 0}</h3>
                       </div>
                     </div>
 
@@ -464,12 +494,9 @@ export default function Patients({
                       <div>
                         <span>Appointments</span>
                         <h3>
-                          {
-                            appointments.filter(
-                              (a) =>
-                                a.patient_id === selectedPatient.patient_id,
-                            ).length
-                          }
+                          {timelineSummary.appointments ?? appointments.filter(
+                              (a) => String(a.patient_id) === String(selectedPatient.patient_id) || String(a.patient_id) === String(selectedPatient.id),
+                            ).length}
                         </h3>
                       </div>
                     </div>
@@ -479,12 +506,9 @@ export default function Patients({
                       <div>
                         <span>Total Bills</span>
                         <h3>
-                          {
-                            bills.filter(
-                              (b) =>
-                                b.patient_id === selectedPatient.patient_id,
-                            ).length
-                          }
+                          {timelineSummary.bills ?? bills.filter(
+                              (b) => String(b.patient_id) === String(selectedPatient.patient_id) || String(b.patient_id) === String(selectedPatient.id),
+                            ).length}
                         </h3>
                       </div>
                     </div>
@@ -505,6 +529,51 @@ export default function Patients({
                         </h3>
                       </div>
                     </div>
+                  </div>
+
+                  <div className="patient-emr-timeline-card">
+                    <div className="patient-document-header">
+                      <div>
+                        <h2>Patient Timeline / EMR</h2>
+                        <p className="muted">Appointments, OPD consultations, prescriptions, bills and uploaded records in one medical history view.</p>
+                      </div>
+                      <div className="document-badge">{timelineRows.length} Events</div>
+                    </div>
+
+                    <div className="emr-summary-strip">
+                      <span>OPD: <b>{timelineSummary.consultations || 0}</b></span>
+                      <span>Rx: <b>{timelineSummary.prescriptions || 0}</b></span>
+                      <span>Lab: <b>{timelineSummary.labTests || 0}</b></span>
+                      <span>Radiology: <b>{timelineSummary.radiologyTests || 0}</b></span>
+                      <span>IPD: <b>{timelineSummary.admissions || 0}</b></span>
+                    </div>
+
+                    {timelineLoading && <p className="muted">Loading patient timeline...</p>}
+                    {timelineError && <p className="error">{timelineError}</p>}
+                    {!timelineLoading && !timelineError && !timelineRows.length && (
+                      <p className="muted">No EMR timeline events found yet.</p>
+                    )}
+                    {!timelineLoading && !timelineError && timelineRows.length > 0 && (
+                      <div className="emr-timeline-list">
+                        {timelineRows.slice(0, 12).map((item, index) => (
+                          <div className="emr-timeline-item" key={`${item.type}-${item.payload?.id ?? index}-${index}`}>
+                            <div className={`emr-timeline-icon ${item.type}`}>
+                              <i className={`bi ${item.type === "billing" ? "bi-receipt" : item.type === "prescription" ? "bi-capsule" : item.type === "opd" ? "bi-clipboard2-pulse" : item.type === "document" ? "bi-file-earmark-medical" : item.type === "ipd" ? "bi-hospital" : "bi-calendar-check"}`}></i>
+                            </div>
+                            <div className="emr-timeline-body">
+                              <div className="emr-timeline-head">
+                                <h4>{item.title}</h4>
+                                <span>{item.status || item.type}</span>
+                              </div>
+                              <p>{item.date ? new Date(item.date).toLocaleString() : "Date not available"}</p>
+                              {item.type === "opd" && item.payload?.diagnosis && <small>Diagnosis: {item.payload.diagnosis}</small>}
+                              {item.type === "prescription" && item.payload?.medicines?.length > 0 && <small>{item.payload.medicines.length} medicine item(s)</small>}
+                              {item.type === "billing" && <small>Total: ₹{item.payload?.total_amount ?? item.payload?.amount ?? 0}</small>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="patient-related-grid">
                     <div className="patient-related-card">

@@ -543,3 +543,135 @@ This phase adds hospital-wise advanced feature flags without breaking existing m
 - Updated profile detail sections, avatar upload controls, document tiles, and empty states to use theme-aware colors.
 - Updated dashboard welcome panel, stat cards, Hospital Overview chart, and Billing Status chart to use theme-aware palette instead of default black/grey chart colors.
 - Verified frontend production build and backend syntax checks.
+
+## V13A - Appointment Stability + Professional Appointment UI
+
+- Added enterprise appointment status flow: scheduled, checked_in, in_consultation, completed, cancelled, no_show.
+- Added appointment type support: OPD, follow-up, emergency, teleconsultation.
+- Added backend validation for patient/doctor references inside the active hospital/tenant.
+- Added backend doctor slot conflict prevention for same doctor/date/time, excluding cancelled/no-show appointments.
+- Added token number generation per appointment date.
+- Added status timestamp fields for check-in, consultation start, completion and cancellation.
+- Added professional appointment board UI with filters, status badges, token cards and lifecycle actions.
+- Frontend build passed.
+- Backend syntax checks passed.
+
+## V13B - Doctor Schedule + Slot Booking Foundation
+
+Implemented after V13A appointment stability.
+
+### Added
+- Doctor schedule model (`doctor_schedules`) with hospital/tenant isolation.
+- Doctor availability setup from Appointment module.
+- Working days, start/end time, break time, slot duration, daily patient limit, unavailable dates.
+- Schedule list with edit/delete actions.
+- Backend appointment validation against active doctor schedule.
+- Backend blocks appointments outside working hours, on unavailable dates, during break time, and beyond daily limit.
+- Doctor slots endpoint: `GET /api/doctors/:id/slots?date=YYYY-MM-DD`.
+- Schedule APIs:
+  - `GET /api/doctor-schedules`
+  - `POST /api/doctor-schedules`
+  - `DELETE /api/doctor-schedules/:id`
+
+### QA
+- Frontend `npm run build`: passed.
+- Backend syntax checks: passed.
+- Backend dependencies install from lock file: passed.
+- Database live check was attempted but not run locally because packaged ZIP intentionally excludes `.env`; Render/local environment must provide `MONGODB_URI`.
+
+## V13C - Reception Queue + Token System
+- Added backend `/api/appointments/queue` endpoint for date/doctor-wise active reception queue.
+- Improved token generation to use the highest existing token for the date instead of raw count, reducing duplicate token risk after deletions.
+- Added queue position and waiting-minute metadata in queue response.
+- Added professional Reception Queue panel in Appointments page.
+- Added Call Next, Check In, Call Patient, Complete, and No Show queue actions.
+- Removed duplicate schedule timing line in schedule card UI.
+
+## V13E - Prescription + Billing Integration from OPD Consultation
+
+Implemented after V13D OPD consultation screen.
+
+### Added
+- Added `Prescription` model/collection with hospital/tenant isolation.
+- OPD consultation save can now also save prescription medicine rows.
+- Added optional OPD consultation bill generation from consultation save.
+- Billing links to patient, doctor, appointment and OPD source.
+- Appointment stores linked `opd_id`, `prescription_id`, and `billing_id` after consultation save.
+- Added prescription list endpoint: `GET /api/prescriptions` with appointment/patient/doctor filters.
+- OPD consultation UI now has two-column clinical + prescription/billing layout.
+- Prescription rows support medicine name, dosage, frequency, duration and instructions.
+- Billing form supports fee, paid amount, discount and GST percent.
+
+### QA
+- Backend `npm install`: passed.
+- Backend syntax checks: passed for models, OPD/IPD routes, core routes and billing routes.
+- Frontend `npm install`: passed.
+- Frontend `npm run build`: passed.
+- Database live check attempted but local package intentionally excludes `.env`; `MONGODB_URI` must be configured in Render/local environment.
+
+---
+
+## HMS_SECURE_PHASE3_STEP11B3_PATIENT_TIMELINE_EMR_V13F
+
+Base used:
+- HMS_SECURE_PHASE3_STEP11B3_PRESCRIPTION_BILLING_V13E.zip
+
+Scope:
+- Patient Timeline / EMR Foundation only.
+- No unrelated modules were redesigned.
+
+Backend changes:
+- Added GET `/api/patients/:id/timeline`.
+- Timeline is tenant/hospital filtered.
+- Timeline combines patient-related records from:
+  - appointments
+  - OPD consultations
+  - prescriptions
+  - billing records
+  - lab records
+  - radiology records
+  - IPD admissions
+  - patient documents
+- Added summary counts for EMR sections.
+
+Frontend changes:
+- Patient profile now loads fresh timeline data from the backend.
+- Added Patient Timeline / EMR card in patient profile.
+- Added event list with status, type, date, diagnosis/medicine/bill details when available.
+- Added theme-aware styling for timeline cards.
+
+Testing:
+- Frontend production build passed.
+- Backend JavaScript syntax checks passed.
+- DB check attempted; local ZIP correctly excludes `.env`, so `MONGODB_URI` is required on local/Render.
+
+Packaging:
+- `.env` excluded.
+- `node_modules` excluded.
+- `dist` excluded.
+- `package.json`, `package-lock.json`, `.env.example`, and `PROJECT_NOTES.md` preserved.
+
+## V14 - Pharmacy + Inventory Enterprise Upgrade
+
+Built on: HMS_SECURE_PHASE3_STEP11B3_PATIENT_TIMELINE_EMR_V13F.zip
+
+Scope:
+- Enterprise pharmacy inventory foundation.
+- Medicine batch/vendor/expiry/quantity/low-stock fields.
+- Medicine edit/update support.
+- Stock adjustment endpoint and UI.
+- Direct pharmacy sale endpoint and UI.
+- Prescription dispense endpoint foundation.
+- Pharmacy summary endpoint with total stock, low stock, expired count and sales revenue.
+- Recent pharmacy sales list.
+- Theme-aware professional pharmacy UI.
+
+Testing:
+- Frontend npm install + npm run build: PASSED.
+- Backend npm install + syntax checks: PASSED.
+- DB check attempted: needs MONGODB_URI in local/Render env. This ZIP correctly excludes .env.
+
+Packaging:
+- .env excluded.
+- node_modules excluded.
+- frontend dist excluded.

@@ -21,6 +21,7 @@ import {
   billingApi,
   dashboardApi,
   doctorApi,
+  doctorScheduleApi,
   labApi,
   patientApi,
   pharmacyApi,
@@ -75,18 +76,32 @@ const emptyDoctor = {
   registration_number: "",
   status: "active",
 };
+const emptySchedule = {
+  doctor_id: "",
+  working_days: ["mon", "tue", "wed", "thu", "fri", "sat"],
+  start_time: "10:00",
+  end_time: "14:00",
+  break_start: "",
+  break_end: "",
+  slot_duration: 15,
+  max_patients_per_day: "",
+  unavailable_dates: "",
+  status: "active",
+  notes: "",
+};
 const emptyAppointment = {
   patient_id: "",
   doctor_id: "",
   appointment_date: "",
   appointment_time: "",
+  appointment_type: "opd",
   status: "scheduled",
   notes: "",
 };
 const emptyBed = { ward: "", bed_number: "", status: "available" };
 const emptyLab = { name: "", price: "" };
 const emptyRad = { name: "", price: "" };
-const emptyMed = { name: "", stock: "", price: "" };
+const emptyMed = { name: "", generic_name: "", category: "", batch_number: "", vendor: "", expiry_date: "", quantity: "", low_stock_threshold: 10, cost_price: "", selling_price: "", unit: "pcs", status: "active" };
 const emptyBill = { patient_id: "", amount: "", status: "unpaid" };
 
 function App() {
@@ -155,6 +170,7 @@ function App() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [doctorSearch, setDoctorSearch] = useState("");
   const [appointments, setAppointments] = useState([]);
+  const [doctorSchedules, setDoctorSchedules] = useState([]);
   const [beds, setBeds] = useState([]);
   const [labs, setLabs] = useState([]);
   const [rads, setRads] = useState([]);
@@ -181,8 +197,11 @@ function App() {
   const [doctor, setDoctor] = useState(emptyDoctor);
 
   const [appointment, setAppointment] = useState(emptyAppointment);
+  const [scheduleForm, setScheduleForm] = useState(emptySchedule);
   const [appointmentSearch, setAppointmentSearch] = useState("");
   const [appointmentStatusFilter, setAppointmentStatusFilter] = useState("all");
+  const [appointmentDateFilter, setAppointmentDateFilter] = useState("");
+  const [appointmentTypeFilter, setAppointmentTypeFilter] = useState("all");
   const [patientPage, setPatientPage] = useState(1);
   const [doctorPage, setDoctorPage] = useState(1);
   const [appointmentPage, setAppointmentPage] = useState(1);
@@ -213,6 +232,7 @@ function App() {
       patientApi.list(),
       doctorApi.list(),
       appointmentApi.list(),
+      doctorScheduleApi.list(),
       bedApi.list(),
       labApi.list(),
       radiologyApi.list(),
@@ -220,11 +240,12 @@ function App() {
       billingApi.list(),
       authApi.getUsers(),
     ];
-    const [s, p, d, a, b, l, r, m, bi, u] = await Promise.allSettled(calls);
+    const [s, p, d, a, ds, b, l, r, m, bi, u] = await Promise.allSettled(calls);
     if (s.value) setStats(s.value.data);
     if (p.value) setPatients(p.value.data);
     if (d.value) setDoctors(d.value.data);
     if (a.value) setAppointments(a.value.data);
+    if (ds.value) setDoctorSchedules(ds.value.data);
     if (b.value) setBeds(b.value.data);
     if (l.value) setLabs(l.value.data);
     if (r.value) setRads(r.value.data);
@@ -605,6 +626,51 @@ function App() {
       toast.error(err.response?.data?.message || "Delete failed");
     }
   }
+  async function saveDoctorSchedule(e) {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...scheduleForm,
+        unavailable_dates: Array.isArray(scheduleForm.unavailable_dates)
+          ? scheduleForm.unavailable_dates
+          : String(scheduleForm.unavailable_dates || "").split(",").map((x) => x.trim()).filter(Boolean),
+      };
+      await doctorScheduleApi.save(payload);
+      setScheduleForm(emptySchedule);
+      await load();
+      toast.success("Doctor schedule saved successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Doctor schedule save failed");
+    }
+  }
+
+  function editDoctorSchedule(row) {
+    setScheduleForm({
+      doctor_id: row.doctor_ref_id || row.doctor_id || "",
+      working_days: row.working_days || emptySchedule.working_days,
+      start_time: row.start_time || "10:00",
+      end_time: row.end_time || "14:00",
+      break_start: row.break_start || "",
+      break_end: row.break_end || "",
+      slot_duration: row.slot_duration || 15,
+      max_patients_per_day: row.max_patients_per_day || "",
+      unavailable_dates: Array.isArray(row.unavailable_dates) ? row.unavailable_dates.join(", ") : (row.unavailable_dates || ""),
+      status: row.status || "active",
+      notes: row.notes || "",
+    });
+  }
+
+  async function deleteDoctorSchedule(row) {
+    if (!confirm("Delete this doctor schedule?")) return;
+    try {
+      await doctorScheduleApi.delete(row.id || row._id);
+      await load();
+      toast.success("Doctor schedule deleted");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Doctor schedule delete failed");
+    }
+  }
+
   async function addAppointment(e) {
     e.preventDefault();
 
@@ -631,6 +697,7 @@ function App() {
       doctor_id: row.doctor_id || "",
       appointment_date: row.appointment_date || "",
       appointment_time: row.appointment_time || "",
+      appointment_type: row.appointment_type || "opd",
       status: row.status || "scheduled",
       notes: row.notes || "",
     });
@@ -647,6 +714,19 @@ function App() {
       toast.success("Appointment deleted successfully");
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
+    }
+  }
+
+  async function updateAppointmentStatus(row, status) {
+    const appointmentId = row.id || row._id;
+    if (!appointmentId) return;
+
+    try {
+      await appointmentApi.updateStatus(appointmentId, status);
+      await load();
+      toast.success(`Appointment marked as ${status.replaceAll("_", " ")}`);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Appointment status update failed");
     }
   }
 
@@ -920,10 +1000,13 @@ function App() {
     appointmentCreate: can("appointment.create"),
     appointmentEdit: can("appointment.edit"),
     appointmentDelete: can("appointment.delete"),
+    appointmentStatusUpdate: can("appointment.status.update"),
+    doctorScheduleManage: can("appointment.edit"),
     bedCreate: can("bed.create"),
     labCreate: can("lab.create"),
     radiologyCreate: can("radiology.create"),
     pharmacyCreate: can("pharmacy.create"),
+    pharmacyStockManage: can("pharmacy.stock.manage"),
     billingCreate: can("billing.create"),
     adminUsersManage: can("admin.users.manage"),
     hospitalManage: can("hospital.manage"),
@@ -988,7 +1071,15 @@ function App() {
         ? true
         : a.status === appointmentStatusFilter;
 
-    return matchSearch && matchStatus;
+    const matchDate = appointmentDateFilter
+      ? a.appointment_date === appointmentDateFilter
+      : true;
+
+    const matchType = appointmentTypeFilter === "all"
+      ? true
+      : (a.appointment_type || "opd") === appointmentTypeFilter;
+
+    return matchSearch && matchStatus && matchDate && matchType;
   });
   const paginatedAppointments = filteredAppointments.slice(
     (appointmentPage - 1) * pageSize,
@@ -1189,13 +1280,25 @@ function App() {
                 setAppointmentSearch={setAppointmentSearch}
                 appointmentStatusFilter={appointmentStatusFilter}
                 setAppointmentStatusFilter={setAppointmentStatusFilter}
+                appointmentDateFilter={appointmentDateFilter}
+                setAppointmentDateFilter={setAppointmentDateFilter}
+                appointmentTypeFilter={appointmentTypeFilter}
+                setAppointmentTypeFilter={setAppointmentTypeFilter}
                 filteredAppointments={filteredAppointments}
                 paginatedAppointments={paginatedAppointments}
                 editAppointment={editAppointment}
                 deleteAppointment={deleteAppointment}
+                updateAppointmentStatus={updateAppointmentStatus}
                 appointmentPage={appointmentPage}
                 setAppointmentPage={setAppointmentPage}
                 appointmentTotalPages={appointmentTotalPages}
+                doctors={doctors}
+                doctorSchedules={doctorSchedules}
+                scheduleForm={scheduleForm}
+                setScheduleForm={setScheduleForm}
+                saveDoctorSchedule={saveDoctorSchedule}
+                editDoctorSchedule={editDoctorSchedule}
+                deleteDoctorSchedule={deleteDoctorSchedule}
                 permissions={permissions}
               />
             )}
@@ -1225,6 +1328,7 @@ function App() {
                 addMedicine={addMedicine}
                 meds={meds}
                 permissions={permissions}
+                onChanged={load}
               />
             )}
 

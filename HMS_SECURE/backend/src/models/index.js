@@ -155,24 +155,96 @@ Doctor.schema.index(
         partialFilterExpression: { doctor_id: { $type: "string" } },
     },
 );
+const DoctorSchedule = makeModel("DoctorSchedule", "doctor_schedules", {
+    hospital_id: { type: Number, default: 1, index: true },
+    doctor_ref_id: Number,
+    doctor_id: { type: String, trim: true },
+    working_days: { type: [String], default: [] },
+    start_time: String,
+    end_time: String,
+    break_start: String,
+    break_end: String,
+    slot_duration: { type: Number, default: 15 },
+    max_patients_per_day: { type: Number, default: 0 },
+    unavailable_dates: { type: [String], default: [] },
+    notes: String,
+    status: { type: String, default: "active" },
+});
+DoctorSchedule.schema.index(
+    { hospital_id: 1, doctor_ref_id: 1 },
+    { name: "doctor_schedule_hospital_doctor_lookup" },
+);
+
 const Appointment = makeModel("Appointment", "appointments", {
     hospital_id: { type: Number, default: 1, index: true },
-    patient_id: String,
-    doctor_id: String,
+    patient_id: { type: String, trim: true },
+    doctor_id: { type: String, trim: true },
+    appointment_uid: String,
     appointment_date: String,
     appointment_time: String,
-    status: String,
+    appointment_type: { type: String, default: "opd" },
+    status: { type: String, default: "scheduled" },
+    token_number: String,
+    checked_in_at: Date,
+    consultation_started_at: Date,
+    completed_at: Date,
+    cancelled_at: Date,
+    cancellation_reason: String,
     notes: String,
 });
+Appointment.schema.index(
+    { hospital_id: 1, doctor_id: 1, appointment_date: 1, appointment_time: 1 },
+    { name: "appointment_doctor_slot_lookup" },
+);
 const Bed = makeModel("Bed", "beds", { hospital_id: { type: Number, default: 1, index: true } });
 const OpdRecord = makeModel("OpdRecord", "opd_records", { hospital_id: { type: Number, default: 1, index: true } });
 const IpdAdmission = makeModel("IpdAdmission", "ipd_admissions", { hospital_id: { type: Number, default: 1, index: true } });
 const NursingNote = makeModel("NursingNote", "nursing_notes", { hospital_id: { type: Number, default: 1, index: true } });
 const LabTest = makeModel("LabTest", "lab_tests", { hospital_id: { type: Number, default: 1, index: true } });
 const RadiologyTest = makeModel("RadiologyTest", "radiology_tests", { hospital_id: { type: Number, default: 1, index: true } });
-const Medicine = makeModel("Medicine", "medicines", { hospital_id: { type: Number, default: 1, index: true } });
-const PharmacySale = makeModel("PharmacySale", "pharmacy_sales", { hospital_id: { type: Number, default: 1, index: true } });
+const Medicine = makeModel("Medicine", "medicines", {
+    hospital_id: { type: Number, default: 1, index: true },
+    name: { type: String, trim: true, index: true },
+    generic_name: String,
+    category: String,
+    batch_number: String,
+    vendor: String,
+    expiry_date: String,
+    quantity: { type: Number, default: 0 },
+    stock: { type: Number, default: 0 },
+    low_stock_threshold: { type: Number, default: 10 },
+    cost_price: { type: Number, default: 0 },
+    selling_price: { type: Number, default: 0 },
+    price: { type: Number, default: 0 },
+    unit: { type: String, default: 'pcs' },
+    status: { type: String, default: 'active' },
+});
+Medicine.schema.index({ hospital_id: 1, name: 1, batch_number: 1 }, { name: 'medicine_hospital_name_batch_lookup' });
+const PharmacySale = makeModel("PharmacySale", "pharmacy_sales", {
+    hospital_id: { type: Number, default: 1, index: true },
+    sale_number: { type: String, index: true },
+    medicine_id: Number,
+    medicine_name: String,
+    prescription_id: Number,
+    patient_id: String,
+    doctor_id: String,
+    quantity: Number,
+    selling_price: Number,
+    total_amount: Number,
+    payment_status: { type: String, default: 'paid' },
+    sale_type: { type: String, default: 'direct' },
+    sold_at: { type: Date, default: Date.now },
+});
 const Billing = makeModel("Billing", "billing", { hospital_id: { type: Number, default: 1, index: true } });
+const Prescription = makeModel("Prescription", "prescriptions", {
+    hospital_id: { type: Number, default: 1, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    doctor_id: { type: String, trim: true, index: true },
+    appointment_id: { type: Number, index: true },
+    opd_id: { type: Number, index: true },
+    prescription_number: { type: String, index: true },
+    status: { type: String, default: "active" },
+});
 const AuditLog = makeModel("AuditLog", "audit_logs", { hospital_id: { type: Number, default: 1, index: true } });
 const SecuritySetting = makeModel("SecuritySetting", "security_settings", {
     hospital_id: { type: Number, default: 1, index: true },
@@ -185,6 +257,7 @@ module.exports = {
     Department,
     Patient,
     Doctor,
+    DoctorSchedule,
     Appointment,
     Bed,
     OpdRecord,
@@ -195,6 +268,7 @@ module.exports = {
     Medicine,
     PharmacySale,
     Billing,
+    Prescription,
     AuditLog,
     SecuritySetting,
 };

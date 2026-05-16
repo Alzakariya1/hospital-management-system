@@ -11,11 +11,11 @@ function formatValue(key, value) {
   if (typeof value === "object") return JSON.stringify(value);
 
   const text = String(value);
-  if (["status", "payment_status"].includes(key)) {
+  if (["status", "payment_status", "stock_status"].includes(key)) {
     const normalized = text.toLowerCase();
-    const cls = normalized.includes("paid") || normalized.includes("active") || normalized.includes("completed")
+    const cls = normalized.includes("paid") || normalized.includes("active") || normalized.includes("completed") || normalized.includes("in stock")
       ? "success"
-      : normalized.includes("cancel") || normalized.includes("delete") || normalized.includes("inactive") || normalized.includes("pending")
+      : normalized.includes("cancel") || normalized.includes("delete") || normalized.includes("inactive") || normalized.includes("pending") || normalized.includes("low stock")
         ? "warning"
         : "neutral";
     return <span className={`statusBadge ${cls}`}>{text}</span>;
