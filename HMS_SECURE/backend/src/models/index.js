@@ -341,6 +341,25 @@ DynamicField.schema.index(
     { unique: true, name: "dynamic_field_hospital_module_key_unique" },
 );
 
+
+const Template = makeModel("Template", "templates", {
+    hospital_id: { type: Number, default: 1, index: true },
+    template_type: { type: String, index: true },
+    name: String,
+    header_text: String,
+    footer_text: String,
+    body_template: String,
+    paper_size: { type: String, default: "A4" },
+    orientation: { type: String, default: "portrait" },
+    logo_position: { type: String, default: "left" },
+    show_hospital_logo: { type: Boolean, default: true },
+    show_patient_details: { type: Boolean, default: true },
+    show_doctor_signature: { type: Boolean, default: true },
+    is_default: { type: Boolean, default: false },
+    is_active: { type: Boolean, default: true },
+});
+Template.schema.index({ hospital_id: 1, template_type: 1, name: 1 }, { unique: true, name: "template_hospital_type_name_unique" });
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -380,5 +399,6 @@ module.exports = {
     LoginHistory,
     SecuritySetting,
     DynamicField,
+    Template,
     Notification,
 };

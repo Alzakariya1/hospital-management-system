@@ -17,3 +17,5 @@ export { notificationApi } from './notificationApi';
 export { auditApi } from './auditApi';
 
 export { configurationApi } from './configurationApi';
+
+export { templateApi } from './templateApi';

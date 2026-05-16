@@ -67,6 +67,7 @@ app.use("/api/billing", require("./routes/billing.routes"));
 app.use("/api", require("./routes/notification.routes"));
 app.use("/api", require("./routes/audit-security.routes"));
 app.use("/api", require("./routes/configuration.routes"));
+app.use("/api", require("./routes/template.routes"));
 app.use(notFound);
 app.use(errorHandler);
 connectDB()

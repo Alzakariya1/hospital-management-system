@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { configurationApi } from '../api/configurationApi';
+import { templateApi } from '../api/templateApi';
 import { DataTable } from '../components';
 
 const emptyField = {
@@ -40,12 +41,19 @@ export default function Configuration({ permissions = {} }) {
   const [moduleFilter, setModuleFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [templates, setTemplates] = useState([]);
+  const [templateForm, setTemplateForm] = useState({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true });
+  const [editingTemplateId, setEditingTemplateId] = useState(null);
 
   async function load() {
     setLoading(true);
     try {
-      const { data } = await configurationApi.listDynamicFields(moduleFilter === 'all' ? {} : { module: moduleFilter });
+      const [{ data }, tpl] = await Promise.all([
+        configurationApi.listDynamicFields(moduleFilter === 'all' ? {} : { module: moduleFilter }),
+        templateApi.list().catch(() => ({ data: [] })),
+      ]);
       setFields(data);
+      setTemplates(tpl.data || []);
     } finally {
       setLoading(false);
     }
@@ -103,6 +111,45 @@ export default function Configuration({ permissions = {} }) {
 
   async function toggle(row) {
     await configurationApi.updateDynamicFieldStatus(row.id, !row.is_active);
+    await load();
+  }
+
+
+  async function submitTemplate(e) {
+    e.preventDefault();
+    setMessage('');
+    try {
+      if (editingTemplateId) {
+        await templateApi.update(editingTemplateId, templateForm);
+        setMessage('Template updated successfully.');
+      } else {
+        await templateApi.create(templateForm);
+        setMessage('Template created successfully.');
+      }
+      setTemplateForm({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true });
+      setEditingTemplateId(null);
+      await load();
+    } catch (err) {
+      setMessage(err?.response?.data?.message || 'Unable to save template.');
+    }
+  }
+
+  function editTemplate(row) {
+    setEditingTemplateId(row.id);
+    setTemplateForm({
+      template_type: row.template_type || 'invoice',
+      name: row.name || '',
+      header_text: row.header_text || '',
+      body_template: row.body_template || '',
+      footer_text: row.footer_text || '',
+      is_default: Boolean(row.is_default),
+      is_active: row.is_active !== false,
+    });
+  }
+
+  async function removeTemplate(row) {
+    if (!confirm(`Delete template ${row.name}?`)) return;
+    await templateApi.delete(row.id);
     await load();
   }
 
@@ -170,6 +217,58 @@ export default function Configuration({ permissions = {} }) {
             <li>Fields are tenant/hospital isolated.</li>
           </ul>
         </div>
+      </div>
+
+
+      <div className="config-layout-grid" style={{ marginTop: 18 }}>
+        <form className="card form configuration-form" onSubmit={submitTemplate}>
+          <h2>{editingTemplateId ? 'Edit Template' : 'Create Template'}</h2>
+          <p className="muted">Build hospital-wise invoice, prescription and report templates.</p>
+          <div className="formGrid">
+            <select value={templateForm.template_type} onChange={e => setTemplateForm({ ...templateForm, template_type: e.target.value })}>
+              <option value="invoice">Invoice</option>
+              <option value="prescription">Prescription</option>
+              <option value="lab_report">Lab Report</option>
+              <option value="radiology_report">Radiology Report</option>
+              <option value="discharge_summary">Discharge Summary</option>
+            </select>
+            <input placeholder="Template name" value={templateForm.name} required onChange={e => setTemplateForm({ ...templateForm, name: e.target.value })} />
+          </div>
+          <input placeholder="Header text" value={templateForm.header_text} onChange={e => setTemplateForm({ ...templateForm, header_text: e.target.value })} />
+          <textarea rows={5} placeholder="Body template. Example: Patient: {{patient_name}} | Doctor: {{doctor_name}} | Total: {{total_amount}}" value={templateForm.body_template} onChange={e => setTemplateForm({ ...templateForm, body_template: e.target.value })} />
+          <input placeholder="Footer text" value={templateForm.footer_text} onChange={e => setTemplateForm({ ...templateForm, footer_text: e.target.value })} />
+          <div className="config-checkbox-row">
+            <label><input type="checkbox" checked={templateForm.is_default} onChange={e => setTemplateForm({ ...templateForm, is_default: e.target.checked })} /> Default template</label>
+            <label><input type="checkbox" checked={templateForm.is_active} onChange={e => setTemplateForm({ ...templateForm, is_active: e.target.checked })} /> Active</label>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button disabled={!permissions.configurationManage}>{editingTemplateId ? 'Update Template' : 'Create Template'}</button>
+            {editingTemplateId && <button type="button" className="secondaryBtn" onClick={() => { setEditingTemplateId(null); setTemplateForm({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true }); }}>Cancel</button>}
+          </div>
+        </form>
+        <div className="card configuration-guide">
+          <h3>Template variables</h3>
+          <ul>
+            <li><b>{{patient_name}}</b>, <b>{{doctor_name}}</b>, <b>{{hospital_name}}</b></li>
+            <li><b>{{invoice_number}}</b>, <b>{{total_amount}}</b>, <b>{{paid_amount}}</b></li>
+            <li><b>{{diagnosis}}</b>, <b>{{prescription_items}}</b>, <b>{{report_notes}}</b></li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="patient-document-header">
+          <div>
+            <h2>Document Templates</h2>
+            <p className="muted">Hospital-wise printable templates for invoices, prescriptions and reports.</p>
+          </div>
+        </div>
+        <DataTable
+          rows={templates.map(row => ({ ...row, type_label: String(row.template_type || '').replaceAll('_', ' '), default_label: row.is_default ? 'Default' : '-', active_label: row.is_active === false ? 'Inactive' : 'Active' }))}
+          cols={['id', 'type_label', 'name', 'default_label', 'active_label']}
+          onEdit={permissions.configurationManage ? editTemplate : null}
+          onDelete={permissions.configurationManage ? removeTemplate : null}
+        />
       </div>
 
       <div className="card">

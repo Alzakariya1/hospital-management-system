@@ -817,3 +817,11 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Frontend `npm run build` passed.
 - Backend syntax checks passed for models, configuration routes, and server.
 - DB live check requires `MONGODB_URI` in local/Render environment because `.env` is not included in the ZIP.
+
+## V19 - Template Builder Foundation
+- Added hospital-wise Template model for invoice, prescription, lab report, radiology report and discharge summary templates.
+- Added backend template APIs under `/api/templates` with tenant filtering, default-template handling, audit events and permission protection.
+- Added Configuration UI section for creating/editing/deleting templates.
+- Added template variables guide for future printable/PDF rendering.
+- Frontend build passed.
+- Backend syntax checks passed.
