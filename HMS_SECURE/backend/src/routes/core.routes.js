@@ -103,7 +103,7 @@ router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (
 
 router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
     const doctorNumericId = Number(req.params.id);
-    const existingDoctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId }));
+    const existingDoctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId })).lean();
     if (!existingDoctor) return res.status(404).json({ message: 'Doctor not found' });
 
     const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'gender', 'specialization', 'qualification', 'consultation_fee', 'experience_years', 'department', 'registration_number', 'license_number', 'address', 'availability', 'bio', 'status'];
@@ -114,24 +114,31 @@ router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async 
         update.doctor_id = cleanDoctorId(update.doctor_id);
         if (!update.doctor_id) return res.status(400).json({ message: 'Doctor ID is required' });
 
-        if (update.doctor_id !== cleanDoctorId(existingDoctor.doctor_id)) {
+        const oldDoctorId = cleanDoctorId(existingDoctor.doctor_id);
+        if (update.doctor_id !== oldDoctorId) {
             const duplicate = await findDuplicateDoctorId(req, update.doctor_id, doctorNumericId);
-            if (duplicate) {
-                return duplicateDoctorResponse(res, duplicate, update.doctor_id);
-            }
+            if (duplicate) return duplicateDoctorResponse(res, duplicate, update.doctor_id);
+        } else {
+            // Do not write the same doctor_id again. This avoids legacy/global index conflicts
+            // and keeps normal edit updates safe.
+            delete update.doctor_id;
         }
     }
 
-    if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' });
+    if (!Object.keys(update).length) return res.json({ message: 'Doctor updated', id: existingDoctor.id });
 
-    Object.assign(existingDoctor, update);
     try {
-        await existingDoctor.save();
-        res.json({ message: 'Doctor updated', id: existingDoctor.id });
+        const updatedDoctor = await Doctor.findOneAndUpdate(
+            tenantFilter(req, { id: doctorNumericId }),
+            { $set: update },
+            { new: true, runValidators: false }
+        ).lean();
+        res.json({ message: 'Doctor updated', id: updatedDoctor.id, doctor: updatedDoctor });
     } catch (error) {
         if (error?.code === 11000) {
-            const duplicate = await findDuplicateDoctorId(req, update.doctor_id || existingDoctor.doctor_id, doctorNumericId);
-            return duplicateDoctorResponse(res, duplicate, update.doctor_id || existingDoctor.doctor_id);
+            const attemptedDoctorId = req.body?.doctor_id || existingDoctor.doctor_id;
+            const duplicate = await findDuplicateDoctorId(req, attemptedDoctorId, doctorNumericId);
+            return duplicateDoctorResponse(res, duplicate, attemptedDoctorId);
         }
         throw error;
     }
@@ -144,7 +151,7 @@ router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async 
 }));
 
 router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), upload.single('profile_image'), asyncHandler(async (req, res) => {
-    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) })).lean();
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
     if (!req.file) return res.status(400).json({ message: 'Profile image is required' });
 
@@ -154,7 +161,7 @@ router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), uplo
     }
 
     if (doctor.profile_image_public_id) {
-        await cloudinary.uploader.destroy(doctor.profile_image_public_id);
+        try { await cloudinary.uploader.destroy(doctor.profile_image_public_id); } catch (_) {}
     }
 
     const result = await new Promise((resolve, reject) => {
@@ -165,19 +172,22 @@ router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), uplo
         stream.end(req.file.buffer);
     });
 
-    doctor.profile_image_url = result.secure_url;
-    doctor.profile_image_public_id = result.public_id;
-    await doctor.save();
+    const updatedDoctor = await Doctor.findOneAndUpdate(
+        tenantFilter(req, { id: Number(req.params.id) }),
+        { $set: { profile_image_url: result.secure_url, profile_image_public_id: result.public_id } },
+        { new: true, runValidators: false }
+    ).lean();
 
     res.json({
         message: 'Doctor profile image uploaded successfully',
-        profile_image_url: doctor.profile_image_url,
-        profile_image_public_id: doctor.profile_image_public_id,
+        profile_image_url: updatedDoctor.profile_image_url,
+        profile_image_public_id: updatedDoctor.profile_image_public_id,
+        doctor: updatedDoctor,
     });
 }));
 
 router.post('/doctors/:id/documents', requirePermission('doctor.edit'), upload.single('document'), asyncHandler(async (req, res) => {
-    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) })).lean();
     if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
     if (!req.file) return res.status(400).json({ message: 'Document file is required' });
 
@@ -207,14 +217,17 @@ router.post('/doctors/:id/documents', requirePermission('doctor.edit'), upload.s
         uploaded_at: new Date(),
     };
 
-    doctor.documents = doctor.documents || [];
-    doctor.documents.push(newDoc);
-    await doctor.save();
+    const updatedDoctor = await Doctor.findOneAndUpdate(
+        tenantFilter(req, { id: Number(req.params.id) }),
+        { $push: { documents: newDoc } },
+        { new: true, runValidators: false }
+    ).lean();
 
     res.status(201).json({
         message: 'Doctor document uploaded successfully',
         document: newDoc,
-        documents: doctor.documents,
+        documents: updatedDoctor.documents || [],
+        doctor: updatedDoctor,
     });
 }));
 

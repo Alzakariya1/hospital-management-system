@@ -35,6 +35,7 @@ export default function Doctors({
   deleteDoctor,
   selectedDoctor,
   setSelectedDoctor,
+  openDoctorProfile,
   setTab,
   doctorPage,
   setDoctorPage,

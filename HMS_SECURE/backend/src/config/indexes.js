@@ -9,13 +9,17 @@ async function ensureDoctorIndexes(db) {
   const collection = db.collection('doctors');
   const indexes = await collection.indexes();
 
-  const globalDoctorIdIndex = indexes.find((idx) => idx.name === 'doctor_id_1');
-  if (globalDoctorIdIndex) {
+  const oldDoctorIdIndexes = indexes.filter((idx) => {
+    const key = idx.key || {};
+    return key.doctor_id === 1 && !key.hospital_id;
+  });
+
+  for (const idx of oldDoctorIdIndexes) {
     try {
-      await collection.dropIndex('doctor_id_1');
-      console.log('Dropped old global doctors.doctor_id_1 index');
+      await collection.dropIndex(idx.name);
+      console.log(`Dropped old doctors.${idx.name} index`);
     } catch (error) {
-      console.warn('Could not drop doctors.doctor_id_1 index:', error.message);
+      console.warn(`Could not drop doctors.${idx.name} index:`, error.message);
     }
   }
 
