@@ -269,6 +269,14 @@ export default function TenantControl({
   const formBranding = safeBranding(tenantForm.branding);
 
   const sortedTenants = useMemo(() => [...(tenants || [])].sort((a, b) => Number(b.id || 0) - Number(a.id || 0)), [tenants]);
+  const duplicateNumericIds = useMemo(() => {
+    const counts = (tenants || []).reduce((acc, tenant) => {
+      const key = String(tenant.id || '');
+      if (key) acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.fromEntries(Object.entries(counts).filter(([, count]) => count > 1));
+  }, [tenants]);
 
   return (
     <section>
@@ -298,6 +306,7 @@ export default function TenantControl({
             <span className="doctor-kicker">Selected SaaS Plan</span>
             <h3>{currentPlan.name}</h3>
             <p className="muted">{currentPlan.description}</p>
+            <p className="muted smallNote">Modules marked Upgrade are locked by the selected SaaS plan. Change the plan to Hospital or Enterprise to unlock them.</p>
           </div>
           <div className="planLimitPills">
             <span>{currentPlan.price}</span>
@@ -459,9 +468,10 @@ export default function TenantControl({
                 {sortedTenants.map((tenant) => {
                   const activeModules = getModules(tenant.enabled_modules);
                   const branding = safeBranding(tenant.branding);
+                  const rowKey = tenant.mongo_id || tenant.id;
                   return (
-                    <tr key={tenant.id}>
-                      <td>{tenant.id}</td>
+                    <tr key={rowKey}>
+                      <td>{tenant.id}{duplicateNumericIds[String(tenant.id || '')] ? <span className="tinyWarning" title="Duplicate numeric ID detected; use maintenance script to repair old data"> !</span> : null}</td>
                       <td>{branding.logo_url ? <img className="hospitalLogoThumb" src={branding.logo_url} alt={`${tenant.name} logo`} /> : <span className="logoPlaceholder">—</span>}</td>
                       <td>{tenant.hospital_code || "—"}</td>
                       <td>{tenant.name}</td>
@@ -472,10 +482,10 @@ export default function TenantControl({
                       <td><span title={Object.entries(getFeatureFlags(tenant.feature_flags)).filter(([, enabled]) => enabled).map(([key]) => key).join(", ") || "No advanced features enabled"}>{countEnabledFeatures(tenant.feature_flags)} enabled</span></td>
                       <td>
                         <div className="actionMenuWrap">
-                          <button type="button" className="kebabBtn" aria-label="Open hospital actions" onClick={(event) => toggleRowMenu(tenant.id, event)}>
+                          <button type="button" className="kebabBtn" aria-label="Open hospital actions" onClick={(event) => toggleRowMenu(rowKey, event)}>
                             <i className="bi bi-three-dots-vertical"></i>
                           </button>
-                          {openMenuId === tenant.id && (
+                          {openMenuId === rowKey && (
                             <div ref={actionMenuRef} className="actionMenu floatingTenantMenu" style={{ top: menuPosition.top, left: menuPosition.left }}>
                               <button type="button" onClick={() => handleAction("view", tenant)}><i className="bi bi-eye"></i> View Details</button>
                               <button type="button" onClick={() => handleAction("edit", tenant)}><i className="bi bi-pencil-square"></i> Edit Hospital</button>

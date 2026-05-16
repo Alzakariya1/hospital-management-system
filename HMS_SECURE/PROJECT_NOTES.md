@@ -922,3 +922,10 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Verified clean packaging excludes `.env`, `node_modules`, and `dist`.
 - Live database/API functional testing requires `MONGODB_URI` and deployment env on Render/local.
 - Known build warnings only: React Hot Toast `use client` bundle warning and large JS chunk warning; not blocking.
+
+## V27 Fix 1 - Hospital Update / Plan Access Clarification
+- Fixed hospital update targeting by using the MongoDB record id when available, preventing edits from accidentally updating the wrong hospital when old data contains duplicate numeric `id` values.
+- Added safer backend hospital lookup for numeric ids, MongoDB ids, and hospital codes.
+- Added duplicate hospital code handling so raw MongoDB `E11000 duplicate key` errors are converted into clear 409 messages.
+- Added `npm run fix-hospital-indexes` to repair old duplicate hospital numeric ids, normalize hospital codes, reset the hospitals counter, and recreate the safe hospital code index.
+- Added UI note explaining why modules show `Upgrade`: Clinic Plan intentionally locks Beds, Lab, Radiology, Pharmacy, Security, Hospitals, and SaaS Control. Switch the hospital plan to Hospital/Enterprise to unlock them.

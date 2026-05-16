@@ -920,9 +920,13 @@ function App() {
   }
 
   function editTenant(row) {
-    setEditingTenantId(row.id);
+    // Prefer mongo_id when available because old seed data may contain duplicate numeric ids.
+    // Using mongo_id keeps hospital updates targeted to the exact row selected from the table.
+    setEditingTenantId(row.mongo_id || row.id);
     setTenantForm({
       ...emptyTenantForm,
+      id: row.id,
+      mongo_id: row.mongo_id,
       hospital_code: row.hospital_code || "",
       name: row.name || "",
       type: row.type || "hospital",

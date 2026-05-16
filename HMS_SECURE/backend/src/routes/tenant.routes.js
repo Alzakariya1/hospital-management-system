@@ -100,7 +100,10 @@ function publicUser(user) {
 }
 
 function publicHospital(hospital) {
-  const x = hospital?.toJSON ? hospital.toJSON() : { ...(hospital || {}) };
+  const raw = hospital?.toObject ? hospital.toObject() : (hospital?.toJSON ? hospital.toJSON() : { ...(hospital || {}) });
+  const x = { ...raw };
+  if (raw?._id) x.mongo_id = String(raw._id);
+  delete x._id;
   if (!x.id) x.id = DEFAULT_HOSPITAL_ID;
   if (!x.name) x.name = process.env.DEFAULT_HOSPITAL_NAME || 'Default Hospital';
   x.plan = x.plan || 'enterprise';
@@ -135,6 +138,36 @@ function publicHospital(hospital) {
     ...(x.settings || {}),
   };
   return x;
+}
+
+function isMongoObjectId(value) {
+  return /^[a-fA-F0-9]{24}$/.test(String(value || ''));
+}
+
+async function findHospitalByIdentifier(identifier) {
+  const raw = String(identifier || '').trim();
+  if (!raw) return null;
+  if (isMongoObjectId(raw)) return Hospital.findById(raw);
+  const numericId = Number(raw);
+  if (Number.isFinite(numericId)) return Hospital.findOne({ id: numericId });
+  return Hospital.findOne({ hospital_code: sanitizeHospitalCode(raw) });
+}
+
+async function findConflictingHospitalCode(code, currentMongoId = null) {
+  if (!code) return null;
+  const conflict = await Hospital.findOne({ hospital_code: code });
+  if (!conflict) return null;
+  if (currentMongoId && String(conflict._id) === String(currentMongoId)) return null;
+  return conflict;
+}
+
+async function auditTenantAction(req, action) {
+  await AuditLog.create({
+    hospital_id: Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID),
+    user_id: req.user.id,
+    action,
+    module_name: 'tenants',
+  });
 }
 
 async function ensureHospital(id = DEFAULT_HOSPITAL_ID) {
@@ -202,11 +235,19 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
 
   const payloadError = validateTenantPayload(payload);
   if (payloadError) return res.status(400).json({ message: payloadError });
-  if (payload.hospital_code && await Hospital.findOne({ hospital_code: payload.hospital_code })) {
-    return res.status(409).json({ message: 'Hospital code already exists' });
+  if (payload.hospital_code && await findConflictingHospitalCode(payload.hospital_code)) {
+    return res.status(409).json({ message: `Hospital code ${payload.hospital_code} already exists. Use Edit Hospital from the row menu, or choose a different hospital code.` });
   }
 
-  const hospital = await Hospital.create(payload);
+  let hospital;
+  try {
+    hospital = await Hospital.create(payload);
+  } catch (err) {
+    if (err?.code === 11000 && err?.keyPattern?.hospital_code) {
+      return res.status(409).json({ message: `Hospital code ${payload.hospital_code || err.keyValue?.hospital_code || ''} already exists. Use Edit Hospital from the row menu, or choose a different hospital code.` });
+    }
+    throw err;
+  }
   let adminUser = null;
 
   try {
@@ -242,7 +283,7 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
 }));
 
 router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
-  const existingHospital = await Hospital.findOne({ id: Number(req.params.id) });
+  const existingHospital = await findHospitalByIdentifier(req.params.id);
   if (!existingHospital) return res.status(404).json({ message: 'Hospital not found' });
   const nextPlan = req.body.plan || existingHospital.plan || 'enterprise';
   const allowed = ['name', 'type', 'status', 'plan', 'enabled_modules', 'feature_flags', 'branding', 'settings', 'plan_limits', 'subscription'];
@@ -262,8 +303,8 @@ router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), 
   if ('hospital_code' in req.body) {
     const code = sanitizeHospitalCode(req.body.hospital_code);
     if (code) {
-      const existing = await Hospital.findOne({ hospital_code: code, id: { $ne: Number(req.params.id) } });
-      if (existing) return res.status(409).json({ message: 'Hospital code already exists' });
+      const existing = await findConflictingHospitalCode(code, existingHospital._id);
+      if (existing) return res.status(409).json({ message: `Hospital code ${code} already exists. Choose a different code.` });
       update.hospital_code = code;
     }
   }
@@ -272,22 +313,32 @@ router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), 
   const payloadError = validateTenantPayload(validationTarget);
   if (payloadError) return res.status(400).json({ message: payloadError });
 
-  await Hospital.updateOne({ id: Number(req.params.id) }, { $set: update });
-  const hospital = await Hospital.findOne({ id: Number(req.params.id) });
+  let hospital;
+  try {
+    hospital = await Hospital.findByIdAndUpdate(existingHospital._id, { $set: update }, { new: true });
+  } catch (err) {
+    if (err?.code === 11000 && err?.keyPattern?.hospital_code) {
+      return res.status(409).json({ message: `Hospital code ${update.hospital_code || err.keyValue?.hospital_code || ''} already exists. Choose a different code.` });
+    }
+    throw err;
+  }
   if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  await auditTenantAction(req, `Updated hospital ${hospital.name}`);
   res.json(publicHospital(hospital));
 }));
 
 router.get('/tenants/:id/admins', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
-  const hospitalId = Number(req.params.id);
+  const hospital = await findHospitalByIdentifier(req.params.id);
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const hospitalId = Number(hospital.id);
   const admins = await User.find({ hospital_id: hospitalId, role: { $in: ['hospital_admin', 'admin'] } }).sort({ id: -1 });
   res.json(admins.map(publicUser));
 }));
 
 router.post('/tenants/:id/admins', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
-  const hospitalId = Number(req.params.id);
-  const hospital = await Hospital.findOne({ id: hospitalId });
+  const hospital = await findHospitalByIdentifier(req.params.id);
   if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const hospitalId = Number(hospital.id);
 
   const adminPayload = await buildInitialAdminPayload(req, hospitalId);
   if (!adminPayload) return res.status(400).json({ message: 'Admin full name, email and password are required' });
@@ -306,9 +357,9 @@ router.post('/tenants/:id/admins', verifyToken, requirePermission('hospital.mana
 }));
 
 router.post('/tenants/:id/logo', verifyToken, requirePermission('hospital.manage'), upload.single('logo'), asyncHandler(async (req, res) => {
-  const hospitalId = Number(req.params.id);
-  const hospital = await Hospital.findOne({ id: hospitalId });
+  const hospital = await findHospitalByIdentifier(req.params.id);
   if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const hospitalId = Number(hospital.id);
   if (!req.file) return res.status(400).json({ message: 'Logo file is required' });
   if (!ALLOWED_LOGO_TYPES.includes(req.file.mimetype)) {
     return res.status(400).json({ message: 'Only JPG, PNG, WEBP, and SVG logos are allowed' });
@@ -349,15 +400,15 @@ router.post('/tenants/:id/logo', verifyToken, requirePermission('hospital.manage
 }));
 
 router.delete('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
-  const hospitalId = Number(req.params.id);
+  const hospital = await findHospitalByIdentifier(req.params.id);
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const hospitalId = Number(hospital.id);
   if (hospitalId === DEFAULT_HOSPITAL_ID) {
     return res.status(400).json({ message: 'Default hospital cannot be archived' });
   }
   if (req.user.role !== 'super_admin') {
     return res.status(403).json({ message: 'Only super admin can archive hospitals' });
   }
-  const hospital = await Hospital.findOne({ id: hospitalId });
-  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
 
   hospital.status = 'archived';
   hospital.is_deleted = true;

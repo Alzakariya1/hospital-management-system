@@ -8,7 +8,8 @@
     "seed": "node scripts/seed-admin.js",
     "check-db": "node scripts/check-db.js",
     "fix-doctor-indexes": "node scripts/fix-doctor-indexes.js",
-    "fix-security-indexes": "node scripts/fix-security-indexes.js"
+    "fix-security-indexes": "node scripts/fix-security-indexes.js",
+    "fix-hospital-indexes": "node scripts/fix-hospital-indexes.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
