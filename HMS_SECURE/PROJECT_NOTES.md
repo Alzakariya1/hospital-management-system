@@ -914,3 +914,11 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added frontend Communications tab with channel/status filters.
 - Added audit logs for communication actions.
 - External email/SMS/WhatsApp sending is intentionally provider-ready only; when env keys are missing, logs are saved as skipped instead of failing.
+
+## V27 Full QA + Bug Stabilization
+- Regression QA phase after V26 Communication Reminders.
+- Frontend dependencies installed locally and production build passed.
+- Backend dependencies installed locally and syntax checks passed for server/app/models/routes.
+- Verified clean packaging excludes `.env`, `node_modules`, and `dist`.
+- Live database/API functional testing requires `MONGODB_URI` and deployment env on Render/local.
+- Known build warnings only: React Hot Toast `use client` bundle warning and large JS chunk warning; not blocking.
