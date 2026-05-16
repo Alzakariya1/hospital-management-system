@@ -1774,3 +1774,104 @@ section > .card {
   .keka-filter-row { grid-template-columns: 1fr; }
   .keka-entity-overview .patient-avatar { margin-top: 0; }
 }
+
+/* Phase 8A cleanup: unified profile polish and smaller camera controls */
+.keka-entity-profile-card {
+  border: 1px solid #e7ebf3;
+  background: #fff;
+}
+.keka-entity-profile-card .keka-cover-title-block h1 {
+  font-size: 28px;
+  line-height: 1.14;
+}
+.entity-clean-header h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  color: #101828;
+  letter-spacing: -0.02em;
+}
+.entity-clean-header p {
+  margin: 0;
+  color: #667085;
+}
+.keka-entity-overview .patient-avatar {
+  width: 104px;
+  height: 104px;
+  min-width: 104px;
+  font-size: 48px;
+  margin-top: -58px;
+}
+.keka-entity-overview .patient-avatar img,
+.patient-avatar img {
+  object-fit: cover;
+}
+.profile-image-overlay-btn,
+.doctor-avatar-upload .profile-image-overlay-btn {
+  width: 30px !important;
+  height: 30px !important;
+  right: 2px !important;
+  bottom: 2px !important;
+  border: 2px solid #fff !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .18) !important;
+}
+.profile-image-overlay-btn i,
+.doctor-avatar-upload .profile-image-overlay-btn i,
+.keka-file-tile i,
+.upload-image-btn i {
+  font-size: 13px !important;
+  line-height: 1;
+}
+.doctor-avatar-upload {
+  border-radius: 999px !important;
+}
+.doctor-avatar-upload img {
+  border-radius: 999px !important;
+}
+.keka-entity-profile-card .patient-profile-main {
+  padding-top: 2px;
+}
+.keka-entity-profile-card .patient-profile-header {
+  margin-bottom: 14px;
+}
+.keka-entity-profile-card .info-card,
+.keka-entity-profile-card .extra-info-card,
+.keka-entity-profile-card .summary-card,
+.keka-entity-profile-card .patient-related-card,
+.keka-entity-profile-card .medical-notes-box {
+  border: 1px solid #e8ecf4;
+  border-radius: 8px;
+}
+.keka-entity-profile-card .info-card h3,
+.keka-entity-profile-card .extra-info-row b,
+.keka-entity-profile-card .summary-card h3 {
+  overflow-wrap: anywhere;
+}
+.keka-entity-profile-card .patient-related-card h3,
+.keka-entity-profile-card .medical-notes-box h3,
+.keka-entity-profile-card .extra-info-card h3 {
+  font-size: 17px;
+}
+.patient-document-item {
+  max-width: 100%;
+}
+.patient-document-actions .icon-btn,
+.patient-document-actions a.icon-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.patient-status {
+  white-space: nowrap;
+  text-transform: capitalize;
+}
+@media (max-width: 760px) {
+  .keka-entity-overview .patient-avatar {
+    margin-top: -36px;
+  }
+  .entity-clean-header h2 {
+    font-size: 21px;
+  }
+}

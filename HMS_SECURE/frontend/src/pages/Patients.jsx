@@ -150,8 +150,7 @@ export default function Patients({
 
                   <h2>Patient Documents</h2>
                   <p className="muted">
-                    Upload identity proof, prescriptions, reports, insurance or
-                    admission documents.
+                    Upload identity proof, prescriptions, reports, insurance or admission records.
                   </p>
 
                   <div className="patient-document-grid">
@@ -363,11 +362,11 @@ export default function Patients({
                     </div>
 
                     <div className="patient-profile-main">
-                      <div className="patient-profile-header">
+                      <div className="patient-profile-header entity-clean-header">
                         <div>
                           <span className="doctor-kicker">Personal Details</span>
-                          <h1>{selectedPatient.full_name}</h1>
-                          <p>Patient ID: {selectedPatient.patient_id}</p>
+                          <h2>Profile Information</h2>
+                          <p>Core demographic, contact and clinical summary.</p>
                         </div>
 
                         <div className="patient-status">Active Patient</div>

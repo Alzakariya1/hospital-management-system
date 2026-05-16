@@ -122,11 +122,11 @@ export default function Doctors({
             </div>
 
             <div className="patient-profile-main">
-              <div className="patient-profile-header doctor-profile-header">
+              <div className="patient-profile-header doctor-profile-header entity-clean-header">
                 <div>
-                  <span className="doctor-kicker">Doctor Overview</span>
-                  <h1>{selectedDoctor.full_name || "Unnamed Doctor"}</h1>
-                  <p>Doctor ID: {selectedDoctor.doctor_id || "--"} {selectedDoctor.specialization ? `• ${selectedDoctor.specialization}` : ""}</p>
+                  <span className="doctor-kicker">Professional Details</span>
+                  <h2>Profile Information</h2>
+                  <p>Credentials, contact details and current profile status.</p>
                 </div>
                 <div className="doctor-profile-actions">
                   <div className="patient-status">{selectedDoctor.status || "Active Doctor"}</div>
