@@ -537,3 +537,9 @@ This phase adds hospital-wise advanced feature flags without breaking existing m
 5. Save.
 6. Re-open Edit and confirm flags are still selected.
 7. Check normal modules still work.
+
+## Phase 8C - Theme-aware profile and dashboard colors
+- Updated doctor, patient, and admin/profile cover backgrounds to follow the selected theme color.
+- Updated profile detail sections, avatar upload controls, document tiles, and empty states to use theme-aware colors.
+- Updated dashboard welcome panel, stat cards, Hospital Overview chart, and Billing Status chart to use theme-aware palette instead of default black/grey chart colors.
+- Verified frontend production build and backend syntax checks.

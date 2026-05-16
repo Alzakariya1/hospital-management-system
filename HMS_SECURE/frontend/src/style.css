@@ -2159,3 +2159,139 @@ section > .card {
   .notificationDropdown,
   .profileDropdown { right: -8px; width: min(320px, 86vw); }
 }
+
+/* Phase 8C: theme-aware dashboard charts and unified profile backgrounds */
+:root {
+  --accent-rgb: 91, 63, 180;
+  --chart-blue: #2563eb;
+  --chart-green: #16a34a;
+  --chart-amber: #f59e0b;
+  --chart-rose: #e11d48;
+  --chart-grid: #e8ecf4;
+  --surface-soft: color-mix(in srgb, var(--purple-soft) 62%, #ffffff 38%);
+  --hero-gradient: linear-gradient(135deg, color-mix(in srgb, var(--purple) 92%, #111827 8%) 0%, color-mix(in srgb, var(--purple) 70%, var(--chart-blue) 30%) 45%, color-mix(in srgb, var(--purple-dark) 76%, #101828 24%) 100%);
+  --dashboard-gradient: linear-gradient(135deg, var(--purple) 0%, color-mix(in srgb, var(--purple) 68%, #60a5fa 32%) 48%, color-mix(in srgb, var(--purple) 62%, #ec4899 38%) 100%);
+}
+:root[data-theme="dark"] {
+  --chart-blue: #60a5fa;
+  --chart-green: #34d399;
+  --chart-amber: #fbbf24;
+  --chart-rose: #fb7185;
+  --chart-grid: #263449;
+  --surface-soft: color-mix(in srgb, var(--purple) 16%, #111827 84%);
+}
+.quickPanel {
+  background: var(--dashboard-gradient) !important;
+  border: 1px solid color-mix(in srgb, var(--purple) 28%, transparent);
+}
+.stat::after {
+  background: color-mix(in srgb, var(--purple-soft) 88%, #ffffff 12%) !important;
+}
+.dashboardTwoCol .card {
+  background:
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--purple-soft) 62%, transparent) 0 70px, transparent 72px),
+    var(--card) !important;
+}
+.dashboardTwoCol .recharts-wrapper text,
+.dashboardTwoCol .recharts-cartesian-axis-tick-value,
+.dashboardTwoCol .recharts-legend-item-text {
+  fill: var(--muted) !important;
+  color: var(--muted) !important;
+}
+.dashboardTwoCol .recharts-tooltip-wrapper {
+  color: var(--text) !important;
+}
+.keka-cover-art {
+  background:
+    radial-gradient(circle at 18% 42%, color-mix(in srgb, var(--purple-soft) 72%, transparent) 0 16%, transparent 18%),
+    radial-gradient(circle at 64% 28%, color-mix(in srgb, var(--purple) 70%, #60a5fa 30%) 0 20%, transparent 23%),
+    var(--hero-gradient) !important;
+}
+.keka-cover-card,
+.compact-cover {
+  background: color-mix(in srgb, var(--purple-dark) 78%, #111827 22%) !important;
+}
+.keka-cover-card::after {
+  background: linear-gradient(90deg, rgba(15,23,42,.06), rgba(15,23,42,.42)) !important;
+}
+.doctor-profile-hero,
+.keka-entity-overview,
+.patient-profile-top {
+  background:
+    radial-gradient(circle at 96% 12%, color-mix(in srgb, var(--purple-soft) 68%, transparent) 0 92px, transparent 94px),
+    linear-gradient(135deg, var(--card) 0%, var(--surface-soft) 100%) !important;
+  border-color: color-mix(in srgb, var(--purple) 14%, var(--border)) !important;
+}
+.doctor-kicker,
+.keka-link-btn,
+.keka-help-card small,
+.keka-file-tile {
+  color: var(--purple) !important;
+}
+.keka-file-tile {
+  background: color-mix(in srgb, var(--purple-soft) 62%, var(--card) 38%) !important;
+  border-color: color-mix(in srgb, var(--purple) 28%, var(--border)) !important;
+}
+.keka-profile-score {
+  background: color-mix(in srgb, var(--purple-dark) 38%, rgba(0,0,0,.28) 62%) !important;
+  border-color: color-mix(in srgb, var(--purple-soft) 20%, rgba(255,255,255,.18) 80%) !important;
+}
+.score-ring,
+.keka-mini-score {
+  border-color: color-mix(in srgb, var(--purple-soft) 45%, #ffcc3f 55%) !important;
+}
+.keka-entity-overview .patient-avatar,
+.doctor-avatar-upload {
+  background: var(--purple-soft) !important;
+  box-shadow: 0 16px 38px color-mix(in srgb, var(--purple) 18%, transparent) !important;
+}
+.profile-image-overlay-btn,
+.doctor-avatar-upload .profile-image-overlay-btn {
+  color: var(--purple) !important;
+  border-color: var(--card) !important;
+}
+.summary-card i,
+.empty-doc-state i {
+  color: var(--purple) !important;
+}
+.summary-card i {
+  background: var(--purple-soft) !important;
+}
+:root[data-theme="dark"] .dashboardTwoCol .card {
+  background:
+    radial-gradient(circle at 92% 4%, color-mix(in srgb, var(--purple) 20%, transparent) 0 70px, transparent 72px),
+    var(--card) !important;
+}
+:root[data-theme="dark"] .doctor-profile-hero,
+:root[data-theme="dark"] .keka-entity-overview,
+:root[data-theme="dark"] .patient-profile-top,
+:root[data-theme="dark"] .keka-section-card,
+:root[data-theme="dark"] .keka-help-card,
+:root[data-theme="dark"] .keka-bio-box,
+:root[data-theme="dark"] .keka-file-tile,
+:root[data-theme="dark"] .patient-document-card,
+:root[data-theme="dark"] .patient-document-item,
+:root[data-theme="dark"] .doctor-document-form,
+:root[data-theme="dark"] .empty-doc-state {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
+:root[data-theme="dark"] .keka-cover-art {
+  background:
+    radial-gradient(circle at 18% 42%, color-mix(in srgb, var(--purple) 34%, transparent) 0 16%, transparent 18%),
+    radial-gradient(circle at 64% 28%, color-mix(in srgb, var(--purple) 42%, #60a5fa 20%) 0 20%, transparent 23%),
+    linear-gradient(135deg, color-mix(in srgb, var(--purple) 42%, #020617 58%) 0%, #111827 48%, #020617 100%) !important;
+}
+:root[data-theme="dark"] .keka-bio-box p,
+:root[data-theme="dark"] .detailBox p,
+:root[data-theme="dark"] .extra-info-row b,
+:root[data-theme="dark"] .info-card h3,
+:root[data-theme="dark"] .medical-notes-box p,
+:root[data-theme="dark"] .patient-document-item b {
+  color: var(--text) !important;
+}
+:root[data-theme="dark"] .patient-status {
+  background: color-mix(in srgb, var(--chart-green) 18%, transparent) !important;
+  color: var(--chart-green) !important;
+}

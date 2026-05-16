@@ -3,6 +3,7 @@ import { Bed, Calendar, Stethoscope, Users } from "lucide-react";
 import {
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
   Pie,
   PieChart,
@@ -14,6 +15,8 @@ import {
 import { DataTable, StatCard } from "../components";
 
 export default function Dashboard({ stats = {}, patients = [], doctors = [], appointments = [], beds = [], bills = [] }) {
+  const chartPalette = ["var(--purple)", "var(--chart-blue)", "var(--chart-green)", "var(--chart-amber)"];
+  const billingPalette = ["var(--chart-green)", "var(--chart-amber)", "var(--chart-rose)"];
   const appointmentChartData = [
     { name: "Patients", value: patients.length },
     { name: "Doctors", value: doctors.length },
@@ -59,10 +62,15 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
           <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer>
               <BarChart data={appointmentChartData}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} stroke="var(--muted)" />
+                <YAxis axisLine={false} tickLine={false} stroke="var(--muted)" />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)" }} />
+                <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                  {appointmentChartData.map((entry, index) => (
+                    <Cell key={`overview-${entry.name}`} fill={chartPalette[index % chartPalette.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -76,12 +84,12 @@ export default function Dashboard({ stats = {}, patients = [], doctors = [], app
           <div style={{ width: "100%", height: 300 }}>
             <ResponsiveContainer>
               <PieChart>
-                <Pie data={billingChartData} dataKey="value" nameKey="name" outerRadius={90} label>
+                <Pie data={billingChartData} dataKey="value" nameKey="name" outerRadius={90} innerRadius={42} paddingAngle={3} label>
                   {billingChartData.map((entry, index) => (
-                    <Cell key={index} />
+                    <Cell key={entry.name} fill={billingPalette[index % billingPalette.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid var(--border)", background: "var(--card)", color: "var(--text)" }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
