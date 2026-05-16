@@ -3,8 +3,14 @@ const { Doctor, Department, Appointment, Patient, Bed, Billing, AuditLog } = req
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
+const multer = require('multer');
+const cloudinary = require('../config/cloudinary');
 
 const router = express.Router();
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 8 * 1024 * 1024 },
+});
 router.use(verifyToken, attachTenant);
 
 async function withNames(req, rows) {
@@ -48,6 +54,34 @@ router.get('/doctors', requirePermission('doctor.view'), asyncHandler(async (req
     const deps = await Department.find(tenantFilter(req)).lean();
     const dm = Object.fromEntries(deps.map(d => [d.id, d.department_name]));
     res.json(rows.map(d => ({ ...d, department_name: dm[d.department_id] })));
+}));
+
+
+router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async (req, res) => {
+    const doctorNumericId = Number(req.params.id);
+    if (!Number.isFinite(doctorNumericId)) {
+        return res.status(400).json({ message: 'Invalid doctor id' });
+    }
+
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId })).lean();
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+    let departmentName = '';
+    if (doctor.department_id) {
+        const department = await Department.findOne(tenantFilter(req, { id: Number(doctor.department_id) })).lean();
+        departmentName = department?.department_name || '';
+    }
+
+    const doctorAppointments = await Appointment.find(tenantFilter(req, {
+        $or: [
+            { doctor_id: String(doctor.doctor_id || '') },
+            { doctor_id: String(doctor.id || '') },
+            { doctor_id: doctor.doctor_id },
+            { doctor_id: doctor.id },
+        ],
+    })).sort({ appointment_date: -1, appointment_time: -1 }).limit(20).lean();
+
+    res.json({ ...doctor, department_name: departmentName, appointments: doctorAppointments });
 }));
 
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
@@ -112,6 +146,166 @@ router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async 
             });
         }
         throw error;
+    }
+}));
+
+
+router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), upload.single('profile_image'), asyncHandler(async (req, res) => {
+    const doctorNumericId = Number(req.params.id);
+    if (!Number.isFinite(doctorNumericId)) {
+        return res.status(400).json({ message: 'Invalid doctor id' });
+    }
+
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'Profile image is required' });
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: 'Only JPG, PNG, and WEBP images are allowed' });
+    }
+
+    try {
+        if (doctor.profile_image_public_id) {
+            await cloudinary.uploader.destroy(doctor.profile_image_public_id, { resource_type: 'image' });
+        }
+
+        const result = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'hms/doctor-profile-images',
+                    resource_type: 'image',
+                },
+                (error, uploadResult) => {
+                    if (error) reject(error);
+                    else resolve(uploadResult);
+                },
+            );
+
+            stream.end(req.file.buffer);
+        });
+
+        doctor.profile_image_url = result.secure_url;
+        doctor.profile_image_public_id = result.public_id;
+        await doctor.save();
+
+        res.json({
+            message: 'Doctor profile image uploaded successfully',
+            profile_image_url: doctor.profile_image_url,
+            profile_image_public_id: doctor.profile_image_public_id,
+            doctor: doctor.toJSON(),
+        });
+    } catch (error) {
+        console.error('Doctor profile image upload failed:', error);
+        res.status(500).json({ message: 'Doctor profile image upload failed. Please verify Cloudinary environment variables on Render.' });
+    }
+}));
+
+
+router.post('/doctors/:id/documents', requirePermission('doctor.document.manage'), upload.single('document'), asyncHandler(async (req, res) => {
+    const doctorNumericId = Number(req.params.id);
+    if (!Number.isFinite(doctorNumericId)) {
+        return res.status(400).json({ message: 'Invalid doctor id' });
+    }
+
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+    if (!req.file) {
+        return res.status(400).json({ message: 'Document file is required' });
+    }
+
+    const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
+
+    if (!allowedTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: 'Only PDF, DOC, DOCX, JPG, PNG, and WEBP files are allowed' });
+    }
+
+    try {
+        const result = await new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'hms/doctor-documents',
+                    resource_type: 'auto',
+                },
+                (error, uploadResult) => {
+                    if (error) reject(error);
+                    else resolve(uploadResult);
+                },
+            );
+
+            stream.end(req.file.buffer);
+        });
+
+        const newDoc = {
+            title: req.body.title || req.file.originalname,
+            category: req.body.category || 'credential',
+            document_type: req.body.document_type || 'Certificate',
+            notes: req.body.notes || '',
+            file_name: req.file.originalname,
+            file_type: req.file.mimetype,
+            file_size: req.file.size,
+            file_url: result.secure_url,
+            file_public_id: result.public_id,
+            uploaded_at: new Date(),
+        };
+
+        doctor.certificates = doctor.certificates || [];
+        doctor.certificates.push(newDoc);
+        await doctor.save();
+
+        res.status(201).json({
+            message: 'Doctor document uploaded successfully',
+            document: newDoc,
+            certificates: doctor.certificates,
+            doctor: doctor.toJSON(),
+        });
+    } catch (error) {
+        console.error('Doctor document upload failed:', error);
+        res.status(500).json({ message: 'Doctor document upload failed. Please verify Cloudinary environment variables on Render.' });
+    }
+}));
+
+router.delete('/doctors/:id/documents/:docIndex', requirePermission('doctor.document.manage'), asyncHandler(async (req, res) => {
+    const doctorNumericId = Number(req.params.id);
+    const docIndex = Number(req.params.docIndex);
+
+    if (!Number.isFinite(doctorNumericId) || !Number.isInteger(docIndex) || docIndex < 0) {
+        return res.status(400).json({ message: 'Invalid doctor document request' });
+    }
+
+    const doctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId }));
+    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
+
+    const doc = doctor.certificates?.[docIndex];
+    if (!doc) return res.status(404).json({ message: 'Document not found' });
+
+    try {
+        if (doc.file_public_id) {
+            await cloudinary.uploader.destroy(doc.file_public_id, { resource_type: 'auto' });
+        }
+
+        doctor.certificates.splice(docIndex, 1);
+        await doctor.save();
+
+        res.json({
+            message: 'Doctor document deleted successfully',
+            certificates: doctor.certificates,
+            doctor: doctor.toJSON(),
+        });
+    } catch (error) {
+        console.error('Doctor document delete failed:', error);
+        res.status(500).json({ message: 'Doctor document delete failed' });
     }
 }));
 

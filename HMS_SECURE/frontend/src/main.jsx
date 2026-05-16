@@ -71,6 +71,9 @@ const emptyDoctor = {
   specialization: "",
   qualification: "",
   consultation_fee: "",
+  license_number: "",
+  registration_number: "",
+  status: "active",
 };
 const emptyAppointment = {
   patient_id: "",
@@ -149,6 +152,7 @@ function App() {
   });
 
   const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [doctorSearch, setDoctorSearch] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [beds, setBeds] = useState([]);
@@ -313,14 +317,26 @@ function App() {
 
     try {
       if (editingDoctorId) {
-        await doctorApi.update(editingDoctorId, doctor);
+        const updatedDoctorId = editingDoctorId;
+        await doctorApi.update(updatedDoctorId, doctor);
         toast.success("Doctor updated successfully");
         setEditingDoctorId(null);
-      } else {
-        await doctorApi.create(doctor);
-        toast.success("Doctor added successfully");
+        setDoctor(emptyDoctor);
+        await load();
+
+        if (tab === "doctorProfile" && selectedDoctor && String(selectedDoctor.id) === String(updatedDoctorId)) {
+          try {
+            const { data } = await doctorApi.get(updatedDoctorId);
+            setSelectedDoctor(data);
+          } catch (_) {
+            setSelectedDoctor((prev) => prev ? { ...prev, ...doctor } : prev);
+          }
+        }
+        return;
       }
 
+      await doctorApi.create(doctor);
+      toast.success("Doctor added successfully");
       setDoctor(emptyDoctor);
       await load();
     } catch (err) {
@@ -455,7 +471,7 @@ function App() {
     setPendingPatientDocs((prev) => prev.filter((doc) => doc.id !== docId));
     toast.success("Document removed");
   }
-  function editDoctor(row) {
+  function editDoctor(row, options = {}) {
     setDoctor({
       doctor_id: row.doctor_id || "",
       full_name: row.full_name || "",
@@ -464,9 +480,118 @@ function App() {
       specialization: row.specialization || "",
       qualification: row.qualification || "",
       consultation_fee: row.consultation_fee || "",
+      license_number: row.license_number || "",
+      registration_number: row.registration_number || "",
+      status: row.status || "active",
     });
 
-    setEditingDoctorId(row.id);
+    setEditingDoctorId(row.id || row._id);
+    if (options.stayOnProfile) setTab("doctorProfile");
+  }
+
+  function cancelDoctorEdit() {
+    setDoctor(emptyDoctor);
+    setEditingDoctorId(null);
+  }
+
+  async function openDoctorProfile(row) {
+    const fallbackDoctor = doctors.find((d) => d.id === row.id || d.doctor_id === row.doctor_id) || row;
+    setSelectedDoctor(fallbackDoctor);
+    setTab("doctorProfile");
+
+    try {
+      const { data } = await doctorApi.get(row.id || row._id);
+      setSelectedDoctor(data);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Could not refresh doctor profile");
+    }
+  }
+
+  async function uploadDoctorProfileImage(doctorId, file) {
+    if (!doctorId || !file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPG, PNG, and WEBP images are allowed");
+      return;
+    }
+
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("Image size should be less than 3MB");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("profile_image", file);
+
+      const { data } = await doctorApi.uploadProfileImage(doctorId, formData);
+      const refreshed = await doctorApi.get(doctorId);
+
+      setSelectedDoctor(refreshed.data);
+      await load();
+      toast.success(data.message || "Doctor profile image uploaded");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Doctor profile image upload failed");
+    }
+  }
+
+
+  async function uploadDoctorDocument(doctorId, payload) {
+    if (!doctorId || !payload?.file) return;
+
+    const allowedTypes = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ];
+
+    if (!allowedTypes.includes(payload.file.type)) {
+      toast.error("Only PDF, DOC, DOCX, JPG, PNG, and WEBP files are allowed");
+      return;
+    }
+
+    if (payload.file.size > 8 * 1024 * 1024) {
+      toast.error("Document size should be less than 8MB");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("document", payload.file);
+      formData.append("title", payload.title || payload.file.name);
+      formData.append("document_type", payload.document_type || "Certificate");
+      formData.append("category", payload.category || "credential");
+      formData.append("notes", payload.notes || "");
+
+      const { data } = await doctorApi.uploadDocument(doctorId, formData);
+      const refreshed = await doctorApi.get(doctorId);
+
+      setSelectedDoctor(refreshed.data);
+      await load();
+      toast.success(data.message || "Doctor document uploaded");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Doctor document upload failed");
+    }
+  }
+
+  async function deleteDoctorDocument(doctorId, docIndex) {
+    if (!doctorId && doctorId !== 0) return;
+    if (!confirm("Delete this doctor document?")) return;
+
+    try {
+      const { data } = await doctorApi.deleteDocument(doctorId, docIndex);
+      const refreshed = await doctorApi.get(doctorId);
+
+      setSelectedDoctor(refreshed.data);
+      await load();
+      toast.success(data.message || "Doctor document deleted");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Doctor document delete failed");
+    }
   }
 
   async function deleteDoctor(row) {
@@ -772,7 +897,7 @@ function App() {
   const tabs = filterTabsByPermissions(user, allTabs, enabledModules);
 
   useEffect(() => {
-    const internalViews = ["patientProfile"];
+    const internalViews = ["patientProfile", "doctorProfile"];
     if (internalViews.includes(tab)) return;
     if (tabs.length && !tabs.some(([id]) => id === tab)) {
       setTab(tabs[0][0]);
@@ -791,6 +916,7 @@ function App() {
     doctorCreate: can("doctor.create"),
     doctorEdit: can("doctor.edit"),
     doctorDelete: can("doctor.delete"),
+    doctorDocumentManage: can("doctor.document.manage") || can("doctor.edit"),
     appointmentCreate: can("appointment.create"),
     appointmentEdit: can("appointment.edit"),
     appointmentDelete: can("appointment.delete"),
@@ -893,7 +1019,7 @@ function App() {
         activeTab={tab}
         onTabChange={setTab}
         onLogout={logout}
-        headerTitle={tab === "patientProfile" ? "Patient Profile" : tabs.find((t) => t[0] === tab)?.[1]}
+        headerTitle={tab === "patientProfile" ? "Patient Profile" : tab === "doctorProfile" ? "Doctor Profile" : tabs.find((t) => t[0] === tab)?.[1]}
         appointmentCount={appointments.length}
         lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
         pendingBillCount={bills.filter((b) => b.status === "pending").length}
@@ -1016,6 +1142,42 @@ function App() {
                 setDoctorPage={setDoctorPage}
                 doctorTotalPages={doctorTotalPages}
                 permissions={permissions}
+                selectedDoctor={selectedDoctor}
+                editingDoctorId={editingDoctorId}
+                cancelDoctorEdit={cancelDoctorEdit}
+                setTab={setTab}
+                openDoctorProfile={openDoctorProfile}
+                uploadDoctorProfileImage={uploadDoctorProfileImage}
+                uploadDoctorDocument={uploadDoctorDocument}
+                deleteDoctorDocument={deleteDoctorDocument}
+                appointments={appointments}
+                activeView="doctors"
+              />
+            )}
+            {tab === "doctorProfile" && selectedDoctor && (
+              <Doctors
+                doctor={doctor}
+                setDoctor={setDoctor}
+                addDoctor={addDoctor}
+                doctorSearch={doctorSearch}
+                setDoctorSearch={setDoctorSearch}
+                paginatedDoctors={paginatedDoctors}
+                editDoctor={editDoctor}
+                deleteDoctor={deleteDoctor}
+                doctorPage={doctorPage}
+                setDoctorPage={setDoctorPage}
+                doctorTotalPages={doctorTotalPages}
+                permissions={permissions}
+                selectedDoctor={selectedDoctor}
+                editingDoctorId={editingDoctorId}
+                cancelDoctorEdit={cancelDoctorEdit}
+                setTab={setTab}
+                openDoctorProfile={openDoctorProfile}
+                uploadDoctorProfileImage={uploadDoctorProfileImage}
+                uploadDoctorDocument={uploadDoctorDocument}
+                deleteDoctorDocument={deleteDoctorDocument}
+                appointments={appointments}
+                activeView="doctorProfile"
               />
             )}
             {tab === "appointments" && (

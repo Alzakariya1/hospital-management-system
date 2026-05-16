@@ -3,7 +3,7 @@ const ROLE_PERMISSIONS = {
   admin: [
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
-    'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
+    'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
@@ -17,7 +17,7 @@ const ROLE_PERMISSIONS = {
   hospital_admin: [
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
-    'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
+    'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
