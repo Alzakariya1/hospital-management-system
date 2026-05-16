@@ -1,6 +1,6 @@
 import React from "react";
 
-export default function Form({ title, data, setData, submit }) {
+export default function Form({ title, data, setData, submit, customFields = [] }) {
   function inputType(k) {
     if (k.includes("date")) return "date";
     if (k.includes("time")) return "time";
@@ -17,11 +17,53 @@ export default function Form({ title, data, setData, submit }) {
     return "text";
   }
 
+  function customValue(field) {
+    return data.custom_fields?.[field.field_key] ?? field.default_value ?? "";
+  }
+
+  function setCustomValue(field, value) {
+    setData({
+      ...data,
+      custom_fields: {
+        ...(data.custom_fields || {}),
+        [field.field_key]: value,
+      },
+    });
+  }
+
+  function renderCustomField(field) {
+    const value = customValue(field);
+    if (field.field_type === "select") {
+      return (
+        <select key={field.id || field.field_key} value={value} required={field.required} onChange={(e) => setCustomValue(field, e.target.value)}>
+          <option value="">{field.placeholder || field.label}</option>
+          {(field.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
+      );
+    }
+    if (field.field_type === "textarea") {
+      return (
+        <textarea key={field.id || field.field_key} placeholder={field.placeholder || field.label} value={value} required={field.required} onChange={(e) => setCustomValue(field, e.target.value)} />
+      );
+    }
+    if (field.field_type === "checkbox") {
+      return (
+        <label key={field.id || field.field_key} className="config-checkbox-field">
+          <input type="checkbox" checked={Boolean(value)} onChange={(e) => setCustomValue(field, e.target.checked)} />
+          {field.label}
+        </label>
+      );
+    }
+    return (
+      <input key={field.id || field.field_key} type={field.field_type === "date" ? "date" : field.field_type === "number" ? "number" : "text"} placeholder={field.placeholder || field.label} value={value} required={field.required} onChange={(e) => setCustomValue(field, e.target.value)} />
+    );
+  }
+
   return (
     <form className="card form" onSubmit={submit}>
       <h2>{title}</h2>
       <div className="formGrid">
-        {Object.keys(data).map((k) =>
+        {Object.keys(data).filter((k) => k !== "custom_fields").map((k) =>
           k === "role" ? (
             <select
               key={k}
@@ -68,6 +110,13 @@ export default function Form({ title, data, setData, submit }) {
           ),
         )}
       </div>
+      {customFields.length > 0 && (
+        <div className="dynamic-fields-block">
+          <h3>Additional Details</h3>
+          <p className="muted">Custom hospital-specific fields configured by admin.</p>
+          <div className="formGrid">{customFields.map(renderCustomField)}</div>
+        </div>
+      )}
       <button>Save</button>
     </form>
   );

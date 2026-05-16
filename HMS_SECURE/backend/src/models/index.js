@@ -275,11 +275,72 @@ const Prescription = makeModel("Prescription", "prescriptions", {
     prescription_number: { type: String, index: true },
     status: { type: String, default: "active" },
 });
-const AuditLog = makeModel("AuditLog", "audit_logs", { hospital_id: { type: Number, default: 1, index: true } });
+const AuditLog = makeModel("AuditLog", "audit_logs", {
+    hospital_id: { type: Number, default: 1, index: true },
+    user_id: { type: Number, index: true },
+    user_role: String,
+    action: { type: String, index: true },
+    module_name: { type: String, index: true },
+    entity_type: String,
+    entity_id: String,
+    old_value: Object,
+    new_value: Object,
+    status: { type: String, default: "success", index: true },
+    severity: { type: String, default: "info" },
+    ip_address: String,
+    user_agent: String,
+    method: String,
+    path: String,
+});
+AuditLog.schema.index({ hospital_id: 1, created_at: -1 }, { name: "audit_hospital_recent_lookup" });
+AuditLog.schema.index({ hospital_id: 1, module_name: 1, status: 1 }, { name: "audit_hospital_module_status_lookup" });
+const LoginHistory = makeModel("LoginHistory", "login_history", {
+    hospital_id: { type: Number, default: 1, index: true },
+    user_id: { type: Number, index: true },
+    email: { type: String, index: true },
+    role: String,
+    status: { type: String, default: "success", index: true },
+    reason: String,
+    ip_address: String,
+    user_agent: String,
+    method: String,
+    path: String,
+    logged_at: { type: Date, default: Date.now, index: true },
+});
+LoginHistory.schema.index({ hospital_id: 1, logged_at: -1 }, { name: "login_history_hospital_recent_lookup" });
 const SecuritySetting = makeModel("SecuritySetting", "security_settings", {
     hospital_id: { type: Number, default: 1, index: true },
-    setting_key: { type: String, unique: true, index: true },
+    setting_key: { type: String, trim: true, index: true },
+    setting_value: String,
+    description: String,
+    category: { type: String, default: "general" },
+    updated_by: Number,
 });
+SecuritySetting.schema.index(
+    { hospital_id: 1, setting_key: 1 },
+    { unique: true, name: "security_setting_hospital_key_unique" },
+);
+
+const DynamicField = makeModel("DynamicField", "dynamic_fields", {
+    hospital_id: { type: Number, default: 1, index: true },
+    target_module: { type: String, trim: true, index: true }, // patients, doctors, appointments, billing, lab, radiology
+    field_key: { type: String, trim: true, index: true },
+    label: String,
+    field_type: { type: String, default: "text" }, // text, number, date, select, textarea, checkbox
+    placeholder: String,
+    section: { type: String, default: "Additional Details" },
+    help_text: String,
+    required: { type: Boolean, default: false },
+    options: { type: [String], default: [] },
+    default_value: String,
+    display_order: { type: Number, default: 100 },
+    is_active: { type: Boolean, default: true },
+});
+DynamicField.schema.index(
+    { hospital_id: 1, target_module: 1, field_key: 1 },
+    { unique: true, name: "dynamic_field_hospital_module_key_unique" },
+);
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -316,6 +377,8 @@ module.exports = {
     Billing,
     Prescription,
     AuditLog,
+    LoginHistory,
     SecuritySetting,
+    DynamicField,
     Notification,
 };

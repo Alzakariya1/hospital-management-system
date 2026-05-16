@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { getUserPermissions, hasPermission } = require('../config/permissions');
+const { auditEvent } = require('../utils/audit');
 
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization || '';
@@ -20,6 +21,7 @@ function verifyToken(req, res, next) {
 function allowRoles(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
+      auditEvent({ req, action: `Role access denied: ${roles.join(',')}`, module_name: 'security', status: 'denied', severity: 'warning' });
       return res.status(403).json({ message: 'Permission denied.' });
     }
     return next();
@@ -29,6 +31,7 @@ function allowRoles(...roles) {
 function requirePermission(permission) {
   return (req, res, next) => {
     if (!req.user || !hasPermission(req.user, permission)) {
+      auditEvent({ req, action: `Permission denied: ${Array.isArray(permission) ? permission.join(',') : permission}`, module_name: 'security', status: 'denied', severity: 'warning' });
       return res.status(403).json({ message: 'Permission denied.', requiredPermission: permission });
     }
     return next();

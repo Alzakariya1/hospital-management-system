@@ -11,7 +11,7 @@ export const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
-    'audit.view', 'security.manage', 'hospital.manage'
+    'audit.view', 'security.manage', 'configuration.manage', 'hospital.manage'
   ],
   hospital_admin: [
     'dashboard.view',
@@ -25,7 +25,7 @@ export const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
-    'audit.view', 'security.manage'
+    'audit.view', 'security.manage', 'configuration.manage'
   ],
   doctor: [
     'dashboard.view',
@@ -84,6 +84,8 @@ export const MODULES = [
   { id: 'pharmacy', label: 'Pharmacy' },
   { id: 'billing', label: 'Billing' },
   { id: 'profile', label: 'Profile' },
+  { id: 'auditSecurity', label: 'Security' },
+  { id: 'configuration', label: 'Configuration' },
   { id: 'tenants', label: 'Hospitals' },
 ];
 
@@ -132,6 +134,8 @@ export const TAB_PERMISSIONS = {
   pharmacy: 'pharmacy.view',
   billing: 'billing.view',
   profile: 'admin.profile.manage',
+  auditSecurity: ['audit.view', 'security.manage'],
+  configuration: 'configuration.manage',
   tenants: 'hospital.manage',
 };
 
@@ -145,12 +149,14 @@ export const TAB_MODULES = {
   pharmacy: ['pharmacy'],
   billing: ['billing'],
   profile: ['profile'],
+  auditSecurity: ['profile'],
+  configuration: ['profile'],
   tenants: ['tenants'],
 };
 
 // Platform-level tabs are controlled by permission only.
 // They must not be hidden by hospital module ON/OFF settings.
-export const PLATFORM_TABS = ['tenants'];
+export const PLATFORM_TABS = ['tenants', 'auditSecurity', 'configuration'];
 
 export function getUserPermissions(user) {
   if (!user || typeof user !== 'object') return [];

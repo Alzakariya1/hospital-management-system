@@ -719,3 +719,101 @@ Packaging:
 
 ### Packaging
 - `.env`, `node_modules`, and `dist` are excluded from the ZIP.
+
+## V17 - Audit + Security Hardening
+
+Built from: HMS_SECURE_PHASE3_STEP11B3_NOTIFICATION_ENGINE_V16_REBUILT.zip
+
+### Backend
+- Added centralized audit utility: `backend/src/utils/audit.js`.
+- Expanded `AuditLog` schema with:
+  - user role
+  - entity type/id
+  - old/new values
+  - status/severity
+  - IP address
+  - user agent
+  - method/path
+- Added `LoginHistory` model for successful, failed and blocked login attempts.
+- Added tenant-safe security settings schema with compound index `{ hospital_id, setting_key }`.
+- Added `npm run fix-security-indexes` to safely drop old global `setting_key_1` index and create tenant-safe compound index.
+- Added login history tracking in auth login flow.
+- Added audit tracking for:
+  - successful login
+  - failed login
+  - blocked inactive-hospital login
+  - profile update
+  - password change
+  - user create/update/delete
+  - permission denied / role denied events
+  - security setting updates
+- Improved `/api/audit-logs` with filtering.
+- Added `/api/audit-logs/export` CSV export.
+- Added `/api/security/login-history`.
+- Added `/api/security/summary`.
+- Added `/api/security-settings/defaults`.
+
+### Frontend
+- Added `auditApi`.
+- Added Security tab for users with audit/security permissions.
+- Added Audit & Security Center UI:
+  - security summary cards
+  - audit log list
+  - audit filter controls
+  - CSV export action
+  - login history list
+  - security settings editor
+  - ensure default settings action
+- Added theme-aware UI styling for security center.
+
+### Testing
+- Backend syntax checks passed:
+  - models
+  - audit utility
+  - audit/security routes
+  - auth routes
+  - auth middleware
+- Frontend `npm install` passed.
+- Frontend `npm run build` passed.
+- Backend `npm install` passed.
+- DB check attempted but `.env` is excluded as required, so `MONGODB_URI` must be set in local/Render.
+
+### Deployment note
+After deployment, run this once on Render/local with MongoDB env configured:
+
+```bash
+npm run fix-security-indexes
+```
+
+This prevents old global `setting_key_1` index from blocking per-hospital security settings.
+
+## V18 - No-Code Dynamic Forms Foundation
+
+Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
+
+### Added
+- DynamicField MongoDB model with hospital/tenant isolation.
+- Backend configuration routes:
+  - GET `/api/configuration/dynamic-fields`
+  - GET `/api/configuration/public-fields`
+  - POST `/api/configuration/dynamic-fields`
+  - PUT `/api/configuration/dynamic-fields/:id`
+  - PATCH `/api/configuration/dynamic-fields/:id/status`
+  - DELETE `/api/configuration/dynamic-fields/:id`
+- New `configuration.manage` permission.
+- New Configuration tab for admins/super admins.
+- Dynamic form builder UI for hospital-specific custom fields.
+- Patient and Doctor forms render active dynamic fields.
+- Patient and Doctor profiles display saved custom field values.
+- DataTable now supports explicit columns and custom extra actions.
+
+### Notes
+- Custom values are stored safely under each record's `custom_fields` object.
+- Existing patient/doctor fields remain untouched.
+- Dynamic fields are per hospital/tenant and do not affect other hospitals.
+
+### Tests
+- Frontend `npm install` passed.
+- Frontend `npm run build` passed.
+- Backend syntax checks passed for models, configuration routes, and server.
+- DB live check requires `MONGODB_URI` in local/Render environment because `.env` is not included in the ZIP.

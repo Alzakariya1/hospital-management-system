@@ -12,6 +12,8 @@ import {
   TestTube2,
   Users,
   UserCircle,
+  ShieldCheck,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -27,6 +29,8 @@ import {
   pharmacyApi,
   radiologyApi,
   tenantApi,
+  auditApi,
+  configurationApi,
 } from "./api";
 import { AppLayout } from "./layouts";
 import {
@@ -41,6 +45,8 @@ import {
   Patients,
   Pharmacy,
   TenantControl,
+  AuditSecurity,
+  Configuration,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -190,6 +196,7 @@ function App() {
     bio: "",
   });
   const [usersList, setUsersList] = useState([]);
+  const [dynamicFields, setDynamicFields] = useState([]);
   const [userSearch, setUserSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
 
@@ -239,8 +246,9 @@ function App() {
       pharmacyApi.list(),
       billingApi.list(),
       authApi.getUsers(),
+      configurationApi.listPublicFields(),
     ];
-    const [s, p, d, a, ds, b, l, r, m, bi, u] = await Promise.allSettled(calls);
+    const [s, p, d, a, ds, b, l, r, m, bi, u, cf] = await Promise.allSettled(calls);
     if (s.value) setStats(s.value.data);
     if (p.value) setPatients(p.value.data);
     if (d.value) setDoctors(d.value.data);
@@ -252,6 +260,7 @@ function App() {
     if (m.value) setMeds(m.value.data);
     if (bi.value) setBills(bi.value.data);
     if (u.value) setUsersList(u.value.data);
+    if (cf.value) setDynamicFields(cf.value.data);
     if (hasPermission(user, "hospital.manage")) {
       try {
         const { data: tenantRows } = await tenantApi.list();
@@ -381,6 +390,7 @@ function App() {
       emergency_contact_phone: row.emergency_contact_phone || "",
       insurance_provider: row.insurance_provider || "",
       insurance_policy_number: row.insurance_policy_number || "",
+      custom_fields: row.custom_fields || {},
     });
 
     setEditingPatientId(row.id || row._id);
@@ -504,6 +514,7 @@ function App() {
       license_number: row.license_number || "",
       registration_number: row.registration_number || "",
       status: row.status || "active",
+      custom_fields: row.custom_fields || {},
     });
 
     setEditingDoctorId(row.id || row._id);
@@ -996,6 +1007,8 @@ function App() {
     ["pharmacy", "Pharmacy", Pill],
     ["billing", "Billing", ReceiptText],
     ["profile", "Profile", UserCircle],
+    ["auditSecurity", "Security", ShieldCheck],
+    ["configuration", "Configuration", SlidersHorizontal],
     ["tenants", "Hospitals", Building2],
   ];
 
@@ -1036,6 +1049,9 @@ function App() {
     billingCreate: can("billing.create"),
     adminUsersManage: can("admin.users.manage"),
     hospitalManage: can("hospital.manage"),
+    auditView: can("audit.view"),
+    securityManage: can("security.manage"),
+    configurationManage: can("configuration.manage"),
     featureFlags: normalizeFeatureFlags(currentHospital?.feature_flags),
   };
 
@@ -1204,6 +1220,7 @@ function App() {
                 bills={bills}
                 savedPatientDocs={savedPatientDocs}
                 permissions={permissions}
+                dynamicFields={dynamicFields.filter((f) => f.target_module === "patients" && f.is_active !== false)}
                 activeView="patients"
               />
             )}
@@ -1242,6 +1259,7 @@ function App() {
                 bills={bills}
                 savedPatientDocs={savedPatientDocs}
                 permissions={permissions}
+                dynamicFields={dynamicFields.filter((f) => f.target_module === "patients" && f.is_active !== false)}
                 activeView="patientProfile"
               />
             )}
@@ -1268,6 +1286,7 @@ function App() {
                 uploadDoctorDocument={uploadDoctorDocument}
                 deleteDoctorDocument={deleteDoctorDocument}
                 appointments={appointments}
+                dynamicFields={dynamicFields.filter((f) => f.target_module === "doctors" && f.is_active !== false)}
                 activeView="doctors"
               />
             )}
@@ -1294,6 +1313,7 @@ function App() {
                 uploadDoctorDocument={uploadDoctorDocument}
                 deleteDoctorDocument={deleteDoctorDocument}
                 appointments={appointments}
+                dynamicFields={dynamicFields.filter((f) => f.target_module === "doctors" && f.is_active !== false)}
                 activeView="doctorProfile"
               />
             )}
@@ -1390,6 +1410,12 @@ function App() {
                 enabledModules={enabledModules}
                 permissions={permissions}
               />
+            )}
+            {tab === "auditSecurity" && (
+              <AuditSecurity permissions={permissions} />
+            )}
+            {tab === "configuration" && (
+              <Configuration permissions={permissions} />
             )}
             {tab === "profile" && (
               <AdminProfile

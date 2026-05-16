@@ -13,7 +13,7 @@ const ROLE_PERMISSIONS = {
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage',
-    'audit.view', 'security.manage', 'hospital.manage'
+    'audit.view', 'security.manage', 'configuration.manage', 'hospital.manage'
   ],
   hospital_admin: [
     'dashboard.view',
@@ -28,7 +28,7 @@ const ROLE_PERMISSIONS = {
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage',
-    'audit.view', 'security.manage'
+    'audit.view', 'security.manage', 'configuration.manage'
   ],
   doctor: [
     'dashboard.view',

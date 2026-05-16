@@ -9,3 +9,7 @@ export { default as Login } from "./Login";
 export { default as Patients } from "./Patients";
 export { default as Pharmacy } from "./Pharmacy";
 export { default as TenantControl } from "./TenantControl";
+
+export { default as AuditSecurity } from './AuditSecurity';
+
+export { default as Configuration } from './Configuration';

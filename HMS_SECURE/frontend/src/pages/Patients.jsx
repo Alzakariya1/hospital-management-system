@@ -40,6 +40,7 @@ export default function Patients({
   savedPatientDocs,
   activeView = "patients",
   permissions = {},
+  dynamicFields = [],
 }) {
   const [patientTimeline, setPatientTimeline] = useState(null);
   const [timelineLoading, setTimelineLoading] = useState(false);
@@ -69,6 +70,40 @@ export default function Patients({
 
   const timelineSummary = patientTimeline?.summary || {};
   const timelineRows = patientTimeline?.timeline || [];
+
+  function getCustomValue(field) {
+    return patient.custom_fields?.[field.field_key] ?? field.default_value ?? "";
+  }
+
+  function setCustomValue(field, value) {
+    setPatient({
+      ...patient,
+      custom_fields: {
+        ...(patient.custom_fields || {}),
+        [field.field_key]: value,
+      },
+    });
+  }
+
+  function renderDynamicField(field) {
+    const value = getCustomValue(field);
+    if (field.field_type === "select") {
+      return (
+        <select key={field.id || field.field_key} value={value} required={field.required} onChange={(e) => setCustomValue(field, e.target.value)}>
+          <option value="">{field.placeholder || field.label}</option>
+          {(field.options || []).map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
+      );
+    }
+    if (field.field_type === "textarea") {
+      return <textarea key={field.id || field.field_key} placeholder={field.placeholder || field.label} value={value} required={field.required} onChange={(e) => setCustomValue(field, e.target.value)} />;
+    }
+    if (field.field_type === "checkbox") {
+      return <label key={field.id || field.field_key} className="config-checkbox-field"><input type="checkbox" checked={Boolean(value)} onChange={(e) => setCustomValue(field, e.target.checked)} /> {field.label}</label>;
+    }
+    return <input key={field.id || field.field_key} type={field.field_type === "date" ? "date" : field.field_type === "number" ? "number" : "text"} placeholder={field.placeholder || field.label} value={value} required={field.required} onChange={(e) => setCustomValue(field, e.target.value)} />;
+  }
+
 
   return (
     <>
@@ -135,7 +170,7 @@ export default function Patients({
                     </div>
                   </div>
                   <div className="formGrid">
-                    {Object.keys(patient).map((k) =>
+                    {Object.keys(patient).filter((k) => k !== "custom_fields").map((k) =>
                       k === "gender" ? (
                         <select
                           key={k}
@@ -174,6 +209,14 @@ export default function Patients({
                       ),
                     )}
                   </div>
+
+                  {dynamicFields.length > 0 && (
+                    <div className="dynamic-fields-block">
+                      <h3>Additional Details</h3>
+                      <p className="muted">Custom fields configured for this hospital.</p>
+                      <div className="formGrid">{dynamicFields.map(renderDynamicField)}</div>
+                    </div>
+                  )}
 
                   {permissions.patientDocumentManage && (<>
                   <div className="patient-form-divider"></div>

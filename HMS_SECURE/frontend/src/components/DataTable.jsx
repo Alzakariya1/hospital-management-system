@@ -24,7 +24,7 @@ function formatValue(key, value) {
   return text;
 }
 
-export default function DataTable({ rows, onEdit, onDelete, showProfile, onProfile }) {
+export default function DataTable({ rows, cols, onEdit, onDelete, showProfile, onProfile, extraActions = [] }) {
   const [openActionMenu, setOpenActionMenu] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
   const menuRef = useRef(null);
@@ -64,13 +64,14 @@ export default function DataTable({ rows, onEdit, onDelete, showProfile, onProfi
   ], []);
 
   const keys = useMemo(() => {
+    if (Array.isArray(cols) && cols.length) return cols;
     if (!rows?.length) return [];
     return Object.keys(rows[0])
       .filter((k) => !hiddenKeys.includes(k))
       .slice(0, 7);
-  }, [rows, hiddenKeys]);
+  }, [rows, hiddenKeys, cols]);
 
-  const hasActions = Boolean(onEdit || onDelete || showProfile);
+  const hasActions = Boolean(onEdit || onDelete || showProfile || extraActions.length);
 
   function openMenu(index, event) {
     event.stopPropagation();
@@ -102,8 +103,8 @@ export default function DataTable({ rows, onEdit, onDelete, showProfile, onProfi
       <table className="enterpriseTable">
         <thead>
           <tr>
-            {keys.map((k) => (
-              <th key={k}>{formatHeader(k)}</th>
+            {keys.map((k, idx) => (
+              <th key={typeof k === "function" ? idx : k}>{typeof k === "function" ? "Value" : formatHeader(k)}</th>
             ))}
             {hasActions && <th className="actionsCol">Actions</th>}
           </tr>
@@ -111,11 +112,15 @@ export default function DataTable({ rows, onEdit, onDelete, showProfile, onProfi
         <tbody>
           {rows.map((r, i) => (
             <tr key={r.id || r._id || i}>
-              {keys.map((k) => (
-                <td key={k} title={typeof r[k] === "object" ? "" : String(r[k] ?? "")}>
-                  <span className="tableCellText">{formatValue(k, r[k])}</span>
-                </td>
-              ))}
+              {keys.map((k, idx) => {
+                const value = typeof k === "function" ? k(r) : r[k];
+                const keyName = typeof k === "function" ? `value_${idx}` : k;
+                return (
+                  <td key={keyName} title={typeof value === "object" ? "" : String(value ?? "")}>
+                    <span className="tableCellText">{typeof k === "function" ? value : formatValue(keyName, value)}</span>
+                  </td>
+                );
+              })}
               {hasActions && (
                 <td className="actions-menu-cell actionsCol">
                   <button
@@ -158,6 +163,20 @@ export default function DataTable({ rows, onEdit, onDelete, showProfile, onProfi
                           Edit
                         </button>
                       )}
+
+                      {extraActions.map((action, actionIndex) => (
+                        <button
+                          type="button"
+                          key={action.label || actionIndex}
+                          onClick={() => {
+                            action.onClick?.(r);
+                            setOpenActionMenu(null);
+                          }}
+                        >
+                          <i className={action.icon || "bi bi-gear"}></i>
+                          {action.label || "Action"}
+                        </button>
+                      ))}
 
                       {onDelete && (
                         <button

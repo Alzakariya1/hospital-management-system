@@ -13,3 +13,7 @@ export { billingApi } from "./billingApi";
 
 export { tenantApi } from './tenantApi';
 export { notificationApi } from './notificationApi';
+
+export { auditApi } from './auditApi';
+
+export { configurationApi } from './configurationApi';

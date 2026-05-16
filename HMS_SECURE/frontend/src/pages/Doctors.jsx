@@ -24,6 +24,7 @@ export default function Doctors({
   uploadDoctorDocument,
   deleteDoctorDocument,
   appointments = [],
+  dynamicFields = [],
 }) {
   const [doctorDocForm, setDoctorDocForm] = useState({
     title: "",
@@ -163,6 +164,14 @@ export default function Doctors({
                   <div className="extra-info-row"><span>Internal Record ID</span><b>{selectedDoctor.id || "--"}</b></div>
                   <div className="extra-info-row"><span>Profile Image</span><b>{selectedDoctor.profile_image_url ? "Uploaded" : "Not uploaded"}</b></div>
                 </div>
+                {selectedDoctor.custom_fields && Object.keys(selectedDoctor.custom_fields).length > 0 && (
+                  <div className="extra-info-card">
+                    <h3>Doctor Custom Details</h3>
+                    {dynamicFields.map((field) => (
+                      <div className="extra-info-row" key={field.field_key}><span>{field.label}</span><b>{String(selectedDoctor.custom_fields?.[field.field_key] ?? "--")}</b></div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -175,6 +184,7 @@ export default function Doctors({
                 data={doctor}
                 setData={setDoctor}
                 submit={addDoctor}
+                customFields={dynamicFields}
               />
               <button
                 type="button"
@@ -366,6 +376,7 @@ export default function Doctors({
           data={doctor}
           setData={setDoctor}
           submit={addDoctor}
+          customFields={dynamicFields}
         />
       )}
       <div className="card">
