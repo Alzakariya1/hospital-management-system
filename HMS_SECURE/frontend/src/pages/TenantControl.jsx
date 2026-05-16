@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { tenantApi } from "../api";
-import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, FEATURE_FLAGS, MODULES, normalizeFeatureFlags } from "../utils";
+import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, FEATURE_FLAGS, MODULES, normalizeFeatureFlags, getPlanDefinition, getPlanModules, normalizePlanModules } from "../utils";
 
 const TENANT_TYPES = ["hospital", "clinic", "diagnostic_center", "nursing_home"];
 const PLANS = ["clinic", "hospital", "enterprise"];
@@ -152,7 +152,8 @@ export default function TenantControl({
   }
 
   function toggleModule(moduleId) {
-    const currentModules = getModules(tenantForm.enabled_modules);
+    if (!getPlanModules(tenantForm.plan || 'enterprise').includes(moduleId)) return;
+    const currentModules = normalizePlanModules(tenantForm.plan || 'enterprise', getModules(tenantForm.enabled_modules));
     const nextModules = currentModules.includes(moduleId)
       ? currentModules.filter((id) => id !== moduleId)
       : [...currentModules, moduleId];
@@ -164,7 +165,7 @@ export default function TenantControl({
   }
 
   function enableAllModules() {
-    setTenantForm({ ...tenantForm, enabled_modules: DEFAULT_ENABLED_MODULES });
+    setTenantForm({ ...tenantForm, enabled_modules: getPlanModules(tenantForm.plan || 'enterprise') });
   }
 
   function toggleFeature(featureId) {
@@ -197,7 +198,7 @@ export default function TenantControl({
       type: "hospital",
       plan: "enterprise",
       status: "active",
-      enabled_modules: DEFAULT_ENABLED_MODULES,
+      enabled_modules: getPlanModules('enterprise'),
       feature_flags: DEFAULT_FEATURE_FLAGS,
       branding: DEFAULT_BRANDING,
       settings: DEFAULT_SETTINGS,
@@ -260,7 +261,9 @@ export default function TenantControl({
     if (action === "archive") archiveTenant(tenant);
   }
 
-  const selectedModules = getModules(tenantForm.enabled_modules);
+  const currentPlan = getPlanDefinition(tenantForm.plan || 'enterprise');
+  const allowedPlanModules = getPlanModules(tenantForm.plan || 'enterprise');
+  const selectedModules = normalizePlanModules(tenantForm.plan || 'enterprise', getModules(tenantForm.enabled_modules));
   const selectedFeatures = getFeatureFlags(tenantForm.feature_flags);
   const formSettings = safeSettings(tenantForm.settings);
   const formBranding = safeBranding(tenantForm.branding);
@@ -290,6 +293,20 @@ export default function TenantControl({
           </p>
         )}
 
+        <div className="planSummaryStrip">
+          <div>
+            <span className="doctor-kicker">Selected SaaS Plan</span>
+            <h3>{currentPlan.name}</h3>
+            <p className="muted">{currentPlan.description}</p>
+          </div>
+          <div className="planLimitPills">
+            <span>{currentPlan.price}</span>
+            <span>{currentPlan.limits.users} users</span>
+            <span>{currentPlan.limits.doctors} doctors</span>
+            <span>{currentPlan.limits.patients.toLocaleString()} patients</span>
+          </div>
+        </div>
+
         <form onSubmit={saveTenant}>
           <div className="formGrid">
             <input
@@ -306,7 +323,7 @@ export default function TenantControl({
             <select value={tenantForm.type || "hospital"} onChange={(e) => updateField("type", e.target.value)}>
               {TENANT_TYPES.map((type) => <option key={type} value={type}>{type.replaceAll("_", " ")}</option>)}
             </select>
-            <select value={tenantForm.plan || "enterprise"} onChange={(e) => updateField("plan", e.target.value)}>
+            <select value={tenantForm.plan || "enterprise"} onChange={(e) => setTenantForm({ ...tenantForm, plan: e.target.value, enabled_modules: normalizePlanModules(e.target.value, tenantForm.enabled_modules) })}>
               {PLANS.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
             </select>
             <select value={tenantForm.status || "active"} onChange={(e) => updateField("status", e.target.value)}>
@@ -378,12 +395,16 @@ export default function TenantControl({
               <button type="button" className="ghostBtn" onClick={enableAllModules}>Enable All</button>
             </div>
             <div className="moduleGrid">
-              {MODULES.map((module) => (
-                <label className="moduleCheck" key={module.id}>
-                  <input type="checkbox" checked={selectedModules.includes(module.id)} onChange={() => toggleModule(module.id)} />
-                  <span>{module.label}</span>
-                </label>
-              ))}
+              {MODULES.map((module) => {
+                const allowedByPlan = allowedPlanModules.includes(module.id);
+                return (
+                  <label className={allowedByPlan ? "moduleCheck" : "moduleCheck disabled"} key={module.id} title={allowedByPlan ? '' : 'Upgrade plan to enable this module'}>
+                    <input type="checkbox" disabled={!allowedByPlan} checked={selectedModules.includes(module.id)} onChange={() => toggleModule(module.id)} />
+                    <span>{module.label}</span>
+                    {!allowedByPlan && <small>Upgrade</small>}
+                  </label>
+                );
+              })}
             </div>
           </div>
 

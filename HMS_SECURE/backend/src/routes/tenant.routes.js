@@ -6,10 +6,11 @@ const cloudinary = require('../config/cloudinary');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
+const { getPlan, getAllowedModules, getAllowedFeatures, normalizePlanModules, normalizePlanFeatureFlags, mergePlanLimits, ensureWithinLimit } = require('../utils/subscription');
 
 const router = express.Router();
 
-const DEFAULT_MODULES = ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'];
+const DEFAULT_MODULES = ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'tenants'];
 const ALLOWED_MODULES = new Set(DEFAULT_MODULES);
 const FEATURE_FLAGS = ['fhir', 'hl7', 'pacs', 'biometric', 'insurance_tpa', 'erp', 'whatsapp_sms', 'abdm_abha', 'two_factor_auth', 'audit_compliance'];
 const DEFAULT_FEATURE_FLAGS = FEATURE_FLAGS.reduce((acc, key) => { acc[key] = key === 'audit_compliance'; return acc; }, {});
@@ -102,8 +103,12 @@ function publicHospital(hospital) {
   const x = hospital?.toJSON ? hospital.toJSON() : { ...(hospital || {}) };
   if (!x.id) x.id = DEFAULT_HOSPITAL_ID;
   if (!x.name) x.name = process.env.DEFAULT_HOSPITAL_NAME || 'Default Hospital';
-  if (!Array.isArray(x.enabled_modules) || !x.enabled_modules.length) x.enabled_modules = DEFAULT_MODULES;
-  x.feature_flags = sanitizeFeatureFlags(x.feature_flags);
+  x.plan = x.plan || 'enterprise';
+  x.plan_limits = mergePlanLimits(x.plan, x.plan_limits || {});
+  x.subscription = { status: 'active', billing_cycle: 'monthly', renewal_date: null, notes: '', ...(x.subscription || {}) };
+  if (!Array.isArray(x.enabled_modules) || !x.enabled_modules.length) x.enabled_modules = getAllowedModules(x.plan);
+  x.enabled_modules = normalizePlanModules(x.plan, x.enabled_modules);
+  x.feature_flags = normalizePlanFeatureFlags(x.plan, x.feature_flags);
   if (!x.branding) x.branding = {};
   x.branding = {
     logo_url: '',
@@ -153,20 +158,12 @@ async function ensureHospital(id = DEFAULT_HOSPITAL_ID) {
   return hospital;
 }
 
-function sanitizeModules(modules) {
-  if (!Array.isArray(modules)) return DEFAULT_MODULES;
-  const cleanModules = Array.from(new Set(modules.filter((moduleId) => ALLOWED_MODULES.has(moduleId))));
-  return cleanModules.length ? cleanModules : DEFAULT_MODULES;
+function sanitizeModules(modules, plan = 'enterprise') {
+  return normalizePlanModules(plan, modules);
 }
 
-function sanitizeFeatureFlags(featureFlags) {
-  const safeFlags = { ...DEFAULT_FEATURE_FLAGS };
-  if (featureFlags && typeof featureFlags === 'object' && !Array.isArray(featureFlags)) {
-    for (const key of FEATURE_FLAGS) {
-      if (key in featureFlags) safeFlags[key] = Boolean(featureFlags[key]);
-    }
-  }
-  return safeFlags;
+function sanitizeFeatureFlags(featureFlags, plan = 'enterprise') {
+  return normalizePlanFeatureFlags(plan, featureFlags);
 }
 
 router.get('/tenant/modules', verifyToken, requirePermission('hospital.manage'), (_req, res) => {
@@ -195,8 +192,10 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
     type: req.body.type || 'hospital',
     status: req.body.status || 'active',
     plan: req.body.plan || 'enterprise',
-    enabled_modules: sanitizeModules(req.body.enabled_modules),
-    feature_flags: sanitizeFeatureFlags(req.body.feature_flags),
+    plan_limits: mergePlanLimits(req.body.plan || 'enterprise', req.body.plan_limits || {}),
+    subscription: { status: req.body.subscription?.status || 'active', billing_cycle: req.body.subscription?.billing_cycle || 'monthly', renewal_date: req.body.subscription?.renewal_date || null, notes: req.body.subscription?.notes || '' },
+    enabled_modules: sanitizeModules(req.body.enabled_modules, req.body.plan || 'enterprise'),
+    feature_flags: sanitizeFeatureFlags(req.body.feature_flags, req.body.plan || 'enterprise'),
     branding: req.body.branding || {},
     settings: req.body.settings || {},
   };
@@ -213,6 +212,12 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
   try {
     const adminPayload = await buildInitialAdminPayload(req, hospital.id);
     if (adminPayload) {
+      const limitCheck = await ensureWithinLimit(hospital.id, 'users', 1);
+      if (!limitCheck.ok) {
+        const err = new Error(limitCheck.message);
+        err.status = 402;
+        throw err;
+      }
       adminUser = await User.create(adminPayload);
     }
   } catch (err) {
@@ -237,14 +242,22 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
 }));
 
 router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
-  const allowed = ['name', 'type', 'status', 'plan', 'enabled_modules', 'feature_flags', 'branding', 'settings'];
+  const existingHospital = await Hospital.findOne({ id: Number(req.params.id) });
+  if (!existingHospital) return res.status(404).json({ message: 'Hospital not found' });
+  const nextPlan = req.body.plan || existingHospital.plan || 'enterprise';
+  const allowed = ['name', 'type', 'status', 'plan', 'enabled_modules', 'feature_flags', 'branding', 'settings', 'plan_limits', 'subscription'];
   const update = {};
   for (const key of allowed) {
     if (!(key in req.body)) continue;
-    if (key === 'enabled_modules') update[key] = sanitizeModules(req.body[key]);
-    else if (key === 'feature_flags') update[key] = sanitizeFeatureFlags(req.body[key]);
+    if (key === 'enabled_modules') update[key] = sanitizeModules(req.body[key], nextPlan);
+    else if (key === 'feature_flags') update[key] = sanitizeFeatureFlags(req.body[key], nextPlan);
+    else if (key === 'plan_limits') update[key] = mergePlanLimits(nextPlan, req.body[key]);
+    else if (key === 'subscription') update[key] = { ...(existingHospital.subscription || {}), ...(req.body[key] || {}), updated_at: new Date() };
     else update[key] = req.body[key];
   }
+  if ('plan' in update && !('enabled_modules' in update)) update.enabled_modules = sanitizeModules(existingHospital.enabled_modules, nextPlan);
+  if ('plan' in update && !('feature_flags' in update)) update.feature_flags = sanitizeFeatureFlags(existingHospital.feature_flags, nextPlan);
+  if ('plan' in update && !('plan_limits' in update)) update.plan_limits = mergePlanLimits(nextPlan, existingHospital.plan_limits || {});
 
   if ('hospital_code' in req.body) {
     const code = sanitizeHospitalCode(req.body.hospital_code);
@@ -278,6 +291,8 @@ router.post('/tenants/:id/admins', verifyToken, requirePermission('hospital.mana
 
   const adminPayload = await buildInitialAdminPayload(req, hospitalId);
   if (!adminPayload) return res.status(400).json({ message: 'Admin full name, email and password are required' });
+  const limitCheck = await ensureWithinLimit(hospitalId, 'users', 1);
+  if (!limitCheck.ok) return res.status(402).json({ message: limitCheck.message, subscription: limitCheck.subscription });
 
   const adminUser = await User.create(adminPayload);
   await AuditLog.create({

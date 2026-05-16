@@ -825,3 +825,37 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added template variables guide for future printable/PDF rendering.
 - Frontend build passed.
 - Backend syntax checks passed.
+
+## V21 - SaaS Plan / Subscription Control
+
+### Scope
+- Added Clinic, Hospital, and Enterprise SaaS plan definitions.
+- Added subscription current-plan and tenant-plan APIs.
+- Added hospital-wise plan limits and subscription metadata fields.
+- Added plan-aware module gating: modules not allowed by selected plan are disabled in Hospital Control.
+- Added user-count limit enforcement when creating users/admins.
+- Added Subscription panel inside Configuration showing current plan, usage, and available plan cards.
+- Added backend subscription utility for plan definitions, limits, usage and limit checks.
+
+### Backend
+- Added `backend/src/utils/subscription.js`.
+- Added `backend/src/routes/subscription.routes.js`.
+- Added `/api/subscription/plans`.
+- Added `/api/subscription/current`.
+- Added `/api/tenants/:id/subscription` GET/PATCH.
+- Tenant create/update now normalizes enabled modules and feature flags according to selected plan.
+- User creation now checks plan user limit.
+
+### Frontend
+- Added `frontend/src/api/subscriptionApi.js`.
+- Configuration tab now shows current SaaS plan and plan usage.
+- Hospital Control now shows selected plan summary and disables modules outside the selected plan.
+
+### Testing
+- Backend syntax checks passed for server, models, routes and utils.
+- Frontend `npm install` completed.
+- Frontend `npm run build` passed.
+- DB live check requires `MONGODB_URI` in local/Render because `.env` is intentionally excluded.
+
+### Packaging
+- Clean package: no `.env`, no `node_modules`, no `dist`.

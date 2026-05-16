@@ -8,6 +8,7 @@ const { verifyToken, allowRoles, requirePermission, getUserPermissions } = requi
 const { ROLE_PERMISSIONS } = require('../config/permissions');
 const { DEFAULT_HOSPITAL_ID, tenantFilter, tenantCreateData } = require('../middleware/tenant');
 const { auditEvent, loginHistoryEvent } = require('../utils/audit');
+const { ensureWithinLimit } = require('../utils/subscription');
 const router = express.Router();
 const VALID_ROLES = ['super_admin', 'admin', 'hospital_admin', 'doctor', 'nurse', 'receptionist', 'accountant', 'pharmacist', 'lab_technician', 'patient'];
 const VALID_STATUS = ['active', 'inactive'];
@@ -120,10 +121,23 @@ router.put('/change-password', verifyToken, asyncHandler(async (req, res) => {
 }));
 router.get('/users', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => res.json((await User.find(req.user.role === 'super_admin' ? {} : { hospital_id: Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID) }).sort({ id: -1 })).map(publicUser))));
 async function createUser(req, res) {
-    const { full_name, password, role = 'receptionist', phone, status = 'active', profile_image, bio, permissions } = req.body; const hospital_id = Number((req.user?.role === 'super_admin' && req.body.hospital_id) || req.user?.hospital_id || DEFAULT_HOSPITAL_ID); const email = normalizeEmail(req.body.email); if (!full_name || !email || !password) return res.status(400).json({ message: 'full_name, email and password are required' }); const err = validatePassword(password); if (err) return res.status(400).json({ message: err }); if (!VALID_ROLES.includes(role)) return res.status(400).json({ message: 'Invalid role' }); if (!VALID_STATUS.includes(status)) return res.status(400).json({ message: 'Invalid status' }); if (await User.findOne({ email })) return res.status(409).json({ message: 'Email already exists' }); const u = await User.create({
+    const { full_name, password, role = 'receptionist', phone, status = 'active', profile_image, bio, permissions } = req.body;
+    const hospital_id = Number((req.user?.role === 'super_admin' && req.body.hospital_id) || req.user?.hospital_id || DEFAULT_HOSPITAL_ID);
+    const email = normalizeEmail(req.body.email);
+    if (!full_name || !email || !password) return res.status(400).json({ message: 'full_name, email and password are required' });
+    const err = validatePassword(password);
+    if (err) return res.status(400).json({ message: err });
+    if (!VALID_ROLES.includes(role)) return res.status(400).json({ message: 'Invalid role' });
+    if (!VALID_STATUS.includes(status)) return res.status(400).json({ message: 'Invalid status' });
+    if (await User.findOne({ email })) return res.status(409).json({ message: 'Email already exists' });
+    const limitCheck = await ensureWithinLimit(hospital_id, 'users', 1);
+    if (!limitCheck.ok) return res.status(402).json({ message: limitCheck.message, subscription: limitCheck.subscription });
+    const u = await User.create({
         full_name, email, hospital_id, password: await bcrypt.hash(String(password), BCRYPT_ROUNDS), role, phone: phone || null, status, profile_image: profile_image || '',
         bio: bio || '', permissions: Array.isArray(permissions) ? permissions : [], password_changed_at: new Date()
-    }); if (req.user) await audit(req, req.user.id, `Created user ${email}`, 'users', hospital_id, { entity_type: 'user', entity_id: u.id, new_value: publicUser(u) }); res.status(201).json({ message: 'User registered successfully', userId: u.id });
+    });
+    if (req.user) await audit(req, req.user.id, `Created user ${email}`, 'users', hospital_id, { entity_type: 'user', entity_id: u.id, new_value: publicUser(u) });
+    res.status(201).json({ message: 'User registered successfully', userId: u.id });
 }
 router.post('/users', verifyToken, requirePermission('admin.users.manage'), asyncHandler(createUser));
 router.patch('/users/:id', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => { const allowed = ['full_name', 'email', 'role', 'phone', 'status', 'profile_image', 'bio', 'permissions']; const update = {}; for (const k of allowed) { if (k in req.body) update[k] = k === 'email' ? normalizeEmail(req.body[k]) : req.body[k]; } if (update.role && !VALID_ROLES.includes(update.role)) return res.status(400).json({ message: 'Invalid role' }); if (update.status && !VALID_STATUS.includes(update.status)) return res.status(400).json({ message: 'Invalid status' }); if (req.body.password) { const err = validatePassword(req.body.password); if (err) return res.status(400).json({ message: err }); update.password = await bcrypt.hash(String(req.body.password), BCRYPT_ROUNDS); update.password_changed_at = new Date(); } await User.updateOne(req.user.role === 'super_admin' ? { id: Number(req.params.id) } : { id: Number(req.params.id), hospital_id: Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID) }, { $set: update }); await audit(req, req.user.id, `Updated user ${req.params.id}`, 'users', req.user.hospital_id, { entity_type: 'user', entity_id: req.params.id, new_value: update }); res.json({ message: 'User updated' }); }));

@@ -19,3 +19,5 @@ export { auditApi } from './auditApi';
 export { configurationApi } from './configurationApi';
 
 export { templateApi } from './templateApi';
+
+export { subscriptionApi } from './subscriptionApi';

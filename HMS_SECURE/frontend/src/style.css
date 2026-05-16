@@ -3279,3 +3279,100 @@ body.dark .pharmacyActionGrid .card {
 .custom-field-readonly-list { margin-top: 14px; border-top: 1px solid var(--border-color, #e5e7eb); padding-top: 12px; }
 .custom-field-readonly-list h4 { margin: 0 0 8px; }
 @media (max-width: 900px) { .page-intro-card, .config-layout-grid { grid-template-columns: 1fr; display: grid; } .config-summary-grid { min-width: 0; grid-template-columns: 1fr; } }
+
+/* V21 SaaS Subscription Controls */
+.planSummaryStrip,
+.subscription-panel {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  margin: 16px 0;
+  border-radius: 22px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, .24));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary, #2563eb) 12%, var(--card-bg, #fff)), var(--card-bg, #fff));
+}
+.planLimitPills,
+.planCards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.planLimitPills span,
+.planCard {
+  border: 1px solid var(--border-color, rgba(148, 163, 184, .24));
+  background: var(--card-bg, #fff);
+  color: var(--text-color, #0f172a);
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+}
+.moduleCheck.disabled {
+  opacity: .55;
+  cursor: not-allowed;
+  filter: grayscale(.25);
+}
+.moduleCheck.disabled small {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--theme-primary, #2563eb);
+  font-weight: 700;
+}
+.subscription-panel {
+  grid-template-columns: minmax(280px, 1.2fr) minmax(260px, .8fr);
+}
+.subscription-current {
+  min-height: 100%;
+}
+.planUsageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.usageMeter {
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color, rgba(148, 163, 184, .24));
+  background: color-mix(in srgb, var(--theme-primary, #2563eb) 6%, var(--card-bg, #fff));
+}
+.usageMeter div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+.usageMeter progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--theme-primary, #2563eb);
+}
+.planCards {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+.planCard.active {
+  border-color: var(--theme-primary, #2563eb);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-primary, #2563eb) 22%, transparent);
+}
+.planCard h3 {
+  margin-bottom: 6px;
+}
+.planCard p {
+  color: var(--muted-color, #64748b);
+  font-size: 13px;
+}
+.planCard b,
+.planCard small {
+  display: block;
+  margin-top: 8px;
+}
+@media (max-width: 900px) {
+  .planSummaryStrip,
+  .subscription-panel {
+    grid-template-columns: 1fr;
+  }
+}

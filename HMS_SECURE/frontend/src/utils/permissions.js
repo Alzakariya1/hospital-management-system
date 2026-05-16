@@ -1,3 +1,46 @@
+
+export const PLAN_DEFINITIONS = {
+  clinic: {
+    id: 'clinic',
+    name: 'Clinic Plan',
+    price: '₹2,999/mo',
+    description: 'Best for single clinics and small practices.',
+    limits: { users: 8, patients: 1500, doctors: 5, appointments_per_month: 1200, medicines: 250, branches: 1, storage_gb: 5 },
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'billing', 'profile', 'configuration'],
+  },
+  hospital: {
+    id: 'hospital',
+    name: 'Hospital Plan',
+    price: '₹9,999/mo',
+    description: 'For hospitals that need OPD/IPD, lab, radiology, pharmacy and billing.',
+    limits: { users: 50, patients: 25000, doctors: 50, appointments_per_month: 15000, medicines: 5000, branches: 3, storage_gb: 100 },
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration'],
+  },
+  enterprise: {
+    id: 'enterprise',
+    name: 'Enterprise Plan',
+    price: '₹24,999/mo',
+    description: 'For chains and enterprise hospitals with advanced controls and integrations.',
+    limits: { users: 500, patients: 500000, doctors: 500, appointments_per_month: 200000, medicines: 50000, branches: 50, storage_gb: 1000 },
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'tenants'],
+  },
+};
+
+export function getPlanDefinition(plan = 'enterprise') {
+  return PLAN_DEFINITIONS[plan] || PLAN_DEFINITIONS.clinic;
+}
+
+export function getPlanModules(plan = 'enterprise') {
+  return getPlanDefinition(plan).modules;
+}
+
+export function normalizePlanModules(plan = 'enterprise', modules = []) {
+  const allowed = new Set(getPlanModules(plan));
+  const selected = Array.isArray(modules) && modules.length ? modules : getPlanModules(plan);
+  const clean = Array.from(new Set(selected.filter((moduleId) => allowed.has(moduleId))));
+  return clean.length ? clean : getPlanModules(plan);
+}
+
 export const ROLE_PERMISSIONS = {
   super_admin: ['*'],
   admin: [

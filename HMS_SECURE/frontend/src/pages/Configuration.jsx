@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { configurationApi } from '../api/configurationApi';
 import { templateApi } from '../api/templateApi';
+import { subscriptionApi } from '../api/subscriptionApi';
 import { DataTable } from '../components';
 
 const emptyField = {
@@ -44,6 +45,8 @@ export default function Configuration({ permissions = {} }) {
   const [templates, setTemplates] = useState([]);
   const [templateForm, setTemplateForm] = useState({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true });
   const [editingTemplateId, setEditingTemplateId] = useState(null);
+  const [subscription, setSubscription] = useState(null);
+  const [plans, setPlans] = useState([]);
 
   async function load() {
     setLoading(true);
@@ -54,6 +57,14 @@ export default function Configuration({ permissions = {} }) {
       ]);
       setFields(data);
       setTemplates(tpl.data || []);
+      try {
+        const [currentSub, planRows] = await Promise.all([subscriptionApi.current(), subscriptionApi.plans()]);
+        setSubscription(currentSub.data);
+        setPlans(planRows.data || []);
+      } catch (_) {
+        setSubscription(null);
+        setPlans([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -173,6 +184,34 @@ export default function Configuration({ permissions = {} }) {
           <div><b>{Object.keys(grouped).length}</b><span>Modules</span></div>
         </div>
       </div>
+
+      {subscription && (
+        <div className="subscription-panel">
+          <div className="card subscription-current">
+            <span className="doctor-kicker">Current SaaS Plan</span>
+            <h2>{subscription.plan_name}</h2>
+            <p className="muted">{subscription.description}</p>
+            <div className="planUsageGrid">
+              {Object.entries(subscription.checks || {}).map(([key, value]) => (
+                <div className="usageMeter" key={key}>
+                  <div><b>{key.replaceAll('_', ' ')}</b><span>{value.used} / {value.limit}</span></div>
+                  <progress value={value.used} max={value.limit || 1}></progress>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="planCards">
+            {plans.map(plan => (
+              <div className={plan.id === subscription.plan ? 'planCard active' : 'planCard'} key={plan.id}>
+                <h3>{plan.name}</h3>
+                <p>{plan.description}</p>
+                <b>₹{Number(plan.monthly_price_inr || 0).toLocaleString()}/mo</b>
+                <small>{plan.modules?.length || 0} modules · {plan.limits?.users} users</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="config-layout-grid">
         <form className="card form configuration-form" onSubmit={submit}>

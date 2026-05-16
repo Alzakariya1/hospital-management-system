@@ -44,6 +44,16 @@ const Hospital = makeModel("Hospital", "hospitals", {
     type: { type: String, default: "hospital" },
     status: { type: String, default: "active" },
     plan: { type: String, default: "enterprise" },
+    plan_limits: { type: Object, default: {} },
+    subscription: {
+        type: Object,
+        default: {
+            status: "active",
+            billing_cycle: "monthly",
+            renewal_date: null,
+            notes: "",
+        },
+    },
     enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'] },
     feature_flags: {
         type: Object,
