@@ -3422,3 +3422,10 @@ body.dark .pharmacyActionGrid .card {
 
 
 .tenantLifecyclePanel{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 10px}.tenantLifecyclePanel select{min-width:150px}.dangerText{color:#dc2626!important}.billingMeta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;color:var(--muted);font-size:12px}.billingMeta span{padding:6px 10px;border:1px solid var(--border);border-radius:999px;background:var(--surface-soft)}
+
+
+.gatewayTitle { margin-top: 22px; }
+.gatewayCard .linkBtn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.statusPill-created, .statusPill-pending { background: rgba(37, 99, 235, .12); color: #2563eb; }
+.statusPill-paid { background: rgba(22, 163, 74, .12); color: #16a34a; }
+.statusPill-failed, .statusPill-expired, .statusPill-cancelled, .statusPill-overdue { background: rgba(220, 38, 38, .12); color: #dc2626; }

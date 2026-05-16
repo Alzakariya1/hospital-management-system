@@ -70,6 +70,7 @@ app.use("/api", require("./routes/configuration.routes"));
 app.use("/api", require("./routes/template.routes"));
 app.use("/api", require("./routes/subscription.routes"));
 app.use("/api", require("./routes/saas.routes"));
+app.use("/api", require("./routes/saas-billing.routes"));
 app.use(notFound);
 app.use(errorHandler);
 connectDB()

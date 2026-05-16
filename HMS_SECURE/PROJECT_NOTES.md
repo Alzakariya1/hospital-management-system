@@ -877,3 +877,27 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Extended subscription fields for trial, suspension, cancellation, and next billing date.
 - Added audit logging for tenant lifecycle actions.
 - Frontend build passed and backend syntax checks passed.
+
+## V24 - SaaS Subscription Invoices + Payment Tracking
+- Added SaaSInvoice and SaaSPayment models for platform subscription billing.
+- Added SaaS billing routes:
+  - GET /api/saas/billing/summary
+  - GET /api/saas/invoices
+  - POST /api/saas/invoices/generate
+  - PATCH /api/saas/invoices/:id/status
+  - POST /api/saas/invoices/:id/payments
+  - GET /api/saas/invoices/export.csv
+- SaaS Control Center now shows invoice billing summary, generated invoices, balance tracking and manual payment recording.
+- Invoice generation uses current tenant plan and billing cycle with optional tax, discount and due date.
+- Payment recording updates invoice status as paid/partial/pending/overdue.
+- Audit logs added for invoice generation, status updates and payment records.
+- Frontend build passed and backend syntax checks passed.
+
+## V25 - Payment Gateway + Invoice Automation Foundation
+- Added SaaS payment intent model for gateway-ready payment links.
+- Added backend endpoints to create payment links, list payment intents, confirm gateway payments, and scan/mark overdue invoices.
+- Added SaaS payment gateway environment placeholders in backend `.env.example`.
+- Added SaaS Control Center UI actions for payment links, overdue scan, and payment intent confirmation.
+- Added payment gateway readiness panel showing latest payment link intents.
+- Payment gateway is foundation-ready: real Razorpay/Stripe/PayU webhook keys can be integrated later without changing the invoice workflow.
+- Tests performed: frontend npm install + build passed; backend syntax checks passed; DB check attempted but requires local/Render `MONGODB_URI` because `.env` is intentionally excluded.

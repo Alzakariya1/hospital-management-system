@@ -375,6 +375,66 @@ const Template = makeModel("Template", "templates", {
 });
 Template.schema.index({ hospital_id: 1, template_type: 1, name: 1 }, { unique: true, name: "template_hospital_type_name_unique" });
 
+
+
+const SaaSInvoice = makeModel("SaaSInvoice", "saas_invoices", {
+    hospital_id: { type: Number, required: true, index: true },
+    hospital_name: String,
+    plan: String,
+    plan_name: String,
+    invoice_number: { type: String, index: true },
+    billing_cycle: { type: String, default: "monthly" },
+    period_start: String,
+    period_end: String,
+    due_date: String,
+    subtotal: { type: Number, default: 0 },
+    tax_amount: { type: Number, default: 0 },
+    discount_amount: { type: Number, default: 0 },
+    total_amount: { type: Number, default: 0 },
+    paid_amount: { type: Number, default: 0 },
+    balance_amount: { type: Number, default: 0 },
+    status: { type: String, default: "pending", index: true }, // draft, pending, paid, partial, overdue, cancelled
+    notes: String,
+    created_by: Number,
+});
+SaaSInvoice.schema.index({ hospital_id: 1, invoice_number: 1 }, { unique: true, name: "saas_invoice_hospital_number_unique" });
+SaaSInvoice.schema.index({ status: 1, due_date: 1 }, { name: "saas_invoice_status_due_lookup" });
+
+const SaaSPayment = makeModel("SaaSPayment", "saas_payments", {
+    hospital_id: { type: Number, required: true, index: true },
+    invoice_id: { type: Number, required: true, index: true },
+    invoice_number: String,
+    payment_number: { type: String, index: true },
+    amount: { type: Number, default: 0 },
+    payment_date: String,
+    payment_mode: { type: String, default: "manual" },
+    transaction_id: String,
+    received_by: Number,
+    notes: String,
+});
+SaaSPayment.schema.index({ hospital_id: 1, invoice_id: 1, created_at: -1 }, { name: "saas_payment_invoice_lookup" });
+
+const SaaSPaymentIntent = makeModel("SaaSPaymentIntent", "saas_payment_intents", {
+    hospital_id: { type: Number, required: true, index: true },
+    invoice_id: { type: Number, required: true, index: true },
+    invoice_number: String,
+    gateway: { type: String, default: "manual" },
+    payment_link_id: String,
+    payment_link_url: String,
+    amount: { type: Number, default: 0 },
+    currency: { type: String, default: "INR" },
+    status: { type: String, default: "created", index: true }, // created, pending, paid, expired, failed, cancelled
+    expires_at: String,
+    paid_at: String,
+    transaction_id: String,
+    customer_email: String,
+    customer_phone: String,
+    notes: String,
+    created_by: Number,
+});
+SaaSPaymentIntent.schema.index({ hospital_id: 1, invoice_id: 1, status: 1 }, { name: "saas_payment_intent_invoice_lookup" });
+
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -416,4 +476,7 @@ module.exports = {
     DynamicField,
     Template,
     Notification,
+    SaaSInvoice,
+    SaaSPayment,
+    SaaSPaymentIntent,
 };
