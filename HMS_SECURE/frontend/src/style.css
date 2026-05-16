@@ -1445,3 +1445,332 @@ section > .card {
   .doctor-profile-header,
   .doctor-profile-actions { align-items: flex-start; justify-content: flex-start; }
 }
+
+/* Phase 7B: Keka-style unified profile experience */
+.keka-profile-page {
+  display: grid;
+  gap: 18px;
+}
+.profileBackBtn {
+  width: fit-content;
+  background: #101828;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.keka-cover-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 166px;
+  border-radius: 6px;
+  border: 1px solid #e6eaf2;
+  background: #1b2440;
+  box-shadow: 0 12px 28px rgba(16, 24, 40, .08);
+}
+.keka-cover-art {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 45%, rgba(120, 89, 227, .72), transparent 18%),
+    radial-gradient(circle at 64% 28%, rgba(50, 75, 155, .65), transparent 22%),
+    linear-gradient(120deg, #1f2b4a 0%, #5b55b7 46%, #191c2e 100%);
+  filter: saturate(1.05);
+}
+.keka-cover-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(15,23,42,.08), rgba(15,23,42,.36));
+}
+.keka-cover-content {
+  position: relative;
+  z-index: 1;
+  min-height: 166px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 28px 34px;
+  color: #fff;
+}
+.keka-avatar-wrap {
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  border: 5px solid rgba(255,255,255,.86);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  background: #f4f0ff;
+  color: var(--purple);
+  font-size: 32px;
+  font-weight: 900;
+  box-shadow: 0 18px 38px rgba(15,23,42,.24);
+}
+.keka-avatar-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.keka-person-title h1,
+.keka-cover-title-block h1 {
+  margin: 0 0 8px;
+  font-size: 30px;
+  color: #fff;
+}
+.keka-person-title p,
+.keka-cover-title-block p {
+  margin: 0;
+  color: rgba(255,255,255,.88);
+  font-weight: 600;
+}
+.keka-profile-score {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 16px;
+  padding: 12px 14px;
+  min-width: 230px;
+}
+.keka-profile-score b,
+.keka-profile-score span {
+  display: block;
+  color: #fff;
+}
+.keka-profile-score span {
+  color: rgba(255,255,255,.82);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.score-ring,
+.keka-mini-score {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 4px solid #ffcc3f;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+.keka-mini-score {
+  border-color: #6abd66;
+  color: #3e8b38;
+  background: #fff;
+}
+.keka-profile-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  align-items: start;
+}
+.keka-main-column,
+.keka-side-column {
+  display: grid;
+  gap: 18px;
+}
+.keka-section-card {
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 3px;
+  box-shadow: none;
+  padding: 20px;
+}
+.keka-section-card h2,
+.keka-help-card h3 {
+  margin: 0 0 7px;
+  font-size: 18px;
+}
+.keka-section-card p,
+.keka-help-card p {
+  margin: 0 0 16px;
+  color: #667085;
+}
+.keka-card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.keka-bio-box {
+  border: 1px solid #e8ecf4;
+  border-radius: 3px;
+  padding: 16px;
+  margin-bottom: 14px;
+  background: #fff;
+}
+.keka-bio-box span {
+  display: block;
+  margin-bottom: 8px;
+  color: #777f91;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: .03em;
+  font-weight: 800;
+}
+.keka-bio-box p {
+  margin: 0;
+  color: #24304a;
+  line-height: 1.65;
+}
+.keka-bio-grid,
+.keka-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.keka-quick-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.keka-link-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  color: #5b3fb4;
+  border: 1px solid #e9e3ff;
+  border-radius: 4px;
+  box-shadow: none;
+  font-weight: 700;
+}
+.keka-file-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px dashed #cfc5ff;
+  border-radius: 10px;
+  padding: 12px;
+  color: #5b3fb4;
+  background: #fbfaff;
+  cursor: pointer;
+  font-weight: 800;
+}
+.admin-profile-modern textarea {
+  min-height: 96px;
+  resize: vertical;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #d9dee8;
+  font-family: inherit;
+}
+.keka-filter-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(160px, 220px);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.keka-help-card {
+  background: #fff;
+  border: 1px solid #e6eaf2;
+  border-radius: 3px;
+  padding: 22px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.keka-help-card.light {
+  display: block;
+}
+.hr-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #ff9f1c;
+  color: #fff;
+  font-weight: 900;
+}
+.keka-help-card small {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #5b3fb4;
+}
+.keka-entity-profile-card {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.keka-entity-profile-card > .patient-profile-top,
+.keka-entity-profile-card > .doctor-profile-hero,
+.keka-entity-profile-card > .patient-summary-grid,
+.keka-entity-profile-card > .patient-related-grid,
+.keka-entity-profile-card > div:not(.keka-cover-card):not(.doctor-profile-hero) {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+.compact-cover {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  min-height: 136px;
+}
+.compact-cover .keka-cover-content {
+  min-height: 136px;
+  padding: 24px 28px;
+}
+.entity-cover-content .doctor-kicker {
+  color: rgba(255,255,255,.86);
+}
+.keka-entity-overview {
+  padding-top: 22px;
+}
+.keka-entity-overview .patient-avatar {
+  margin-top: -70px;
+  position: relative;
+  z-index: 3;
+  border: 5px solid #fff;
+  border-radius: 999px;
+  background: #f4f0ff;
+  box-shadow: 0 16px 38px rgba(15,23,42,.16);
+}
+.keka-entity-overview .patient-avatar img {
+  border-radius: 999px;
+}
+.keka-entity-overview .patient-profile-header {
+  padding-top: 4px;
+}
+.keka-entity-overview .info-card,
+.keka-entity-overview .extra-info-card,
+.keka-entity-profile-card .summary-card,
+.keka-entity-profile-card .patient-related-card,
+.keka-entity-profile-card .patient-document-card,
+.keka-entity-profile-card .medical-notes-box {
+  border-radius: 3px;
+  background: #fff;
+  border-color: #e6eaf2;
+  box-shadow: none;
+}
+.keka-entity-profile-card .patient-summary-grid {
+  padding-top: 6px;
+}
+.keka-entity-profile-card .patient-related-grid {
+  padding-bottom: 20px;
+}
+.keka-entity-profile-card .mini-record {
+  border-radius: 4px;
+}
+@media (max-width: 1120px) {
+  .keka-profile-layout { grid-template-columns: 1fr; }
+  .keka-side-column { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .keka-quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .keka-cover-content,
+  .compact-cover .keka-cover-content { flex-direction: column; align-items: flex-start; }
+  .keka-profile-score { margin-left: 0; width: 100%; }
+  .keka-bio-grid,
+  .keka-quick-grid,
+  .keka-side-column,
+  .keka-filter-row { grid-template-columns: 1fr; }
+  .keka-entity-overview .patient-avatar { margin-top: 0; }
+}

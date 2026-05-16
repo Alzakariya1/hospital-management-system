@@ -332,15 +332,25 @@ export default function Patients({
       )}
 
       {activeView === "patientProfile" && selectedPatient && (
-              <section>
-                <button onClick={() => setTab("patients")}>
+              <section className="keka-profile-page patient-keka-profile">
+                <button className="profileBackBtn" onClick={() => setTab("patients")}>
                   ← Back to Patients
                 </button>
 
-                <div className="card" style={{ marginTop: 16 }}>
-                  <h2>Patient Profile</h2>
+                <div className="card keka-entity-profile-card" style={{ marginTop: 16 }}>
+                  <div className="keka-cover-card compact-cover">
+                    <div className="keka-cover-art"></div>
+                    <div className="keka-cover-content entity-cover-content">
+                      <div className="keka-cover-title-block">
+                        <span className="doctor-kicker">Patient Overview</span>
+                        <h1>{selectedPatient.full_name}</h1>
+                        <p>Patient ID: {selectedPatient.patient_id} • {selectedPatient.gender || "Not added"} • {selectedPatient.blood_group || "Blood group not added"}</p>
+                      </div>
+                      <div className="keka-profile-score"><div className="score-ring">{selectedPatient.documents?.length || 0}</div><div><b>Documents</b><span>Saved records</span></div></div>
+                    </div>
+                  </div>
 
-                  <div className="patient-profile-top">
+                  <div className="patient-profile-top keka-entity-overview">
                     <div className="patient-avatar">
                       {selectedPatient.profile_image_url ? (
                         <img
@@ -355,8 +365,8 @@ export default function Patients({
                     <div className="patient-profile-main">
                       <div className="patient-profile-header">
                         <div>
+                          <span className="doctor-kicker">Personal Details</span>
                           <h1>{selectedPatient.full_name}</h1>
-
                           <p>Patient ID: {selectedPatient.patient_id}</p>
                         </div>
 

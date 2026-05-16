@@ -65,8 +65,8 @@ export default function Doctors({
     const documents = selectedDoctor.certificates || selectedDoctor.documents || [];
 
     return (
-      <section>
-        <button
+      <section className="keka-profile-page doctor-keka-profile">
+        <button className="profileBackBtn"
           type="button"
           onClick={() => {
             cancelDoctorEdit?.();
@@ -78,8 +78,19 @@ export default function Doctors({
           ← Back to Doctors
         </button>
 
-        <div className="card doctor-profile-card" style={{ marginTop: 16 }}>
-          <div className="doctor-profile-hero">
+        <div className="card doctor-profile-card keka-entity-profile-card" style={{ marginTop: 16 }}>
+          <div className="keka-cover-card compact-cover">
+            <div className="keka-cover-art"></div>
+            <div className="keka-cover-content entity-cover-content">
+              <div className="keka-cover-title-block">
+                <span className="doctor-kicker">Doctor Overview</span>
+                <h1>{selectedDoctor.full_name || "Unnamed Doctor"}</h1>
+                <p>Doctor ID: {selectedDoctor.doctor_id || "--"} {selectedDoctor.specialization ? `• ${selectedDoctor.specialization}` : ""}</p>
+              </div>
+              <div className="keka-profile-score"><div className="score-ring">{documents.length}</div><div><b>Documents</b><span>Credentials uploaded</span></div></div>
+            </div>
+          </div>
+          <div className="doctor-profile-hero keka-entity-overview">
 
           <div className="patient-profile-top doctor-profile-top">
             <div className="patient-avatar doctor-avatar-upload">
