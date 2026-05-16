@@ -3,14 +3,8 @@ const { Doctor, Department, Appointment, Patient, Bed, Billing, AuditLog } = req
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
-const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
 
 const router = express.Router();
-const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 },
-});
 router.use(verifyToken, attachTenant);
 
 async function withNames(req, rows) {
@@ -56,196 +50,69 @@ router.get('/doctors', requirePermission('doctor.view'), asyncHandler(async (req
     res.json(rows.map(d => ({ ...d, department_name: dm[d.department_id] })));
 }));
 
-function cleanDoctorId(value) {
-    return String(value || '').trim();
-}
-
-async function findDuplicateDoctorId(req, doctorId, currentDoctorNumericId = null) {
-    const cleanId = cleanDoctorId(doctorId);
-    if (!cleanId) return null;
-
-    const query = tenantFilter(req, { doctor_id: cleanId });
-    if (currentDoctorNumericId) query.id = { $ne: Number(currentDoctorNumericId) };
-    return Doctor.findOne(query).lean();
-}
-
-function duplicateDoctorResponse(res, duplicate, doctorId) {
-    return res.status(409).json({
-        message: `Doctor ID already exists${duplicate?.full_name ? ` for ${duplicate.full_name}` : ''}: ${doctorId}`,
-        field: 'doctor_id',
-        value: doctorId,
-        duplicate_id: duplicate?.id,
-        duplicate_name: duplicate?.full_name,
-    });
-}
-
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
-    const doctorId = cleanDoctorId(req.body.doctor_id);
-    if (!doctorId) return res.status(400).json({ message: 'Doctor ID is required' });
-
-    const duplicate = await findDuplicateDoctorId(req, doctorId);
-    if (duplicate) {
-        return duplicateDoctorResponse(res, duplicate, doctorId);
-    }
-
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
-    try {
-        const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_id: doctorId, doctor_uid: uid, status: req.body.status || 'active' }));
-        res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
-    } catch (error) {
-        if (error?.code === 11000) {
-            const duplicate = await findDuplicateDoctorId(req, doctorId);
-            return duplicateDoctorResponse(res, duplicate, doctorId);
-        }
-        throw error;
-    }
+    const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_uid: uid, status: req.body.status || 'active' }));
+    res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
 }));
 
 router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
     const doctorNumericId = Number(req.params.id);
+    if (!Number.isFinite(doctorNumericId)) {
+        return res.status(400).json({ message: 'Invalid doctor id' });
+    }
+
+    const allowed = [
+        'doctor_id',
+        'full_name',
+        'email',
+        'phone',
+        'specialization',
+        'qualification',
+        'consultation_fee',
+        'department_id',
+        'status',
+        'license_number',
+        'registration_number',
+    ];
+    const update = {};
+    allowed.forEach(k => {
+        if (k in req.body) update[k] = typeof req.body[k] === 'string' ? req.body[k].trim() : req.body[k];
+    });
+
+    if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' });
+
     const existingDoctor = await Doctor.findOne(tenantFilter(req, { id: doctorNumericId })).lean();
     if (!existingDoctor) return res.status(404).json({ message: 'Doctor not found' });
 
-    const allowed = ['doctor_id', 'full_name', 'email', 'phone', 'gender', 'specialization', 'qualification', 'consultation_fee', 'experience_years', 'department', 'registration_number', 'license_number', 'address', 'availability', 'bio', 'status'];
-    const update = {};
-    allowed.forEach(k => { if (k in req.body) update[k] = req.body[k]; });
+    if (Object.prototype.hasOwnProperty.call(update, 'doctor_id') && update.doctor_id) {
+        const duplicateDoctor = await Doctor.findOne(tenantFilter(req, {
+            doctor_id: update.doctor_id,
+            id: { $ne: doctorNumericId },
+        })).lean();
 
-    if ('doctor_id' in update) {
-        update.doctor_id = cleanDoctorId(update.doctor_id);
-        if (!update.doctor_id) return res.status(400).json({ message: 'Doctor ID is required' });
-
-        const oldDoctorId = cleanDoctorId(existingDoctor.doctor_id);
-        if (update.doctor_id !== oldDoctorId) {
-            const duplicate = await findDuplicateDoctorId(req, update.doctor_id, doctorNumericId);
-            if (duplicate) return duplicateDoctorResponse(res, duplicate, update.doctor_id);
-        } else {
-            // Do not write the same doctor_id again. This avoids legacy/global index conflicts
-            // and keeps normal edit updates safe.
-            delete update.doctor_id;
+        if (duplicateDoctor) {
+            return res.status(409).json({
+                message: `Doctor ID already exists for ${duplicateDoctor.full_name || 'another doctor'}: ${update.doctor_id}`,
+            });
         }
     }
 
-    if (!Object.keys(update).length) return res.json({ message: 'Doctor updated', id: existingDoctor.id });
-
     try {
-        const updatedDoctor = await Doctor.findOneAndUpdate(
+        const updated = await Doctor.findOneAndUpdate(
             tenantFilter(req, { id: doctorNumericId }),
             { $set: update },
-            { new: true, runValidators: false }
+            { new: true, runValidators: true },
         ).lean();
-        res.json({ message: 'Doctor updated', id: updatedDoctor.id, doctor: updatedDoctor });
+        res.json({ message: 'Doctor updated', doctor: updated });
     } catch (error) {
         if (error?.code === 11000) {
-            const attemptedDoctorId = req.body?.doctor_id || existingDoctor.doctor_id;
-            const duplicate = await findDuplicateDoctorId(req, attemptedDoctorId, doctorNumericId);
-            return duplicateDoctorResponse(res, duplicate, attemptedDoctorId);
+            return res.status(409).json({
+                message: 'Doctor ID already exists in this hospital. Please use a different Doctor ID.',
+            });
         }
         throw error;
     }
-}));
-
-router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async (req, res) => {
-    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
-    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-    res.json(doctor);
-}));
-
-router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), upload.single('profile_image'), asyncHandler(async (req, res) => {
-    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) })).lean();
-    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-    if (!req.file) return res.status(400).json({ message: 'Profile image is required' });
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-        return res.status(400).json({ message: 'Only JPG, PNG, and WEBP images are allowed' });
-    }
-
-    if (doctor.profile_image_public_id) {
-        try { await cloudinary.uploader.destroy(doctor.profile_image_public_id); } catch (_) {}
-    }
-
-    const result = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-            { folder: 'hms/doctor-profile-images', resource_type: 'image' },
-            (error, uploadResult) => error ? reject(error) : resolve(uploadResult)
-        );
-        stream.end(req.file.buffer);
-    });
-
-    const updatedDoctor = await Doctor.findOneAndUpdate(
-        tenantFilter(req, { id: Number(req.params.id) }),
-        { $set: { profile_image_url: result.secure_url, profile_image_public_id: result.public_id } },
-        { new: true, runValidators: false }
-    ).lean();
-
-    res.json({
-        message: 'Doctor profile image uploaded successfully',
-        profile_image_url: updatedDoctor.profile_image_url,
-        profile_image_public_id: updatedDoctor.profile_image_public_id,
-        doctor: updatedDoctor,
-    });
-}));
-
-router.post('/doctors/:id/documents', requirePermission('doctor.edit'), upload.single('document'), asyncHandler(async (req, res) => {
-    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) })).lean();
-    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-    if (!req.file) return res.status(400).json({ message: 'Document file is required' });
-
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(req.file.mimetype)) {
-        return res.status(400).json({ message: 'Only PDF, JPG, PNG, and WEBP files are allowed' });
-    }
-
-    const result = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-            { folder: 'hms/doctor-documents', resource_type: 'auto' },
-            (error, uploadResult) => error ? reject(error) : resolve(uploadResult)
-        );
-        stream.end(req.file.buffer);
-    });
-
-    const newDoc = {
-        title: req.body.title || req.file.originalname,
-        category: req.body.category || 'professional',
-        document_type: req.body.document_type || 'Certificate',
-        notes: req.body.notes || '',
-        file_name: req.file.originalname,
-        file_type: req.file.mimetype,
-        file_size: req.file.size,
-        file_url: result.secure_url,
-        file_public_id: result.public_id,
-        uploaded_at: new Date(),
-    };
-
-    const updatedDoctor = await Doctor.findOneAndUpdate(
-        tenantFilter(req, { id: Number(req.params.id) }),
-        { $push: { documents: newDoc } },
-        { new: true, runValidators: false }
-    ).lean();
-
-    res.status(201).json({
-        message: 'Doctor document uploaded successfully',
-        document: newDoc,
-        documents: updatedDoctor.documents || [],
-        doctor: updatedDoctor,
-    });
-}));
-
-router.delete('/doctors/:id/documents/:docIndex', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {
-    const doctor = await Doctor.findOne(tenantFilter(req, { id: Number(req.params.id) }));
-    if (!doctor) return res.status(404).json({ message: 'Doctor not found' });
-
-    const docIndex = Number(req.params.docIndex);
-    const doc = doctor.documents?.[docIndex];
-    if (!doc) return res.status(404).json({ message: 'Document not found' });
-
-    if (doc.file_public_id) {
-        await cloudinary.uploader.destroy(doc.file_public_id, { resource_type: 'auto' });
-    }
-
-    doctor.documents.splice(docIndex, 1);
-    await doctor.save();
-    res.json({ message: 'Doctor document deleted successfully', documents: doctor.documents });
 }));
 
 router.delete('/doctors/:id', requirePermission('doctor.delete'), asyncHandler(async (req, res) => {

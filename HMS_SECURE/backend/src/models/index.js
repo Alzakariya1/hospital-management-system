@@ -107,25 +107,26 @@ const Patient = makeModel("Patient", "patients", {
 
 const Doctor = makeModel("Doctor", "doctors", {
     hospital_id: { type: Number, default: 1, index: true },
-    doctor_id: { type: String, index: true },
+    // Keep doctor_id unique per hospital through the compound index below.
+    // Do not mark this field globally unique, otherwise different hospitals cannot use the same doctor_id.
+    doctor_id: { type: String, trim: true },
+
     full_name: String,
     email: String,
     phone: String,
-    gender: String,
     specialization: String,
     qualification: String,
-    consultation_fee: String,
-    experience_years: String,
-    department: String,
-    registration_number: String,
-    license_number: String,
-    address: String,
-    availability: String,
-    bio: String,
+    consultation_fee: Number,
+    department_id: Number,
     status: { type: String, default: "active" },
+
+    // Reserved for the next doctor-profile phase. Keeping these schema fields now is backward compatible
+    // because strict:false already allowed them, but defining them documents the intended structure.
     profile_image_url: String,
     profile_image_public_id: String,
-    documents: [
+    license_number: String,
+    registration_number: String,
+    certificates: [
         {
             title: String,
             category: String,
@@ -143,6 +144,14 @@ const Doctor = makeModel("Doctor", "doctors", {
         },
     ],
 });
+Doctor.schema.index(
+    { hospital_id: 1, doctor_id: 1 },
+    {
+        unique: true,
+        name: "doctor_hospital_doctor_id_unique",
+        partialFilterExpression: { doctor_id: { $type: "string" } },
+    },
+);
 const Appointment = makeModel("Appointment", "appointments", {
     hospital_id: { type: Number, default: 1, index: true },
     patient_id: String,

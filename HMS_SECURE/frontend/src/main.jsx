@@ -68,18 +68,9 @@ const emptyDoctor = {
   full_name: "",
   email: "",
   phone: "",
-  gender: "male",
   specialization: "",
   qualification: "",
   consultation_fee: "",
-  experience_years: "",
-  department: "",
-  registration_number: "",
-  license_number: "",
-  address: "",
-  availability: "",
-  bio: "",
-  status: "active",
 };
 const emptyAppointment = {
   patient_id: "",
@@ -184,16 +175,6 @@ function App() {
 
   const [patient, setPatient] = useState(emptyPatient);
   const [doctor, setDoctor] = useState(emptyDoctor);
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [doctorProfileImage, setDoctorProfileImage] = useState(null);
-  const [doctorProfilePreview, setDoctorProfilePreview] = useState("");
-  const [pendingDoctorDocs, setPendingDoctorDocs] = useState([]);
-  const [doctorDocForm, setDoctorDocForm] = useState({
-    category: "professional",
-    document_type: "Medical Registration Certificate",
-    title: "",
-    notes: "",
-  });
 
   const [appointment, setAppointment] = useState(emptyAppointment);
   const [appointmentSearch, setAppointmentSearch] = useState("");
@@ -331,56 +312,16 @@ function App() {
     e.preventDefault();
 
     try {
-      let savedDoctorId = editingDoctorId;
-
       if (editingDoctorId) {
         await doctorApi.update(editingDoctorId, doctor);
         toast.success("Doctor updated successfully");
         setEditingDoctorId(null);
       } else {
-        const { data } = await doctorApi.create(doctor);
-        savedDoctorId = data.id;
+        await doctorApi.create(doctor);
         toast.success("Doctor added successfully");
       }
 
-      if (doctorProfileImage && savedDoctorId) {
-        const imageFormData = new FormData();
-        imageFormData.append("profile_image", doctorProfileImage);
-        await doctorApi.uploadProfileImage(savedDoctorId, imageFormData);
-      }
-
-      for (const doc of pendingDoctorDocs) {
-        if (!doc.file || !savedDoctorId) continue;
-        const formData = new FormData();
-        formData.append("document", doc.file);
-        formData.append("title", doc.title);
-        formData.append("category", doc.category);
-        formData.append("document_type", doc.document_type);
-        formData.append("notes", doc.notes || "");
-        await doctorApi.uploadDocument(savedDoctorId, formData);
-      }
-
-      if (savedDoctorId) {
-        try {
-          const { data: freshDoctor } = await doctorApi.get(savedDoctorId);
-          setDoctors((prev) => prev.map((d) => (d.id === savedDoctorId ? freshDoctor : d)));
-          setSelectedDoctor((prev) => (prev?.id === savedDoctorId ? freshDoctor : prev));
-        } catch (_) {
-          // Fresh profile fetch is best-effort; list reload below remains the source of truth.
-        }
-      }
-
       setDoctor(emptyDoctor);
-      setEditingDoctorId(null);
-      setDoctorProfileImage(null);
-      setDoctorProfilePreview("");
-      setPendingDoctorDocs([]);
-      setDoctorDocForm({
-        category: "professional",
-        document_type: "Medical Registration Certificate",
-        title: "",
-        notes: "",
-      });
       await load();
     } catch (err) {
       toast.error(err.response?.data?.message || "Doctor action failed");
@@ -514,128 +455,18 @@ function App() {
     setPendingPatientDocs((prev) => prev.filter((doc) => doc.id !== docId));
     toast.success("Document removed");
   }
-  async function openDoctorProfile(row) {
-    const doctorId = row?.id || row?._id;
-    if (!doctorId) {
-      toast.error("Doctor record not found");
-      return;
-    }
-    try {
-      const { data } = await doctorApi.get(doctorId);
-      setSelectedDoctor(data);
-      setTab("doctorProfile");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Could not open doctor profile");
-    }
-  }
-
   function editDoctor(row) {
     setDoctor({
       doctor_id: row.doctor_id || "",
       full_name: row.full_name || "",
       email: row.email || "",
       phone: row.phone || "",
-      gender: row.gender || "male",
       specialization: row.specialization || "",
       qualification: row.qualification || "",
       consultation_fee: row.consultation_fee || "",
-      experience_years: row.experience_years || "",
-      department: row.department || "",
-      registration_number: row.registration_number || "",
-      license_number: row.license_number || "",
-      address: row.address || "",
-      availability: row.availability || "",
-      bio: row.bio || "",
-      status: row.status || "active",
     });
 
-    setEditingDoctorId(row.id || row._id);
-    setDoctorProfilePreview(row.profile_image_url || "");
-    setDoctorProfileImage(null);
-    setPendingDoctorDocs([]);
-  }
-
-  function handleDoctorProfileImage(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Only JPG, PNG, and WEBP images are allowed");
-      e.target.value = "";
-      return;
-    }
-
-    const maxSize = 3 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error("Image size should be less than 3MB");
-      e.target.value = "";
-      return;
-    }
-
-    setDoctorProfileImage(file);
-    setDoctorProfilePreview(URL.createObjectURL(file));
-    toast.success("Doctor profile image selected");
-  }
-
-  function handlePendingDoctorDocument(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Only PDF, JPG, PNG, and WEBP files are allowed");
-      e.target.value = "";
-      return;
-    }
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error("File size should be less than 5MB");
-      e.target.value = "";
-      return;
-    }
-
-    const newDoc = {
-      id: Date.now(),
-      category: doctorDocForm.category,
-      document_type: doctorDocForm.document_type,
-      title: doctorDocForm.title || file.name,
-      notes: doctorDocForm.notes,
-      file_name: file.name,
-      file_type: file.type,
-      file_size: file.size,
-      file,
-      file_url: URL.createObjectURL(file),
-      uploaded_at: new Date().toLocaleString(),
-    };
-
-    setPendingDoctorDocs((prev) => [...prev, newDoc]);
-    setDoctorDocForm({
-      category: "professional",
-      document_type: "Medical Registration Certificate",
-      title: "",
-      notes: "",
-    });
-    e.target.value = "";
-    toast.success("Doctor document added to form");
-  }
-
-  function removePendingDoctorDocument(docId) {
-    setPendingDoctorDocs((prev) => prev.filter((doc) => doc.id !== docId));
-    toast.success("Doctor document removed");
-  }
-
-  async function deleteDoctorDocument(doctorId, docIndex) {
-    if (!confirm("Delete this doctor document?")) return;
-    try {
-      const { data } = await doctorApi.deleteDocument(doctorId, docIndex);
-      setSelectedDoctor((prev) => prev ? { ...prev, documents: data.documents || [] } : prev);
-      await load();
-      toast.success("Doctor document deleted");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Document delete failed");
-    }
+    setEditingDoctorId(row.id);
   }
 
   async function deleteDoctor(row) {
@@ -941,7 +772,7 @@ function App() {
   const tabs = filterTabsByPermissions(user, allTabs, enabledModules);
 
   useEffect(() => {
-    const internalViews = ["patientProfile", "doctorProfile"];
+    const internalViews = ["patientProfile"];
     if (internalViews.includes(tab)) return;
     if (tabs.length && !tabs.some(([id]) => id === tab)) {
       setTab(tabs[0][0]);
@@ -1062,7 +893,7 @@ function App() {
         activeTab={tab}
         onTabChange={setTab}
         onLogout={logout}
-        headerTitle={tab === "patientProfile" ? "Patient Profile" : tab === "doctorProfile" ? "Doctor Profile" : tabs.find((t) => t[0] === tab)?.[1]}
+        headerTitle={tab === "patientProfile" ? "Patient Profile" : tabs.find((t) => t[0] === tab)?.[1]}
         appointmentCount={appointments.length}
         lowStockCount={meds.filter((m) => Number(m.stock || 0) < 10).length}
         pendingBillCount={bills.filter((b) => b.status === "pending").length}
@@ -1175,74 +1006,16 @@ function App() {
               <Doctors
                 doctor={doctor}
                 setDoctor={setDoctor}
-                emptyDoctor={emptyDoctor}
-                editingDoctorId={editingDoctorId}
-                setEditingDoctorId={setEditingDoctorId}
                 addDoctor={addDoctor}
-                doctorProfilePreview={doctorProfilePreview}
-                setDoctorProfilePreview={setDoctorProfilePreview}
-                doctorProfileImage={doctorProfileImage}
-                setDoctorProfileImage={setDoctorProfileImage}
-                handleDoctorProfileImage={handleDoctorProfileImage}
-                doctorDocForm={doctorDocForm}
-                setDoctorDocForm={setDoctorDocForm}
-                pendingDoctorDocs={pendingDoctorDocs}
-                setPendingDoctorDocs={setPendingDoctorDocs}
-                handlePendingDoctorDocument={handlePendingDoctorDocument}
-                removePendingDoctorDocument={removePendingDoctorDocument}
                 doctorSearch={doctorSearch}
                 setDoctorSearch={setDoctorSearch}
                 paginatedDoctors={paginatedDoctors}
-                doctors={doctors}
                 editDoctor={editDoctor}
                 deleteDoctor={deleteDoctor}
-                selectedDoctor={selectedDoctor}
-                setSelectedDoctor={setSelectedDoctor}
-                openDoctorProfile={openDoctorProfile}
-                setTab={setTab}
                 doctorPage={doctorPage}
                 setDoctorPage={setDoctorPage}
                 doctorTotalPages={doctorTotalPages}
-                deleteDoctorDocument={deleteDoctorDocument}
                 permissions={permissions}
-                activeView="doctors"
-              />
-            )}
-            {tab === "doctorProfile" && selectedDoctor && (
-              <Doctors
-                doctor={doctor}
-                setDoctor={setDoctor}
-                emptyDoctor={emptyDoctor}
-                editingDoctorId={editingDoctorId}
-                setEditingDoctorId={setEditingDoctorId}
-                addDoctor={addDoctor}
-                doctorProfilePreview={doctorProfilePreview}
-                setDoctorProfilePreview={setDoctorProfilePreview}
-                doctorProfileImage={doctorProfileImage}
-                setDoctorProfileImage={setDoctorProfileImage}
-                handleDoctorProfileImage={handleDoctorProfileImage}
-                doctorDocForm={doctorDocForm}
-                setDoctorDocForm={setDoctorDocForm}
-                pendingDoctorDocs={pendingDoctorDocs}
-                setPendingDoctorDocs={setPendingDoctorDocs}
-                handlePendingDoctorDocument={handlePendingDoctorDocument}
-                removePendingDoctorDocument={removePendingDoctorDocument}
-                doctorSearch={doctorSearch}
-                setDoctorSearch={setDoctorSearch}
-                paginatedDoctors={paginatedDoctors}
-                doctors={doctors}
-                editDoctor={editDoctor}
-                deleteDoctor={deleteDoctor}
-                selectedDoctor={selectedDoctor}
-                setSelectedDoctor={setSelectedDoctor}
-                openDoctorProfile={openDoctorProfile}
-                setTab={setTab}
-                doctorPage={doctorPage}
-                setDoctorPage={setDoctorPage}
-                doctorTotalPages={doctorTotalPages}
-                deleteDoctorDocument={deleteDoctorDocument}
-                permissions={permissions}
-                activeView="doctorProfile"
               />
             )}
             {tab === "appointments" && (
