@@ -35,6 +35,7 @@ export default function Doctors({
   const [uploadingDoctorImage, setUploadingDoctorImage] = useState(false);
   const [uploadingDoctorDocument, setUploadingDoctorDocument] = useState(false);
   const [deletingDoctorDocumentIndex, setDeletingDoctorDocumentIndex] = useState(null);
+  const [showDoctorDocForm, setShowDoctorDocForm] = useState(false);
 
   function resetDoctorDocForm() {
     setDoctorDocForm({
@@ -70,29 +71,17 @@ export default function Doctors({
           onClick={() => {
             cancelDoctorEdit?.();
             resetDoctorDocForm();
+            setShowDoctorDocForm(false);
             setTab("doctors");
           }}
         >
           ← Back to Doctors
         </button>
 
-        <div className="card" style={{ marginTop: 16 }}>
-          <div className="patient-document-header">
-            <div>
-              <h2>Doctor Profile</h2>
-              <p className="muted">View and manage doctor details, credentials, image, and documents from one profile.</p>
-            </div>
-            {permissions.doctorEdit && (
-              <button
-                type="button"
-                onClick={() => editDoctor(selectedDoctor, { stayOnProfile: true })}
-              >
-                <i className="bi bi-pencil-square"></i> Edit Profile
-              </button>
-            )}
-          </div>
+        <div className="card doctor-profile-card" style={{ marginTop: 16 }}>
+          <div className="doctor-profile-hero">
 
-          <div className="patient-profile-top">
+          <div className="patient-profile-top doctor-profile-top">
             <div className="patient-avatar doctor-avatar-upload">
               {selectedDoctor.profile_image_url ? (
                 <img src={selectedDoctor.profile_image_url} alt={selectedDoctor.full_name} />
@@ -122,12 +111,23 @@ export default function Doctors({
             </div>
 
             <div className="patient-profile-main">
-              <div className="patient-profile-header">
+              <div className="patient-profile-header doctor-profile-header">
                 <div>
+                  <span className="doctor-kicker">Doctor Overview</span>
                   <h1>{selectedDoctor.full_name || "Unnamed Doctor"}</h1>
-                  <p>Doctor ID: {selectedDoctor.doctor_id || "--"}</p>
+                  <p>Doctor ID: {selectedDoctor.doctor_id || "--"} {selectedDoctor.specialization ? `• ${selectedDoctor.specialization}` : ""}</p>
                 </div>
-                <div className="patient-status">{selectedDoctor.status || "Active Doctor"}</div>
+                <div className="doctor-profile-actions">
+                  <div className="patient-status">{selectedDoctor.status || "Active Doctor"}</div>
+                  {permissions.doctorEdit && (
+                    <button
+                      type="button"
+                      onClick={() => editDoctor(selectedDoctor, { stayOnProfile: true })}
+                    >
+                      <i className="bi bi-pencil-square"></i> Edit Profile
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="patient-info-grid">
@@ -155,6 +155,7 @@ export default function Doctors({
               </div>
             </div>
           </div>
+          </div>
 
           {permissions.doctorEdit && String(editingDoctorId || "") === String(selectedDoctor.id || "") && (
             <div style={{ marginTop: 16 }}>
@@ -178,7 +179,7 @@ export default function Doctors({
           <div className="patient-summary-grid">
             <div className="summary-card"><i className="bi bi-calendar-check"></i><div><span>Appointments</span><h3>{relatedAppointments.length}</h3></div></div>
             <div className="summary-card"><i className="bi bi-file-earmark-medical"></i><div><span>Documents</span><h3>{documents.length}</h3></div></div>
-            <div className="summary-card"><i className="bi bi-person-badge"></i><div><span>Doctor ID</span><h3>{selectedDoctor.doctor_id || "--"}</h3></div></div>
+            <div className="summary-card"><i className="bi bi-clock-history"></i><div><span>Recent Records</span><h3>{Math.min(relatedAppointments.length, 20)}</h3></div></div>
             <div className="summary-card"><i className="bi bi-cash-stack"></i><div><span>Fee</span><h3>{selectedDoctor.consultation_fee ? `₹${selectedDoctor.consultation_fee}` : "--"}</h3></div></div>
           </div>
 
@@ -206,10 +207,15 @@ export default function Doctors({
                   <h3>Doctor Documents</h3>
                   <p className="muted">Registration, license, certificates, and other credentials.</p>
                 </div>
+                {permissions.doctorDocumentManage && uploadDoctorDocument && (
+                  <button type="button" onClick={() => setShowDoctorDocForm((v) => !v)}>
+                    <i className={showDoctorDocForm ? "bi bi-x-lg" : "bi bi-plus-lg"}></i> {showDoctorDocForm ? "Close" : "Add Document"}
+                  </button>
+                )}
               </div>
 
-              {permissions.doctorDocumentManage && uploadDoctorDocument && (
-                <div className="patient-document-card profile-documents" style={{ marginBottom: 14 }}>
+              {permissions.doctorDocumentManage && uploadDoctorDocument && showDoctorDocForm && (
+                <div className="patient-document-card profile-documents doctor-document-form" style={{ marginBottom: 14 }}>
                   <div className="patient-document-grid">
                     <input
                       placeholder="Document title"
@@ -261,6 +267,7 @@ export default function Doctors({
                           setUploadingDoctorDocument(true);
                           await uploadDoctorDocument(selectedDoctor.id, doctorDocForm);
                           resetDoctorDocForm();
+                          setShowDoctorDocForm(false);
                         } finally {
                           setUploadingDoctorDocument(false);
                         }
@@ -274,7 +281,14 @@ export default function Doctors({
               )}
 
               {!documents.length ? (
-                <p className="muted">No doctor documents uploaded yet.</p>
+                <div className="empty-doc-state">
+                  <i className="bi bi-folder2-open"></i>
+                  <h4>No documents uploaded yet</h4>
+                  <p>Upload registration certificate, medical license, degree certificate, or other credentials.</p>
+                  {permissions.doctorDocumentManage && uploadDoctorDocument && !showDoctorDocForm && (
+                    <button type="button" onClick={() => setShowDoctorDocForm(true)}>Add First Document</button>
+                  )}
+                </div>
               ) : (
                 <div className="patient-document-list">
                   {documents.map((doc, index) => (

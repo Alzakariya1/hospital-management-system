@@ -80,6 +80,7 @@ const Patient = makeModel("Patient", "patients", {
 
     profile_image_url: String,
     profile_image_public_id: String,
+    profile_image_storage: String,
 
     emergency_contact_name: String,
     emergency_contact_phone: String,
@@ -97,6 +98,7 @@ const Patient = makeModel("Patient", "patients", {
             file_size: Number,
             file_url: String,
             file_public_id: String,
+            storage: String,
             uploaded_at: {
                 type: Date,
                 default: Date.now,
@@ -124,6 +126,7 @@ const Doctor = makeModel("Doctor", "doctors", {
     // because strict:false already allowed them, but defining them documents the intended structure.
     profile_image_url: String,
     profile_image_public_id: String,
+    profile_image_storage: String,
     license_number: String,
     registration_number: String,
     certificates: [

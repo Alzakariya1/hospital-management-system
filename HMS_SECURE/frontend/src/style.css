@@ -1355,3 +1355,93 @@ section > .card {
   transform: translateY(-1px);
   box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
 }
+
+/* Doctor profile enterprise polish */
+.doctor-profile-card {
+  overflow: hidden;
+}
+.doctor-profile-hero {
+  border: 1px solid #e8ecf5;
+  border-radius: 24px;
+  padding: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8f6ff 45%, #f7fbff 100%);
+  margin-bottom: 20px;
+}
+.doctor-profile-top {
+  align-items: flex-start;
+}
+.doctor-profile-header {
+  align-items: flex-start;
+  gap: 16px;
+}
+.doctor-kicker {
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #5b3db8;
+  margin-bottom: 6px;
+}
+.doctor-profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.doctor-avatar-upload {
+  border-radius: 28px;
+  box-shadow: inset 0 0 0 1px #ded6ff, 0 16px 36px rgba(91, 61, 184, .14);
+  background: #f2edff;
+}
+.doctor-avatar-upload img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+}
+.profile-image-overlay-btn {
+  width: 44px;
+  height: 44px;
+  right: -8px;
+  bottom: -8px;
+  border: 3px solid #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, .18);
+}
+.doctor-document-form {
+  background: #fbfcff;
+  border: 1px dashed #cfd8ea;
+}
+.empty-doc-state {
+  border: 1px dashed #cfd8ea;
+  border-radius: 18px;
+  padding: 28px 18px;
+  text-align: center;
+  background: #fbfcff;
+  color: #607086;
+}
+.empty-doc-state i {
+  font-size: 34px;
+  color: #6847c7;
+}
+.empty-doc-state h4 {
+  margin: 10px 0 6px;
+  color: #0f172a;
+}
+.empty-doc-state p {
+  margin: 0 auto 14px;
+  max-width: 420px;
+}
+.record-status {
+  text-transform: capitalize;
+}
+.patient-related-card .mini-record {
+  border: 1px solid #edf1f7;
+  box-shadow: none;
+}
+@media (max-width: 900px) {
+  .doctor-profile-hero { padding: 16px; }
+  .doctor-profile-header,
+  .doctor-profile-actions { align-items: flex-start; justify-content: flex-start; }
+}

@@ -4,13 +4,36 @@ const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
 const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
+const { cloudinary, hasCloudinaryConfig } = require('../config/cloudinary');
 
 const router = express.Router();
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 8 * 1024 * 1024 },
 });
+
+function fileToDataUrl(file) {
+    return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+}
+
+async function uploadBufferToCloudinary(file, options) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(options, (error, uploadResult) => {
+            if (error) reject(error);
+            else resolve(uploadResult);
+        });
+        stream.end(file.buffer);
+    });
+}
+
+async function safelyDestroyCloudinary(publicId, resourceType = 'auto') {
+    if (!publicId || !hasCloudinaryConfig()) return;
+    try {
+        await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    } catch (error) {
+        console.warn('Cloudinary cleanup skipped:', error?.message || error);
+    }
+}
 router.use(verifyToken, attachTenant);
 
 async function withNames(req, rows) {
@@ -169,38 +192,41 @@ router.post('/doctors/:id/profile-image', requirePermission('doctor.edit'), uplo
     }
 
     try {
-        if (doctor.profile_image_public_id) {
-            await cloudinary.uploader.destroy(doctor.profile_image_public_id, { resource_type: 'image' });
+        await safelyDestroyCloudinary(doctor.profile_image_public_id, 'image');
+
+        let profileImageUrl;
+        let profileImagePublicId = '';
+        let profileImageStorage = 'database';
+
+        if (hasCloudinaryConfig()) {
+            const result = await uploadBufferToCloudinary(req.file, {
+                folder: 'hms/doctor-profile-images',
+                resource_type: 'image',
+            });
+            profileImageUrl = result.secure_url;
+            profileImagePublicId = result.public_id;
+            profileImageStorage = 'cloudinary';
+        } else {
+            profileImageUrl = fileToDataUrl(req.file);
         }
 
-        const result = await new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-                {
-                    folder: 'hms/doctor-profile-images',
-                    resource_type: 'image',
-                },
-                (error, uploadResult) => {
-                    if (error) reject(error);
-                    else resolve(uploadResult);
-                },
-            );
-
-            stream.end(req.file.buffer);
-        });
-
-        doctor.profile_image_url = result.secure_url;
-        doctor.profile_image_public_id = result.public_id;
+        doctor.profile_image_url = profileImageUrl;
+        doctor.profile_image_public_id = profileImagePublicId;
+        doctor.profile_image_storage = profileImageStorage;
         await doctor.save();
 
         res.json({
-            message: 'Doctor profile image uploaded successfully',
+            message: profileImageStorage === 'cloudinary'
+                ? 'Doctor profile image uploaded successfully'
+                : 'Doctor profile image saved successfully. Cloudinary is not configured, so the file was stored in MongoDB.',
             profile_image_url: doctor.profile_image_url,
             profile_image_public_id: doctor.profile_image_public_id,
+            storage: profileImageStorage,
             doctor: doctor.toJSON(),
         });
     } catch (error) {
         console.error('Doctor profile image upload failed:', error);
-        res.status(500).json({ message: 'Doctor profile image upload failed. Please verify Cloudinary environment variables on Render.' });
+        res.status(500).json({ message: error?.message || 'Doctor profile image upload failed' });
     }
 }));
 
@@ -232,20 +258,21 @@ router.post('/doctors/:id/documents', requirePermission('doctor.document.manage'
     }
 
     try {
-        const result = await new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-                {
-                    folder: 'hms/doctor-documents',
-                    resource_type: 'auto',
-                },
-                (error, uploadResult) => {
-                    if (error) reject(error);
-                    else resolve(uploadResult);
-                },
-            );
+        let fileUrl;
+        let filePublicId = '';
+        let storage = 'database';
 
-            stream.end(req.file.buffer);
-        });
+        if (hasCloudinaryConfig()) {
+            const result = await uploadBufferToCloudinary(req.file, {
+                folder: 'hms/doctor-documents',
+                resource_type: 'auto',
+            });
+            fileUrl = result.secure_url;
+            filePublicId = result.public_id;
+            storage = 'cloudinary';
+        } else {
+            fileUrl = fileToDataUrl(req.file);
+        }
 
         const newDoc = {
             title: req.body.title || req.file.originalname,
@@ -255,8 +282,9 @@ router.post('/doctors/:id/documents', requirePermission('doctor.document.manage'
             file_name: req.file.originalname,
             file_type: req.file.mimetype,
             file_size: req.file.size,
-            file_url: result.secure_url,
-            file_public_id: result.public_id,
+            file_url: fileUrl,
+            file_public_id: filePublicId,
+            storage,
             uploaded_at: new Date(),
         };
 
@@ -265,14 +293,14 @@ router.post('/doctors/:id/documents', requirePermission('doctor.document.manage'
         await doctor.save();
 
         res.status(201).json({
-            message: 'Doctor document uploaded successfully',
+            message: storage === 'cloudinary' ? 'Doctor document uploaded successfully' : 'Doctor document saved successfully. Cloudinary is not configured, so the file was stored in MongoDB.',
             document: newDoc,
             certificates: doctor.certificates,
             doctor: doctor.toJSON(),
         });
     } catch (error) {
         console.error('Doctor document upload failed:', error);
-        res.status(500).json({ message: 'Doctor document upload failed. Please verify Cloudinary environment variables on Render.' });
+        res.status(500).json({ message: error?.message || 'Doctor document upload failed' });
     }
 }));
 
@@ -291,9 +319,7 @@ router.delete('/doctors/:id/documents/:docIndex', requirePermission('doctor.docu
     if (!doc) return res.status(404).json({ message: 'Document not found' });
 
     try {
-        if (doc.file_public_id) {
-            await cloudinary.uploader.destroy(doc.file_public_id, { resource_type: 'auto' });
-        }
+        await safelyDestroyCloudinary(doc.file_public_id, 'auto');
 
         doctor.certificates.splice(docIndex, 1);
         await doctor.save();
