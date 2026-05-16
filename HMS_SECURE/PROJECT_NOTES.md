@@ -859,3 +859,13 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 
 ### Packaging
 - Clean package: no `.env`, no `node_modules`, no `dist`.
+
+## V22 - SaaS Super Admin Control Center
+- Added backend SaaS overview endpoint: `GET /api/saas/overview`.
+- Added tenant CSV export endpoint: `GET /api/saas/tenants/export.csv`.
+- Added platform owner SaaS Control Center page.
+- Shows total tenants, active tenants, MRR estimate, recorded tenant revenue, plan breakdown, subscription status breakdown, and tenant limit usage.
+- Added usage warning indicators when tenants approach plan limits or subscription is not active.
+- Added SaaS Control sidebar tab gated by `hospital.manage` permission and tenant module access.
+- Frontend build passed.
+- Backend syntax checks passed.

@@ -130,6 +130,7 @@ export const MODULES = [
   { id: 'auditSecurity', label: 'Security' },
   { id: 'configuration', label: 'Configuration' },
   { id: 'tenants', label: 'Hospitals' },
+  { id: 'saasControl', label: 'SaaS Control' },
 ];
 
 export const DEFAULT_ENABLED_MODULES = MODULES.map((module) => module.id);
@@ -180,6 +181,7 @@ export const TAB_PERMISSIONS = {
   auditSecurity: ['audit.view', 'security.manage'],
   configuration: 'configuration.manage',
   tenants: 'hospital.manage',
+  saasControl: 'hospital.manage',
 };
 
 export const TAB_MODULES = {
@@ -195,11 +197,12 @@ export const TAB_MODULES = {
   auditSecurity: ['profile'],
   configuration: ['profile'],
   tenants: ['tenants'],
+  saasControl: ['tenants'],
 };
 
 // Platform-level tabs are controlled by permission only.
 // They must not be hidden by hospital module ON/OFF settings.
-export const PLATFORM_TABS = ['tenants', 'auditSecurity', 'configuration'];
+export const PLATFORM_TABS = ['tenants', 'saasControl', 'auditSecurity', 'configuration'];
 
 export function getUserPermissions(user) {
   if (!user || typeof user !== 'object') return [];

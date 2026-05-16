@@ -3376,3 +3376,46 @@ body.dark .pharmacyActionGrid .card {
     grid-template-columns: 1fr;
   }
 }
+
+/* V22 SaaS Control Center */
+.saasControl { display: grid; gap: 20px; }
+.heroHeader { align-items: center; }
+.eyebrow { display:inline-flex; align-items:center; width:max-content; border-radius:999px; padding:6px 10px; background: color-mix(in srgb, var(--purple, #5b3fb4) 14%, transparent); color: var(--purple, #5b3fb4); font-weight: 800; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 8px; }
+.headerActions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.headerActions button { display:inline-flex; align-items:center; gap:8px; width:auto; }
+.ghostBtn { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.saasStats .statCard { position: relative; overflow: hidden; }
+.saasStats .statCard svg { position:absolute; right:18px; bottom:18px; color: var(--purple, #5b3fb4); opacity:.22; }
+.saasPanels.twoCol { grid-template-columns: 1fr 1fr; }
+.planBreakdown { display:grid; gap:12px; }
+.planLine { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px; border:1px solid var(--border); border-radius:14px; background: color-mix(in srgb, var(--card, #fff) 92%, var(--purple, #5b3fb4)); }
+.planLine > div { display:grid; grid-template-columns: auto 1fr; gap:4px 8px; align-items:center; }
+.planLine svg { color: var(--purple, #5b3fb4); }
+.planLine span { grid-column: 2; color: var(--muted); font-size:12px; }
+.capitalize { text-transform: capitalize; }
+.filterRow { display:grid; grid-template-columns: 1fr 180px 180px; gap:12px; margin-bottom:16px; }
+.tenantUsageList { display:grid; gap:14px; }
+.tenantUsageCard { border:1px solid var(--border); background: var(--card); border-radius:18px; padding:18px; box-shadow: var(--shadow); display:grid; gap:14px; }
+.tenantUsageHead { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.tenantUsageHead h3 { margin:0 0 4px; }
+.tenantUsageHead p { margin:0; color:var(--muted); }
+.tenantTags { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.usageGrid { display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; }
+.usageRow { display:grid; gap:8px; min-width: 0; }
+.usageRowTop { display:flex; justify-content:space-between; gap:8px; font-size:12px; color:var(--muted); }
+.usageRowTop b { color:var(--text); white-space:nowrap; }
+.usageTrack { height:8px; border-radius:999px; background: color-mix(in srgb, var(--border, #e5e7eb) 70%, transparent); overflow:hidden; }
+.usageFill { height:100%; border-radius:999px; background: var(--purple, #5b3fb4); }
+.usageFill.warning { background:#d97706; }
+.usageFill.danger { background:#dc2626; }
+.tenantFooter { display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:13px; }
+.tenantFooter strong { color: var(--text); }
+.warningBox { border:1px solid rgba(245,158,11,.35); background: rgba(245,158,11,.10); color:#b45309; border-radius:12px; padding:10px 12px; font-size:13px; font-weight:700; }
+.statusPill-clinic { background: rgba(99,102,241,.12); color:#4f46e5; }
+.statusPill-hospital { background: rgba(14,165,233,.12); color:#0284c7; }
+.statusPill-enterprise { background: rgba(168,85,247,.13); color:#9333ea; }
+:root[data-theme="dark"] .planLine,
+:root[data-theme="dark"] .tenantUsageCard { background: var(--card); }
+:root[data-theme="dark"] .warningBox { color:#fbbf24; }
+@media (max-width: 1100px) { .usageGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .saasPanels.twoCol { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .filterRow { grid-template-columns: 1fr; } .usageGrid { grid-template-columns: 1fr; } .tenantUsageHead, .tenantFooter { flex-direction:column; } .tenantTags { justify-content:flex-start; } }

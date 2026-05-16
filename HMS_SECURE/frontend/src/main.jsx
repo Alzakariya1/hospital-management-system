@@ -14,6 +14,7 @@ import {
   UserCircle,
   ShieldCheck,
   SlidersHorizontal,
+  Crown,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -31,6 +32,7 @@ import {
   tenantApi,
   auditApi,
   configurationApi,
+  saasApi,
 } from "./api";
 import { AppLayout } from "./layouts";
 import {
@@ -47,6 +49,7 @@ import {
   TenantControl,
   AuditSecurity,
   Configuration,
+  SaasControl,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1009,6 +1012,7 @@ function App() {
     ["profile", "Profile", UserCircle],
     ["auditSecurity", "Security", ShieldCheck],
     ["configuration", "Configuration", SlidersHorizontal],
+    ["saasControl", "SaaS Control", Crown],
     ["tenants", "Hospitals", Building2],
   ];
 
@@ -1392,6 +1396,9 @@ function App() {
                 bills={bills}
                 permissions={permissions}
               />
+            )}
+            {tab === "saasControl" && (
+              <SaasControl />
             )}
             {tab === "tenants" && (
               <TenantControl

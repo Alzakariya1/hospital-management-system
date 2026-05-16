@@ -21,3 +21,5 @@ export { configurationApi } from './configurationApi';
 export { templateApi } from './templateApi';
 
 export { subscriptionApi } from './subscriptionApi';
+
+export { saasApi } from './saasApi';

@@ -13,3 +13,5 @@ export { default as TenantControl } from "./TenantControl";
 export { default as AuditSecurity } from './AuditSecurity';
 
 export { default as Configuration } from './Configuration';
+
+export { default as SaasControl } from './SaasControl';
