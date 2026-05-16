@@ -249,9 +249,9 @@ export default function Configuration({ permissions = {} }) {
         <div className="card configuration-guide">
           <h3>Template variables</h3>
           <ul>
-            <li><b>{{patient_name}}</b>, <b>{{doctor_name}}</b>, <b>{{hospital_name}}</b></li>
-            <li><b>{{invoice_number}}</b>, <b>{{total_amount}}</b>, <b>{{paid_amount}}</b></li>
-            <li><b>{{diagnosis}}</b>, <b>{{prescription_items}}</b>, <b>{{report_notes}}</b></li>
+            <li><b>{"{{patient_name}}"}</b>, <b>{"{{doctor_name}}"}</b>, <b>{"{{hospital_name}}"}</b></li>
+            <li><b>{"{{invoice_number}}"}</b>, <b>{"{{total_amount}}"}</b>, <b>{"{{paid_amount}}"}</b></li>
+            <li><b>{"{{diagnosis}}"}</b>, <b>{"{{prescription_items}}"}</b>, <b>{"{{report_notes}}"}</b></li>
           </ul>
         </div>
       </div>
