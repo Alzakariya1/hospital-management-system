@@ -31,6 +31,7 @@ import {
   BarChart3,
   ServerCog,
   Presentation,
+  Scale,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -79,6 +80,7 @@ import {
   CommandCenter,
   ProductionOps,
   SalesDemoCenter,
+  LegalSecurityCenter,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1088,6 +1090,7 @@ function App() {
     ["communications", "Communications", MessageCircle],
     ["saasControl", "SaaS Control", Crown],
     ["salesDemo", "Sales Demo", Presentation],
+    ["legalSecurity", "Legal & Security", Scale],
     ["tenants", "Hospitals", Building2],
     ["integration", "FHIR APIs", FileCode2],
     ["hl7", "HL7 Ready", Link2],
@@ -1553,6 +1556,9 @@ function App() {
             )}
             {tab === "salesDemo" && (
               <SalesDemoCenter />
+            )}
+            {tab === "legalSecurity" && (
+              <LegalSecurityCenter />
             )}
             {tab === "tenants" && (
               <TenantControl

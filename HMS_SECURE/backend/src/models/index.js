@@ -919,6 +919,69 @@ const SalesActivity = makeModel("SalesActivity", "sales_activities", {
 });
 SalesActivity.schema.index({ demo_request_id: 1, created_at: -1 }, { name: "sales_activity_demo_recent_lookup" });
 
+
+
+const LegalPolicy = makeModel("LegalPolicy", "legal_policies", {
+    policy_key: { type: String, required: true, index: true },
+    title: { type: String, required: true },
+    version: { type: String, default: "1.0" },
+    category: { type: String, default: "legal", index: true },
+    content: { type: String, default: "" },
+    effective_date: Date,
+    owner: String,
+    review_cycle_days: { type: Number, default: 180 },
+    next_review_date: Date,
+    status: { type: String, default: "draft", index: true },
+    approved_by: Number,
+    approved_at: Date,
+});
+LegalPolicy.schema.index({ policy_key: 1, version: 1 }, { unique: true, name: "legal_policy_key_version_unique" });
+
+const DataRequest = makeModel("DataRequest", "data_requests", {
+    hospital_id: { type: Number, default: 1, index: true },
+    requester_name: { type: String, required: true },
+    requester_email: { type: String, required: true, index: true },
+    requester_phone: String,
+    request_type: { type: String, default: "access", index: true },
+    patient_id: Number,
+    user_id: Number,
+    description: String,
+    due_date: Date,
+    status: { type: String, default: "open", index: true },
+    assigned_to: Number,
+    resolution_notes: String,
+    resolved_at: Date,
+});
+DataRequest.schema.index({ hospital_id: 1, status: 1, due_date: 1 }, { name: "data_request_hospital_status_due" });
+
+const SecurityIncident = makeModel("SecurityIncident", "security_incidents", {
+    hospital_id: { type: Number, default: 1, index: true },
+    title: { type: String, required: true },
+    severity: { type: String, default: "medium", index: true },
+    category: { type: String, default: "security", index: true },
+    detected_at: { type: Date, default: Date.now },
+    reported_by: Number,
+    affected_systems: { type: [String], default: [] },
+    patient_data_involved: { type: Boolean, default: false },
+    description: String,
+    containment_actions: String,
+    root_cause: String,
+    corrective_actions: String,
+    status: { type: String, default: "open", index: true },
+    closed_at: Date,
+});
+SecurityIncident.schema.index({ hospital_id: 1, severity: 1, status: 1 }, { name: "security_incident_hospital_severity_status" });
+
+const PolicyAcknowledgement = makeModel("PolicyAcknowledgement", "policy_acknowledgements", {
+    hospital_id: { type: Number, default: 1, index: true },
+    policy_id: { type: Number, required: true, index: true },
+    user_id: { type: Number, required: true, index: true },
+    acknowledged_at: { type: Date, default: Date.now },
+    ip_address: String,
+    user_agent: String,
+});
+PolicyAcknowledgement.schema.index({ policy_id: 1, user_id: 1 }, { unique: true, name: "policy_ack_policy_user_unique" });
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -987,4 +1050,8 @@ module.exports = {
     WebhookEvent,
     DemoRequest,
     SalesActivity,
+    LegalPolicy,
+    DataRequest,
+    SecurityIncident,
+    PolicyAcknowledgement,
 };

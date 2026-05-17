@@ -97,7 +97,9 @@ function getUserPermissions(user = {}) {
 function hasPermission(user = {}, permission) {
   if (!permission) return false;
   const permissions = getUserPermissions(user);
-  return permissions.includes('*') || permissions.includes(permission);
+  if (permissions.includes('*')) return true;
+  if (Array.isArray(permission)) return permission.some((p) => permissions.includes(p));
+  return permissions.includes(permission);
 }
 
 module.exports = {

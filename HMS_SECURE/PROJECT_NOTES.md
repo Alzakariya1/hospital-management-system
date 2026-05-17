@@ -1130,3 +1130,7 @@ V39 adds the business-facing sales layer needed before pilot outreach:
 - Website integration documentation
 
 This phase does not remove or alter existing V31-V38 hospital workflows. It prepares the HMS for real demos, lead capture, pilot conversations and product website integration.
+
+## V40 - Security + Legal Readiness
+
+Added a Legal & Security Readiness Center with policy templates, data protection request tracking, security incident register, policy acknowledgements and audit pack export. This phase helps move the HMS from demo software toward a safer pilot-ready SaaS product.

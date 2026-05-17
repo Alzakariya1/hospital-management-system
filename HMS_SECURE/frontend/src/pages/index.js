@@ -36,3 +36,5 @@ export { default as CommandCenter } from './CommandCenter';
 export { default as ProductionOps } from './ProductionOps';
 
 export { default as SalesDemoCenter } from './SalesDemoCenter';
+
+export { default as LegalSecurityCenter } from './LegalSecurityCenter';

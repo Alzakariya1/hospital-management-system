@@ -39,3 +39,5 @@ export { commandCenterApi } from './commandCenterApi';
 export { operationsApi } from './operationsApi';
 
 export { salesApi } from './salesApi';
+
+export { legalSecurityApi } from './legalSecurityApi';
