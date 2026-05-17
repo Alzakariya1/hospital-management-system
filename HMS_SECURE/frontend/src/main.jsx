@@ -26,6 +26,7 @@ import {
   BadgeCheck,
   KeyRound,
   ClipboardCheck,
+  FileHeart,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -44,6 +45,7 @@ import {
   auditApi,
   configurationApi,
   saasApi,
+  emrApi,
 } from "./api";
 import { AppLayout } from "./layouts";
 import {
@@ -64,6 +66,8 @@ import {
   Communications,
   PatientPortal,
   DoctorPortal,
+  EMR,
+  InsuranceTPA,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1025,6 +1029,7 @@ function App() {
     ["appointments", "Appointments", Calendar],
     ["patientPortal", "Patient Portal", UserCircle],
     ["doctorPortal", "Doctor Portal", Stethoscope],
+    ["emr", "EMR / EHR", FileHeart],
     ["beds", "Beds", Bed],
     ["labs", "Lab/Radiology", TestTube2],
     ["pharmacy", "Pharmacy", Pill],
@@ -1089,6 +1094,7 @@ function App() {
     securityManage: can("security.manage"),
     configurationManage: can("configuration.manage"),
     featureFlags: normalizeFeatureFlags(currentHospital?.feature_flags),
+    insuranceManage: can("insurance.manage") || can("billing.edit") || can("configuration.manage"),
   };
 
   const filteredUsers = usersList.filter((u) => {
@@ -1210,7 +1216,7 @@ function App() {
           }
         }}
       >
-            {["fhir", "hl7", "pacs", "biometric", "insurance_tpa", "erp", "whatsapp_sms", "abdm_abha", "two_factor_auth", "audit_compliance"].includes(tab) && (
+            {["fhir", "hl7", "pacs", "biometric", "erp", "whatsapp_sms", "abdm_abha", "two_factor_auth", "audit_compliance"].includes(tab) && (
               <section className="card enterpriseFeaturePage">
                 <div className="sectionHead">
                   <div>
@@ -1451,6 +1457,14 @@ function App() {
               />
             )}
 
+
+            {tab === "insurance_tpa" && (
+              <InsuranceTPA
+                patients={patients}
+                bills={bills}
+                permissions={permissions}
+              />
+            )}
             {tab === "billing" && (
               <Billing
                 bill={bill}
@@ -1489,6 +1503,9 @@ function App() {
             )}
             {tab === "communications" && (
               <Communications />
+            )}
+            {tab === "emr" && (
+              <EMR />
             )}
             {tab === "profile" && (
               <AdminProfile

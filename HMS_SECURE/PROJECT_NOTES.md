@@ -950,3 +950,28 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added portal UI styling with theme-aware cards, stats, timeline and status badges.
 - Full frontend production build passed.
 - Backend syntax checks passed for server, portal routes and permission config.
+
+## V29 - Advanced EMR / EHR Clinical Record Foundation
+- Added ClinicalRecord model for structured longitudinal patient records.
+- Added EMR backend APIs:
+  - GET /api/emr/patients
+  - GET /api/emr/patients/:id/summary
+  - POST /api/emr/records
+  - PUT /api/emr/records/:id
+  - DELETE /api/emr/records/:id
+- Added EMR permissions for admin, hospital_admin, doctor, nurse, receptionist, and patient roles.
+- Added EMR / EHR sidebar module and plan module access.
+- Added EMR UI with patient selector, clinical summary, active allergies, conditions, medications, SOAP note entry, vitals, and unified timeline.
+- EMR summary merges clinical records with appointments, OPD, prescriptions, lab, radiology, billing, and IPD data.
+- Added audit logs and notifications for EMR record creation/update/delete.
+- Frontend build passed and backend syntax checks passed.
+
+## V30 - Advanced Billing + Insurance/TPA
+- Added Insurance/TPA claim workflow foundation.
+- Added backend InsuranceClaim model and APIs for claim list, summary, create, update, status update, and create-from-bill.
+- Added tenant/hospital filtering for claims.
+- Added audit logs and notifications for insurance claim actions.
+- Added Insurance/TPA page replacing the old placeholder when feature flag is enabled.
+- Claim register supports provider, TPA, policy, claim number, claim type, claim amount, approved amount, paid amount, status, priority, admission/discharge dates and notes.
+- Insurance/TPA can link claims to existing bills/invoices.
+- Frontend build passed and backend syntax checks passed.

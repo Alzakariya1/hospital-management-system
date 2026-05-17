@@ -21,3 +21,7 @@ export { default as Communications } from './Communications';
 export { default as PatientPortal } from './PatientPortal';
 
 export { default as DoctorPortal } from './DoctorPortal';
+
+export { default as EMR } from './EMR';
+
+export { default as InsuranceTPA } from './InsuranceTPA';

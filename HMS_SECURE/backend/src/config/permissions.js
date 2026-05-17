@@ -4,7 +4,9 @@ const ROLE_PERMISSIONS = {
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
-    'appointment.view', 'portal.patient.view', 'portal.doctor.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'portal.patient.view', 'portal.doctor.view',
+    'emr.view', 'emr.create', 'emr.edit', 'emr.delete',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
@@ -13,13 +15,15 @@ const ROLE_PERMISSIONS = {
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
-    'audit.view', 'security.manage', 'configuration.manage', 'hospital.manage'
+    'audit.view', 'security.manage', 'configuration.manage', 'hospital.manage',
   ],
   hospital_admin: [
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view', 'appointment.status.update',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'portal.patient.view', 'portal.doctor.view',
+    'emr.view', 'emr.create', 'emr.edit', 'emr.delete',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
@@ -28,62 +32,50 @@ const ROLE_PERMISSIONS = {
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
-    'audit.view', 'security.manage', 'configuration.manage'
+    'audit.view', 'security.manage', 'configuration.manage',
   ],
   doctor: [
-    'dashboard.view',
-    'patient.view',
+    'dashboard.view', 'patient.view',
     'appointment.view', 'appointment.status.update', 'portal.doctor.view',
     'opd.view', 'opd.create', 'ipd.view',
+    'emr.view', 'emr.create', 'emr.edit',
     'lab.view', 'radiology.view',
-    'admin.profile.manage',
-    'notification.view', 'communication.view'
+    'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   nurse: [
-    'dashboard.view',
-    'patient.view', 'patient.edit',
+    'dashboard.view', 'patient.view', 'patient.edit',
     'bed.view', 'bed.status.update',
     'appointment.view',
     'opd.view', 'ipd.view', 'ipd.create',
-    'admin.profile.manage',
-    'notification.view', 'communication.view'
+    'emr.view', 'emr.create',
+    'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   receptionist: [
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.document.manage',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view',
-    'bed.view',
-    'opd.view', 'opd.create',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete',
+    'portal.patient.view', 'portal.doctor.view',
+    'emr.view',
+    'bed.view', 'opd.view', 'opd.create',
     'billing.view', 'billing.create',
-    'admin.profile.manage',
-    'notification.view', 'communication.view'
+    'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   pharmacist: [
-    'dashboard.view',
-    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
-    'admin.profile.manage',
-    'notification.view', 'communication.view'
+    'dashboard.view', 'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   lab_technician: [
-    'dashboard.view',
-    'lab.view', 'lab.create',
-    'radiology.view', 'radiology.create',
-    'admin.profile.manage',
-    'notification.view', 'communication.view'
+    'dashboard.view', 'lab.view', 'lab.create', 'radiology.view', 'radiology.create',
+    'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   accountant: [
-    'dashboard.view',
-    'billing.view', 'billing.create', 'billing.edit',
-    'admin.profile.manage',
-    'notification.view', 'communication.view'
+    'dashboard.view', 'billing.view', 'billing.create', 'billing.edit',
+    'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   patient: [
-    'dashboard.view',
-    'appointment.view', 'portal.patient.view',
-    'billing.view',
-    'admin.profile.manage',
-    'notification.view'
-  ]
+    'dashboard.view', 'appointment.view', 'portal.patient.view', 'emr.view', 'billing.view',
+    'admin.profile.manage', 'notification.view',
+  ],
 };
 
 function normalizePermissions(input) {

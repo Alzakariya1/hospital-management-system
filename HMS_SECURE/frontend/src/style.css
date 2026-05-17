@@ -3570,3 +3570,30 @@ body.dark .pharmacyActionGrid .card {
 .status-cancelled, .status-no_show { background: #fee2e2; color: #b91c1c; }
 .status-pending, .status-unpaid, .status-partial { background: #ffedd5; color: #c2410c; }
 @media (max-width: 980px) { .portalStatsGrid, .portalTwoCol { grid-template-columns: 1fr; } .portalProfile, .portalHero { grid-template-columns: 1fr; display: grid; } }
+
+/* V29 EMR/EHR clinical record UI */
+.emr-page .subtle-hero {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary, #5942c6) 10%, #fff), color-mix(in srgb, var(--theme-primary, #5942c6) 4%, #fff));
+  border: 1px solid var(--border-color, #e8edf5);
+}
+.toolbar-row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.toolbar-row select { min-width: 260px; }
+.emr-summary-card { overflow:hidden; }
+.stats-grid.compact { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); margin: 18px 0; }
+.mini-stat { border:1px solid var(--border-color,#edf0f7); border-radius:16px; padding:14px 16px; background: var(--card-bg,#fff); }
+.mini-stat span { display:block; color: var(--muted,#64748b); font-size:12px; }
+.mini-stat strong { display:block; margin-top:4px; font-size:22px; color: var(--text-color,#0f172a); }
+.clinical-alert-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px; }
+.soft-card { box-shadow:none; background: color-mix(in srgb, var(--theme-primary,#5942c6) 3%, #fff); }
+.grid.two-col { display:grid; grid-template-columns:minmax(360px, 0.95fr) minmax(420px, 1.05fr); gap:18px; align-items:start; }
+.form-card textarea { min-height:72px; resize:vertical; }
+.timeline-card { min-height: 560px; }
+.timeline-list { display:flex; flex-direction:column; gap:12px; max-height:720px; overflow:auto; padding-right:4px; }
+.timeline-item { position:relative; display:grid; grid-template-columns:18px 1fr; gap:12px; padding:14px; border:1px solid var(--border-color,#edf0f7); border-radius:16px; background: var(--card-bg,#fff); }
+.timeline-dot { width:11px; height:11px; border-radius:999px; background: var(--theme-primary,#5942c6); margin-top:5px; box-shadow:0 0 0 5px color-mix(in srgb, var(--theme-primary,#5942c6) 13%, transparent); }
+.badge-soft { display:inline-flex; margin-left:8px; padding:3px 8px; border-radius:999px; background:color-mix(in srgb, var(--theme-primary,#5942c6) 10%, #fff); color:var(--theme-primary,#5942c6); font-size:11px; text-transform:capitalize; }
+button.ghost.danger { background:transparent; color:#dc2626; border:1px solid #fecaca; padding:6px 10px; margin-top:8px; }
+[data-theme="dark"] .emr-page .subtle-hero,
+[data-theme="dark"] .soft-card,
+[data-theme="dark"] .badge-soft { background: color-mix(in srgb, var(--theme-primary,#14b8a6) 16%, #0f172a); }
+@media (max-width: 1100px) { .grid.two-col { grid-template-columns:1fr; } }

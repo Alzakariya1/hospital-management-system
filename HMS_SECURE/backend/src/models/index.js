@@ -59,7 +59,7 @@ const Hospital = makeModel("Hospital", "hospitals", {
             notes: "",
         },
     },
-    enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'] },
+    enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'] },
     feature_flags: {
         type: Object,
         default: {
@@ -281,6 +281,34 @@ const PharmacySale = makeModel("PharmacySale", "pharmacy_sales", {
     sold_at: { type: Date, default: Date.now },
 });
 const Billing = makeModel("Billing", "billing", { hospital_id: { type: Number, default: 1, index: true } });
+const InsuranceClaim = makeModel("InsuranceClaim", "insurance_claims", {
+    hospital_id: { type: Number, default: 1, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    billing_id: { type: Number, index: true },
+    invoice_number: String,
+    insurance_provider: String,
+    tpa_name: String,
+    policy_number: String,
+    claim_number: { type: String, index: true },
+    claim_type: { type: String, default: "cashless" },
+    claim_amount: { type: Number, default: 0 },
+    approved_amount: { type: Number, default: 0 },
+    paid_amount: { type: Number, default: 0 },
+    balance_amount: { type: Number, default: 0 },
+    status: { type: String, default: "draft", index: true },
+    priority: { type: String, default: "normal" },
+    admission_date: String,
+    discharge_date: String,
+    submitted_at: Date,
+    approved_at: Date,
+    settled_at: Date,
+    rejection_reason: String,
+    notes: String,
+    documents: { type: [Object], default: [] },
+    created_by: Number,
+});
+InsuranceClaim.schema.index({ hospital_id: 1, claim_number: 1 }, { unique: true, name: "insurance_claim_hospital_number_unique" });
+InsuranceClaim.schema.index({ hospital_id: 1, status: 1, created_at: -1 }, { name: "insurance_claim_status_lookup" });
 const Prescription = makeModel("Prescription", "prescriptions", {
     hospital_id: { type: Number, default: 1, index: true },
     patient_id: { type: String, trim: true, index: true },
@@ -290,6 +318,33 @@ const Prescription = makeModel("Prescription", "prescriptions", {
     prescription_number: { type: String, index: true },
     status: { type: String, default: "active" },
 });
+
+const ClinicalRecord = makeModel("ClinicalRecord", "clinical_records", {
+    hospital_id: { type: Number, default: 1, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    doctor_id: { type: String, trim: true, index: true },
+    appointment_id: Number,
+    opd_id: Number,
+    record_type: { type: String, default: "clinical_note", index: true },
+    title: String,
+    chief_complaint: String,
+    subjective: String,
+    objective: String,
+    assessment: String,
+    plan: String,
+    diagnosis: String,
+    severity: String,
+    onset_date: String,
+    status: { type: String, default: "active", index: true },
+    notes: String,
+    vitals: { type: Object, default: {} },
+    attachments: { type: [Object], default: [] },
+    recorded_by: Number,
+    record_date: { type: Date, default: Date.now, index: true },
+});
+ClinicalRecord.schema.index({ hospital_id: 1, patient_id: 1, record_date: -1 }, { name: "clinical_record_patient_timeline_lookup" });
+ClinicalRecord.schema.index({ hospital_id: 1, record_type: 1, status: 1 }, { name: "clinical_record_type_status_lookup" });
+
 const AuditLog = makeModel("AuditLog", "audit_logs", {
     hospital_id: { type: Number, default: 1, index: true },
     user_id: { type: Number, index: true },
@@ -493,7 +548,9 @@ module.exports = {
     Medicine,
     PharmacySale,
     Billing,
+    InsuranceClaim,
     Prescription,
+    ClinicalRecord,
     AuditLog,
     LoginHistory,
     SecuritySetting,

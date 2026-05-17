@@ -26,3 +26,6 @@ export { saasApi } from './saasApi';
 export { communicationApi } from './communicationApi';
 
 export { portalApi } from './portalApi';
+export { emrApi } from './emrApi';
+
+export { insuranceApi } from './insuranceApi';
