@@ -40,6 +40,7 @@ export default function SaasControl() {
   const [planForm, setPlanForm] = useState({ plan_id: '', name: '', monthly_price_inr: '', trial_days: 14, support_level: 'standard', modules: 'dashboard,patients,doctors,appointments,billing', limits: '{\"users\":10,\"patients\":2000,\"doctors\":5}' });
   const [onboardingForm, setOnboardingForm] = useState({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, create_tenant_db: true, admin_full_name: '', admin_email: '', admin_password: '' });
   const [tenantDb, setTenantDb] = useState({ summary: {}, hospitals: [], backups: [], migrations: [], connection_status: [] });
+  const [structureCheck, setStructureCheck] = useState(null);
   const [migrationPreview, setMigrationPreview] = useState(null);
 
   async function load() {
@@ -229,6 +230,26 @@ export default function SaasControl() {
     }
   }
 
+  async function verifyTenantDatabase(tenant) {
+    try {
+      const res = await saasApi.verifyTenantDb(tenant.id);
+      toast.success(res.data?.checks?.tenant_meta_exists ? `Verified: ${res.data?.tenant_db_name}` : 'Verification returned warnings');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Tenant DB verification failed');
+    }
+  }
+
+  async function runStructureCheck() {
+    try {
+      const res = await saasApi.structureCheck();
+      setStructureCheck(res.data);
+      toast.success('DB structure check complete');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Structure check failed');
+    }
+  }
+
   async function backupTenantDatabase(tenant) {
     try {
       await saasApi.backupTenantDb(tenant.id, { notes: 'Manual backup from SaaS Control Center' });
@@ -370,7 +391,7 @@ export default function SaasControl() {
             <input placeholder="Hospital name" value={onboardingForm.name} onChange={(e) => setOnboardingForm({ ...onboardingForm, name: e.target.value })} />
             <input placeholder="Hospital code" value={onboardingForm.hospital_code} onChange={(e) => setOnboardingForm({ ...onboardingForm, hospital_code: e.target.value })} />
             <select value={onboardingForm.type} onChange={(e) => setOnboardingForm({ ...onboardingForm, type: e.target.value })}>
-              <option value="hospital">Hospital</option><option value="clinic">Clinic</option><option value="diagnostic_center">Diagnostic Center</option><option value="nursing_home">Nursing Home</option>
+              <option value="hospital">Hospital</option><option value="clinic">Clinic</option><option value="diagnostic_center">Diagnostic Center</option><option value="lab">Lab</option><option value="nursing_home">Nursing Home</option>
             </select>
             <select value={onboardingForm.plan} onChange={(e) => setOnboardingForm({ ...onboardingForm, plan: e.target.value })}>
               {(businessPlans.length ? businessPlans : data.plans || []).map((plan) => <option key={plan.plan_id || plan.id} value={plan.plan_id || plan.id}>{plan.name}</option>)}
@@ -417,9 +438,11 @@ export default function SaasControl() {
         <div className="sectionTitleRow">
           <div>
             <h2>Tenant database isolation & backups</h2>
-            <p>Each new hospital can have a separate MongoDB database. Old shared-database tenants remain safe until provisioned or migrated.</p>
+            <p>Each new hospital gets a separate MongoDB database with _tenant_meta. Old shared-database tenants remain safe until provisioned or migrated.</p>
           </div>
+          <button type="button" className="ghostBtn" onClick={runStructureCheck}><ServerCog size={14} /> DB structure check</button>
         </div>
+        {structureCheck && <div className="warningBox">Master: {structureCheck.expected?.master_db_name || structureCheck.expected_structure?.master_db_name} · Tenant DBs: {(structureCheck.tenant_databases || []).join(', ') || 'none'} · Warnings: {(structureCheck.warnings || []).join(' | ') || 'none'}</div>}
         <div className="statsGrid saasStats compactStats">
           <div className="statCard"><span>Isolated DBs</span><strong>{tenantDb.summary?.isolated_databases || 0}</strong><small>Database-per-tenant</small><ServerCog size={24} /></div>
           <div className="statCard"><span>Shared tenants</span><strong>{tenantDb.summary?.shared_database_hospitals || 0}</strong><small>Backward-compatible mode</small><ShieldAlert size={24} /></div>
@@ -431,12 +454,13 @@ export default function SaasControl() {
               <div className="tenantUsageHead">
                 <div>
                   <h3>{tenant.name}</h3>
-                  <p>{tenant.hospital_code} · {tenant.tenant_db_name || 'shared database'} · {tenant.tenant_db_status || 'shared'}</p>
+                  <p>{tenant.hospital_code} · DB: {tenant.tenant_db_name || 'not provisioned'} · Status: {tenant.tenant_db_status || 'shared'} · Provisioned: {tenant.tenant_provisioned_at ? new Date(tenant.tenant_provisioned_at).toLocaleString() : '—'}</p>
                 </div>
-                <div className="tenantTags"><span className="statusPill mutedPill">{tenant.tenant_db_name ? 'isolated' : 'shared'}</span></div>
+                <div className="tenantTags"><span className="statusPill mutedPill">{tenant.tenant_db_status || (tenant.tenant_db_name ? 'provisioned' : 'shared')}</span></div>
               </div>
               <div className="invoicePaymentRow">
-                {!tenant.tenant_db_name && <button type="button" className="ghostBtn" onClick={() => provisionTenantDatabase(tenant)}><ServerCog size={14} /> Provision DB</button>}
+                {(!tenant.tenant_db_name || tenant.tenant_db_status !== 'provisioned') && <button type="button" className="ghostBtn" onClick={() => provisionTenantDatabase(tenant)}><ServerCog size={14} /> Provision DB</button>}
+                {tenant.tenant_db_name && <button type="button" className="ghostBtn" onClick={() => verifyTenantDatabase(tenant)}><CheckCircle2 size={14} /> Verify DB</button>}
                 <button type="button" className="ghostBtn" onClick={() => previewMigration(tenant)}><ArrowRightLeft size={14} /> Preview migration</button>
                 <button type="button" className="ghostBtn" onClick={() => runTenantMigration(tenant)}><CheckCircle2 size={14} /> Run safe copy</button>
                 {tenant.tenant_db_name && <button type="button" className="ghostBtn" onClick={() => backupTenantDatabase(tenant)}><Download size={14} /> Backup now</button>}
@@ -515,7 +539,7 @@ export default function SaasControl() {
               <div className="tenantUsageHead">
                 <div>
                   <h3>{tenant.name}</h3>
-                  <p>{tenant.hospital_code || `HOSP-${tenant.id}`} · {tenant.type || 'hospital'}</p>
+                  <p>{tenant.hospital_code || `HOSP-${tenant.id}`} · {tenant.type || 'hospital'} · DB: {tenant.tenant_db_name || 'not provisioned'} · {tenant.tenant_db_status || 'shared'}</p>
                 </div>
                 <div className="tenantTags"><PlanBadge plan={tenant.plan} /><span className="statusPill mutedPill">{tenant.subscription?.status || tenant.status}</span></div>
               </div>

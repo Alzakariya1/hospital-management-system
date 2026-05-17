@@ -5,7 +5,8 @@ const { verifyToken, requirePermission } = require('../middleware/auth');
 const { Hospital, User, SaaSPlan } = require('../models');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
 const { auditEvent } = require('../utils/audit');
-const { buildTenantDbName, ensureTenantDatabase } = require('../config/tenantDb');
+const { buildTenantDbName } = require('../config/tenantDb');
+const { provisionHospitalTenant } = require('../utils/tenantProvisioning');
 const {
   PLAN_DEFINITIONS,
   getPlanId,
@@ -19,7 +20,7 @@ const router = express.Router();
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
 const VALID_CYCLES = ['monthly', 'quarterly', 'yearly'];
 const VALID_SUBSCRIPTION_STATUS = ['trial', 'active', 'past_due', 'suspended', 'cancelled'];
-const VALID_TENANT_TYPES = ['hospital', 'clinic', 'diagnostic_center', 'nursing_home'];
+const VALID_TENANT_TYPES = ['hospital', 'clinic', 'diagnostic_center', 'lab', 'nursing_home'];
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -145,13 +146,13 @@ router.post('/saas/onboarding/hospitals', verifyToken, requirePermission('hospit
   };
   const createIsolatedDb = req.body.create_tenant_db !== false;
   const tenantDbName = createIsolatedDb ? buildTenantDbName({ hospital_code: code, name }) : null;
-  if (tenantDbName) await ensureTenantDatabase(tenantDbName);
 
   const hospital = await Hospital.create({
     hospital_code: code,
-    tenant_db_name: tenantDbName,
-    tenant_db_status: tenantDbName ? 'active' : 'shared',
-    tenant_db_created_at: tenantDbName ? new Date() : null,
+    tenant_db_name: null,
+    tenant_db_status: 'shared',
+    tenant_db_created_at: null,
+    tenant_provisioned_at: null,
     name,
     type,
     status: 'active',
@@ -163,6 +164,7 @@ router.post('/saas/onboarding/hospitals', verifyToken, requirePermission('hospit
     settings: req.body.settings || {},
     branding: req.body.branding || {},
   });
+  if (createIsolatedDb) await provisionHospitalTenant(hospital, { tenant_db_name: tenantDbName, source: 'saas_onboarding' });
 
   let adminUser = null;
   const adminEmail = normalizeEmail(req.body.admin_email || req.body.initial_admin?.email);

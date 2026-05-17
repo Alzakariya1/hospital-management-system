@@ -8,6 +8,7 @@ const { verifyToken, allowRoles, requirePermission, getUserPermissions } = requi
 const { ROLE_PERMISSIONS } = require('../config/permissions');
 const { DEFAULT_HOSPITAL_ID, tenantFilter, tenantCreateData } = require('../middleware/tenant');
 const { auditEvent, loginHistoryEvent } = require('../utils/audit');
+const { provisionHospitalTenant } = require('../utils/tenantProvisioning');
 const { ensureWithinLimit } = require('../utils/subscription');
 const router = express.Router();
 const VALID_ROLES = ['super_admin', 'admin', 'hospital_admin', 'doctor', 'nurse', 'receptionist', 'accountant', 'pharmacist', 'lab_technician', 'patient'];
@@ -30,6 +31,7 @@ async function ensureDefaultHospital() {
             enabled_modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile'],
             feature_flags: { audit_compliance: true },
         });
+        await provisionHospitalTenant(hospital, { source: 'auth_default_hospital' });
     }
     return hospital;
 }

@@ -23,6 +23,8 @@ export const saasApi = {
   onboardingChecklist: () => api.get('/saas/onboarding/checklist'),
   tenantDbOverview: () => api.get('/tenant-databases/overview'),
   provisionTenantDb: (hospitalId, data = {}) => api.post(`/tenant-databases/${hospitalId}/provision`, data),
+  verifyTenantDb: (hospitalId) => api.post(`/tenant-databases/${hospitalId}/verify-provision`),
+  structureCheck: () => api.get('/tenant-databases/structure-check'),
   backupTenantDb: (hospitalId, data = {}) => api.post(`/tenant-databases/${hospitalId}/backup`, data),
   tenantBackups: (params = {}) => api.get('/tenant-databases/backups', { params }),
   verifyTenantBackup: (id) => api.post(`/tenant-databases/backups/${id}/verify`),

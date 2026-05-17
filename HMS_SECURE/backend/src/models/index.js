@@ -12,6 +12,14 @@ const counterSchema = new mongoose.Schema(
 const Counter = mongoose.model("Counter", counterSchema);
 async function nextId(name, db) {
     const counterModel = db?.models?.Counter || (db ? db.model("Counter", counterSchema) : Counter);
+    const nativeDb = db?.db || mongoose.connection.db;
+    const maxRow = nativeDb
+        ? await nativeDb.collection(name).find({}, { projection: { id: 1 } }).sort({ id: -1 }).limit(1).next().catch(() => null)
+        : null;
+    const maxExisting = Number(maxRow?.id || 0);
+    if (maxExisting > 0) {
+        await counterModel.findByIdAndUpdate(name, { $max: { seq: maxExisting } }, { upsert: true });
+    }
     const c = await counterModel.findByIdAndUpdate(
         name,
         { $inc: { seq: 1 } },
@@ -80,6 +88,7 @@ const Hospital = makeModel("Hospital", "hospitals", {
     tenant_db_name: { type: String, sparse: true, index: true },
     tenant_db_status: { type: String, default: "shared" },
     tenant_db_created_at: Date,
+    tenant_provisioned_at: Date,
     name: { type: String, default: "Default Hospital" },
     type: { type: String, default: "hospital" },
     status: { type: String, default: "active" },

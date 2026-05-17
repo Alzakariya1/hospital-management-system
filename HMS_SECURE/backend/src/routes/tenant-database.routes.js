@@ -15,6 +15,7 @@ const {
   uriForDb,
   getExpectedStructure,
 } = require('../config/tenantDb');
+const { provisionHospitalTenant, verifyHospitalTenant } = require('../utils/tenantProvisioning');
 
 const router = express.Router();
 router.use(verifyToken, requirePermission('hospital.manage'));
@@ -101,33 +102,23 @@ router.get('/tenant-databases/structure-check', asyncHandler(async (_req, res) =
 router.post('/tenant-databases/:hospitalId/verify-provision', asyncHandler(async (req, res) => {
   const hospital = await Hospital.findOne({ id: Number(req.params.hospitalId) });
   if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
-  const requested = sanitizeDbName(req.body.tenant_db_name);
-  const dbName = requested || hospital.tenant_db_name || buildTenantDbName({ hospital_code: hospital.hospital_code, id: hospital.id, name: hospital.name });
-  const meta = await ensureTenantDatabase(dbName);
-  hospital.tenant_db_name = dbName;
-  hospital.tenant_db_status = 'active';
-  hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
-  await hospital.save();
+  const out = await verifyHospitalTenant(hospital);
+  const dbName = out.tenant_db_name;
+  const meta = out.meta;
+  const collections = out.collections.map((name) => ({ name }));
+  const hasMeta = out.collections.includes('_tenant_meta');
   const conn = require('../config/tenantDb').getTenantConnection(dbName);
-  await conn.asPromise?.();
-  const collections = await conn.db.listCollections().toArray();
-  const hasMeta = collections.some((c) => c.name === '_tenant_meta');
   await auditEvent({ req, userId: req.user.id, hospital_id: hospital.id, action: `Verified tenant database ${dbName}`, module_name: 'tenant_database', entity_type: 'hospital', entity_id: hospital.id });
-  res.json({ message: 'Tenant database provision verified', tenant_db_name: dbName, hospital: publicHospital(hospital), meta, visible_collections: collections.map((c) => c.name).sort(), checks: { tenant_meta_exists: hasMeta, ready_state: conn.readyState } });
+  res.json({ message: 'Tenant database provision verified', tenant_db_name: dbName, hospital: publicHospital(out.hospital), meta, visible_collections: out.collections, checks: { tenant_meta_exists: hasMeta, ready_state: conn.readyState } });
 }));
 
 router.post('/tenant-databases/:hospitalId/provision', asyncHandler(async (req, res) => {
   const hospital = await Hospital.findOne({ id: Number(req.params.hospitalId) });
   if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
-  const requested = sanitizeDbName(req.body.tenant_db_name);
-  const dbName = requested || hospital.tenant_db_name || buildTenantDbName({ hospital_code: hospital.hospital_code, id: hospital.id, name: hospital.name });
-  await ensureTenantDatabase(dbName);
-  hospital.tenant_db_name = dbName;
-  hospital.tenant_db_status = 'active';
-  hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
-  await hospital.save();
+  const out = await provisionHospitalTenant(hospital, { tenant_db_name: req.body.tenant_db_name, source: 'tenant_database_route' });
+  const dbName = out.tenant_db_name;
   await auditEvent({ req, userId: req.user.id, hospital_id: hospital.id, action: `Provisioned tenant database ${dbName}`, module_name: 'tenant_database', entity_type: 'hospital', entity_id: hospital.id });
-  res.json({ message: 'Tenant database provisioned', hospital: publicHospital(hospital), tenant_db_name: dbName });
+  res.json({ message: 'Tenant database provisioned', hospital: publicHospital(out.hospital), tenant_db_name: dbName, meta: out.meta });
 }));
 
 router.post('/tenant-databases/:hospitalId/backup', asyncHandler(async (req, res) => {
@@ -259,7 +250,7 @@ router.post('/tenant-databases/:hospitalId/migrate', asyncHandler(async (req, re
       results.push({ collection: name, source_count: rows.length, copied, skipped, source_deleted: deleted });
     }
     hospital.tenant_db_name = dbName;
-    hospital.tenant_db_status = 'active';
+    hospital.tenant_db_status = 'provisioned';
     hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
     await hospital.save();
     migration.status = 'completed';

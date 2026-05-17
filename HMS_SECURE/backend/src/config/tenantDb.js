@@ -84,7 +84,7 @@ function getTenantModel(modelName, schema, collectionName, dbName = getCurrentTe
   return conn.models[modelName] || conn.model(modelName, schema, collectionName);
 }
 
-async function ensureTenantDatabase(dbName) {
+async function ensureTenantDatabase(dbName, meta = {}) {
   const safeDb = sanitizeDbName(dbName);
   if (!safeDb) throw new Error('Tenant database name is required');
   const conn = getTenantConnection(safeDb);
@@ -92,7 +92,7 @@ async function ensureTenantDatabase(dbName) {
   // Force DB creation without writing business data. This is safe and idempotent.
   await conn.db.collection('_tenant_meta').updateOne(
     { _id: 'tenant' },
-    { $set: { db_name: safeDb, initialized_at: new Date(), architecture: 'database-per-tenant' } },
+    { $set: { db_name: safeDb, initialized_at: new Date(), last_verified_at: new Date(), architecture: 'database-per-tenant', ...meta } },
     { upsert: true },
   );
   return { db_name: safeDb, ready_state: conn.readyState };

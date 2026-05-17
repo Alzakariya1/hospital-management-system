@@ -6,6 +6,7 @@ const cloudinary = require('../config/cloudinary');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
+const { provisionHospitalTenant, verifyHospitalTenant } = require('../utils/tenantProvisioning');
 const { getPlan, getAllowedModules, getAllowedFeatures, normalizePlanModules, normalizePlanFeatureFlags, mergePlanLimits, ensureWithinLimit } = require('../utils/subscription');
 
 const router = express.Router();
@@ -15,7 +16,7 @@ const ALLOWED_MODULES = new Set(DEFAULT_MODULES);
 const FEATURE_FLAGS = ['fhir', 'hl7', 'pacs', 'biometric', 'insurance_tpa', 'erp', 'whatsapp_sms', 'abdm_abha', 'two_factor_auth', 'audit_compliance'];
 const DEFAULT_FEATURE_FLAGS = FEATURE_FLAGS.reduce((acc, key) => { acc[key] = key === 'audit_compliance'; return acc; }, {});
 
-const VALID_TENANT_TYPES = ['hospital', 'clinic', 'diagnostic_center', 'nursing_home'];
+const VALID_TENANT_TYPES = ['hospital', 'clinic', 'diagnostic_center', 'lab', 'nursing_home'];
 const VALID_PLANS = ['clinic', 'hospital', 'enterprise'];
 const VALID_STATUSES = ['active', 'inactive', 'archived'];
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
@@ -183,6 +184,7 @@ async function ensureHospital(id = DEFAULT_HOSPITAL_ID) {
       enabled_modules: DEFAULT_MODULES,
       feature_flags: DEFAULT_FEATURE_FLAGS,
     });
+    await provisionHospitalTenant(hospital, { source: 'ensure_default_hospital' });
   }
   if (hospital && Number(id) === DEFAULT_HOSPITAL_ID && (!Array.isArray(hospital.enabled_modules) || !hospital.enabled_modules.length)) {
     hospital.enabled_modules = DEFAULT_MODULES;
@@ -242,6 +244,7 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
   let hospital;
   try {
     hospital = await Hospital.create(payload);
+    await provisionHospitalTenant(hospital, { source: 'tenant_create' });
   } catch (err) {
     if (err?.code === 11000 && err?.keyPattern?.hospital_code) {
       return res.status(409).json({ message: `Hospital code ${payload.hospital_code || err.keyValue?.hospital_code || ''} already exists. Use Edit Hospital from the row menu, or choose a different hospital code.` });
@@ -280,6 +283,21 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
     hospital: publicHospital(hospital),
     admin_user: publicUser(adminUser),
   });
+}));
+
+router.post('/tenants/:id/provision-tenant-db', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
+  const hospital = await findHospitalByIdentifier(req.params.id);
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const out = await provisionHospitalTenant(hospital, { tenant_db_name: req.body.tenant_db_name, source: 'manual_provision_button' });
+  await auditTenantAction(req, `Provisioned tenant DB ${out.tenant_db_name} for ${hospital.name}`);
+  res.json({ message: 'Tenant database provisioned', hospital: publicHospital(out.hospital), tenant_db_name: out.tenant_db_name, meta: out.meta });
+}));
+
+router.post('/tenants/:id/verify-tenant-db', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
+  const hospital = await findHospitalByIdentifier(req.params.id);
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const out = await verifyHospitalTenant(hospital);
+  res.json({ message: 'Tenant database verified', hospital: publicHospital(out.hospital), tenant_db_name: out.tenant_db_name, collections: out.collections, checks: { tenant_meta_exists: out.collections.includes('_tenant_meta') } });
 }));
 
 router.patch('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {
