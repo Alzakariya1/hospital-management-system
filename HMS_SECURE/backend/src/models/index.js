@@ -12,14 +12,6 @@ const counterSchema = new mongoose.Schema(
 const Counter = mongoose.model("Counter", counterSchema);
 async function nextId(name, db) {
     const counterModel = db?.models?.Counter || (db ? db.model("Counter", counterSchema) : Counter);
-    const nativeDb = db?.db || mongoose.connection.db;
-    const maxRow = nativeDb
-        ? await nativeDb.collection(name).find({}, { projection: { id: 1 } }).sort({ id: -1 }).limit(1).next().catch(() => null)
-        : null;
-    const maxExisting = Number(maxRow?.id || 0);
-    if (maxExisting > 0) {
-        await counterModel.findByIdAndUpdate(name, { $max: { seq: maxExisting } }, { upsert: true });
-    }
     const c = await counterModel.findByIdAndUpdate(
         name,
         { $inc: { seq: 1 } },
@@ -88,7 +80,6 @@ const Hospital = makeModel("Hospital", "hospitals", {
     tenant_db_name: { type: String, sparse: true, index: true },
     tenant_db_status: { type: String, default: "shared" },
     tenant_db_created_at: Date,
-    tenant_provisioned_at: Date,
     name: { type: String, default: "Default Hospital" },
     type: { type: String, default: "hospital" },
     status: { type: String, default: "active" },
@@ -1081,30 +1072,6 @@ const PilotTask = makeModel("PilotTask", "pilot_tasks", {
 PilotTask.schema.index({ pilot_id: 1, status: 1 }, { name: "pilot_task_status_lookup" });
 
 
-
-const TenantMigration = makeModel("TenantMigration", "tenant_migrations", {
-    hospital_id: { type: Number, required: true, index: true },
-    hospital_code: String,
-    hospital_name: String,
-    tenant_db_name: { type: String, required: true, index: true },
-    status: { type: String, default: "preview", index: true },
-    mode: { type: String, default: "copy_only" },
-    collections: { type: [Object], default: [] },
-    total_source: { type: Number, default: 0 },
-    total_target_before: { type: Number, default: 0 },
-    total_ready_to_copy: { type: Number, default: 0 },
-    total_conflicts: { type: Number, default: 0 },
-    total_copied: { type: Number, default: 0 },
-    total_skipped: { type: Number, default: 0 },
-    source_deleted: { type: Number, default: 0 },
-    error_message: String,
-    started_at: Date,
-    completed_at: Date,
-    requested_by: Number,
-    notes: String,
-});
-TenantMigration.schema.index({ hospital_id: 1, created_at: -1 }, { name: "tenant_migration_hospital_recent_lookup" });
-
 const TenantBackup = makeModel("TenantBackup", "tenant_backups", {
     hospital_id: { type: Number, required: true, index: true },
     hospital_code: String,
@@ -1200,6 +1167,5 @@ module.exports = {
     PolicyAcknowledgement,
     PilotDeployment,
     PilotTask,
-    TenantMigration,
     TenantBackup,
 };

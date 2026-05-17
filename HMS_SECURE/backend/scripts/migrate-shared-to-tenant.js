@@ -40,8 +40,7 @@ async function main() {
     report.push({ collection: name, copied: upserted, source_deleted: deleteSource ? rows.length : 0 });
   }
   hospital.tenant_db_name = dbName;
-  hospital.tenant_db_status = 'provisioned';
-  hospital.tenant_provisioned_at = hospital.tenant_provisioned_at || new Date();
+  hospital.tenant_db_status = 'active';
   hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
   await hospital.save();
   console.table(report.filter((x) => x.copied || x.source_deleted));

@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const { AsyncLocalStorage } = require('async_hooks');
-const { getMasterDbName, parseUriDatabaseName } = require('./db');
 
 const tenantContext = new AsyncLocalStorage();
 const connections = new Map();
@@ -38,19 +37,6 @@ function uriForDb(dbName) {
   return `${base.slice(0, slash + 1)}${safeDb}${query}`;
 }
 
-function getTenantDbPrefix() {
-  return sanitizeDbName(process.env.TENANT_DB_PREFIX || 'hms_tenant');
-}
-
-function getExpectedStructure() {
-  return {
-    master_db_name: getMasterDbName(),
-    tenant_db_prefix: getTenantDbPrefix(),
-    uri_db_name: parseUriDatabaseName(process.env.MONGODB_URI || '') || null,
-    tenant_mode: process.env.TENANT_DATABASE_MODE || process.env.TENANT_DB_ISOLATION || 'hybrid',
-  };
-}
-
 function getCurrentTenantDbName() {
   const store = tenantContext.getStore();
   return store?.tenant_db_name || null;
@@ -84,7 +70,7 @@ function getTenantModel(modelName, schema, collectionName, dbName = getCurrentTe
   return conn.models[modelName] || conn.model(modelName, schema, collectionName);
 }
 
-async function ensureTenantDatabase(dbName, meta = {}) {
+async function ensureTenantDatabase(dbName) {
   const safeDb = sanitizeDbName(dbName);
   if (!safeDb) throw new Error('Tenant database name is required');
   const conn = getTenantConnection(safeDb);
@@ -92,7 +78,7 @@ async function ensureTenantDatabase(dbName, meta = {}) {
   // Force DB creation without writing business data. This is safe and idempotent.
   await conn.db.collection('_tenant_meta').updateOne(
     { _id: 'tenant' },
-    { $set: { db_name: safeDb, initialized_at: new Date(), last_verified_at: new Date(), architecture: 'database-per-tenant', ...meta } },
+    { $set: { db_name: safeDb, initialized_at: new Date(), architecture: 'database-per-tenant' } },
     { upsert: true },
   );
   return { db_name: safeDb, ready_state: conn.readyState };
@@ -106,8 +92,6 @@ module.exports = {
   tenantIsolationEnabled,
   sanitizeDbName,
   buildTenantDbName,
-  getTenantDbPrefix,
-  getExpectedStructure,
   uriForDb,
   getCurrentTenantDbName,
   runWithTenantDbName,

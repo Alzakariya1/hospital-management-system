@@ -1160,23 +1160,3 @@ Added pilot deployment management, pilot task tracking, readiness score API and 
 ## V43.1 - Tenant Isolation Verification + Route Hardening
 
 V43.1 hardens the V43 tenant database architecture. Command Center, Legal/Security and Pilot Deployment flows now run under tenant context, tenant-aware collections were expanded, and a `tenant:audit` script was added to verify operational route coverage. Existing shared DB fallback remains preserved to avoid data loss.
-
-
-## V44: Tenant Migration + Backup Restore Deep Validation
-
-- Added migration preview and copy-only tenant migration APIs.
-- Added `tenant_migrations` log model.
-- Added restore dry-run validation for tenant backups.
-- Added Super Admin UI controls for migration preview, safe copy, backup verification and restore dry-run.
-- Added CLI scripts for migration preview and backup validation.
-- Existing/shared DB data is not deleted by default.
-
-
-## V44.1 - MongoDB Atlas Structure Fix + Tenant Provision Verification
-
-- Enforced `hms_master` as the safe default master database when `MASTER_DB_NAME`/`MONGODB_DB_NAME` are missing.
-- Added warnings for `/test` or missing DB name in MongoDB URI.
-- Added structure check endpoint and CLI: `npm run db:structure`.
-- Added tenant provision verification endpoint and CLI: `npm run tenant:verify-provision -- <hospital_code_or_id>`.
-- Tenant DB provisioning now ensures `_tenant_meta` exists so MongoDB Atlas displays the tenant database immediately.
-- Documented correct Atlas layout and Render environment values.

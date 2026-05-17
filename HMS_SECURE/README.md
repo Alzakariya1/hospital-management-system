@@ -218,13 +218,3 @@ VITE_API_URL=http://localhost:5000/api docker compose up --build
 ```
 
 Important packaging rule for this project: `.env`, `node_modules`, and `dist` must not be committed or included in handover zips. `package.json`, `package-lock.json`, and `.env.example` must stay included.
-
-
-## V44: Tenant Migration + Backup Restore Deep Validation
-
-- Added migration preview and copy-only tenant migration APIs.
-- Added `tenant_migrations` log model.
-- Added restore dry-run validation for tenant backups.
-- Added Super Admin UI controls for migration preview, safe copy, backup verification and restore dry-run.
-- Added CLI scripts for migration preview and backup validation.
-- Existing/shared DB data is not deleted by default.

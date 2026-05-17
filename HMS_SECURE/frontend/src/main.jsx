@@ -150,15 +150,6 @@ function App() {
   const [user, setUser] = useState(() =>
     JSON.parse(localStorage.getItem("user") || "null"),
   );
-
-  useEffect(() => {
-    const onExpired = (event) => {
-      setUser(null);
-      toast.error(event.detail?.message || "Session expired. Please login again.");
-    };
-    window.addEventListener("hms-auth-expired", onExpired);
-    return () => window.removeEventListener("hms-auth-expired", onExpired);
-  }, []);
   const [tab, setTab] = useState("dashboard");
   const [currentHospital, setCurrentHospital] = useState(null);
   const [tenants, setTenants] = useState([]);

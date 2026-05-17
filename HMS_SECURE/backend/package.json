@@ -20,14 +20,7 @@
     "fix-tenant-indexes": "node scripts/fix-tenant-indexes.js",
     "tenant:provision": "node scripts/provision-tenant-db.js",
     "tenant:migrate": "node scripts/migrate-shared-to-tenant.js",
-    "tenant:audit": "node scripts/tenant-isolation-audit.js",
-    "tenant:migration-preview": "node scripts/tenant-migration-preview.js",
-    "tenant:backup-validate": "node scripts/tenant-backup-validate.js",
-    "db:structure": "node scripts/atlas-structure-check.js",
-    "tenant:verify-provision": "node scripts/verify-tenant-provision.js",
-    "tenant:provision-shared": "node scripts/provision-tenant-db.js",
-    "fix-hospital-ids": "node scripts/fix-hospital-ids.js",
-    "auth:smoke": "node scripts/auth-smoke.js"
+    "tenant:audit": "node scripts/tenant-isolation-audit.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

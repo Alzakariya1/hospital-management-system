@@ -67,7 +67,7 @@ const tenantCollections = [
   'patients', 'doctors', 'appointments', 'billings', 'medicines', 'pharmacy_sales',
   'lab_tests', 'radiology_tests', 'inventory_items', 'inventory_batches', 'purchase_orders',
   'consent_forms', 'incident_reports', 'audit_logs', 'dynamic_fields', 'templates',
-  'data_requests', 'security_incidents', 'pilot_deployments', 'pilot_tasks', 'tenant_migrations'
+  'data_requests', 'security_incidents', 'pilot_deployments', 'pilot_tasks'
 ];
 for (const collection of tenantCollections) {
   if (!modelsSource.includes(`"${collection}"`)) failures.push(`models/index.js: ${collection} missing from tenant-aware collection list`);
