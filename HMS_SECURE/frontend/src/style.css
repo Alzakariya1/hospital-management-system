@@ -3649,3 +3649,9 @@ button.ghost.danger { background:transparent; color:#dc2626; border:1px solid #f
 .actionStack { display: flex; flex-direction: column; gap: 8px; min-width: 140px; }
 .actionStack button { display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
 @media (max-width: 1050px) { .heroPanel, .twoCols, .pricingGrid, .fourCols { grid-template-columns: 1fr; } .formGrid { grid-template-columns: 1fr; } }
+
+.template-preview-box{margin-top:16px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;padding:16px}
+.template-preview-box h3{margin:0 0 10px;color:#0f172a}
+.template-preview-box pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;background:white;border-radius:12px;padding:14px;border:1px solid #e2e8f0;color:#334155;max-height:320px;overflow:auto}
+.dynamic-fields-block{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:18px}
+.config-checkbox-field{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;font-weight:700;color:#334155}

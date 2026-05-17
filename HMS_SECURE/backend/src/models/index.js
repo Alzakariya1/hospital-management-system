@@ -1,4 +1,5 @@
 const { mongoose } = require("../config/db");
+const { getCurrentTenantDbName, getTenantModel } = require("../config/tenantDb");
 const opts = {
     timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
     strict: false,
@@ -9,18 +10,54 @@ const counterSchema = new mongoose.Schema(
     { versionKey: false },
 );
 const Counter = mongoose.model("Counter", counterSchema);
-async function nextId(name) {
-    const c = await Counter.findByIdAndUpdate(
+async function nextId(name, db) {
+    const counterModel = db?.models?.Counter || (db ? db.model("Counter", counterSchema) : Counter);
+    const c = await counterModel.findByIdAndUpdate(
         name,
         { $inc: { seq: 1 } },
         { upsert: true, new: true },
     );
     return c.seq;
 }
+const TENANT_COLLECTIONS = new Set([
+    "departments", "patients", "doctors", "doctor_schedules", "appointments", "beds",
+    "opd_records", "ipd_admissions", "nursing_notes", "lab_test_templates", "lab_tests",
+    "radiology_tests", "medicines", "pharmacy_sales", "billings", "insurance_claims",
+    "prescriptions", "clinical_records", "audit_logs", "login_history", "security_settings",
+    "dynamic_fields", "templates", "notifications", "communication_logs", "suppliers",
+    "inventory_items", "inventory_batches", "purchase_orders", "supplier_bills",
+    "stock_receivings", "stock_returns", "inventory_transactions", "consent_forms",
+    "incident_reports", "sop_documents", "compliance_checklists", "backup_verifications",
+    "api_keys", "integration_logs", "webhook_subscriptions", "webhook_events",
+    "data_requests", "security_incidents", "policy_acknowledgements",
+    "pilot_deployments", "pilot_tasks"
+]);
+function tenantAwareModel(model, name, schema, collection) {
+    if (!TENANT_COLLECTIONS.has(collection)) return model;
+    return new Proxy(model, {
+        get(target, prop) {
+            if (prop === "schema" || prop === "modelName" || prop === "collection" || prop === "db" || prop === Symbol.toStringTag) return target[prop];
+            const dbName = getCurrentTenantDbName();
+            const active = dbName ? getTenantModel(name, schema, collection, dbName) : target;
+            const value = active[prop];
+            return typeof value === "function" ? value.bind(active) : value;
+        },
+        apply(target, thisArg, argArray) {
+            const dbName = getCurrentTenantDbName();
+            const active = dbName ? getTenantModel(name, schema, collection, dbName) : target;
+            return Reflect.apply(active, thisArg, argArray);
+        },
+        construct(target, argArray) {
+            const dbName = getCurrentTenantDbName();
+            const active = dbName ? getTenantModel(name, schema, collection, dbName) : target;
+            return Reflect.construct(active, argArray);
+        },
+    });
+}
 function makeModel(name, collection, extra = {}) {
     const schema = new mongoose.Schema({ id: { type: Number }, ...extra }, opts);
     schema.pre("validate", async function (next) {
-        if (this.isNew && !this.id) this.id = await nextId(collection);
+        if (this.isNew && !this.id) this.id = await nextId(collection, this.constructor.db);
         next();
     });
     schema.set("toJSON", {
@@ -29,7 +66,7 @@ function makeModel(name, collection, extra = {}) {
             return ret;
         },
     });
-    return mongoose.model(name, schema, collection);
+    return tenantAwareModel(mongoose.model(name, schema, collection), name, schema, collection);
 }
 const User = makeModel("User", "users", {
     email: { type: String, unique: true, index: true },
@@ -40,6 +77,9 @@ const User = makeModel("User", "users", {
 });
 const Hospital = makeModel("Hospital", "hospitals", {
     hospital_code: { type: String, unique: true, sparse: true, index: true },
+    tenant_db_name: { type: String, sparse: true, index: true },
+    tenant_db_status: { type: String, default: "shared" },
+    tenant_db_created_at: Date,
     name: { type: String, default: "Default Hospital" },
     type: { type: String, default: "hospital" },
     status: { type: String, default: "active" },
@@ -82,7 +122,8 @@ const Department = makeModel("Department", "departments", { hospital_id: { type:
 
 const Patient = makeModel("Patient", "patients", {
     hospital_id: { type: Number, default: 1, index: true },
-    patient_id: { type: String, unique: true, index: true },
+    // Patient ID is unique per tenant/hospital, not globally.
+    patient_id: { type: String, trim: true, index: true },
 
     full_name: String,
     age: Number,
@@ -92,6 +133,7 @@ const Patient = makeModel("Patient", "patients", {
     address: String,
     blood_group: String,
     medical_notes: String,
+    custom_fields: { type: Object, default: {} },
 
     profile_image_url: String,
     profile_image_public_id: String,
@@ -122,6 +164,16 @@ const Patient = makeModel("Patient", "patients", {
     ],
 });
 
+
+Patient.schema.index(
+    { hospital_id: 1, patient_id: 1 },
+    {
+        unique: true,
+        name: "patient_hospital_patient_id_unique",
+        partialFilterExpression: { patient_id: { $type: "string" } },
+    },
+);
+
 const Doctor = makeModel("Doctor", "doctors", {
     hospital_id: { type: Number, default: 1, index: true },
     // Keep doctor_id unique per hospital through the compound index below.
@@ -136,6 +188,7 @@ const Doctor = makeModel("Doctor", "doctors", {
     consultation_fee: Number,
     department_id: Number,
     status: { type: String, default: "active" },
+    custom_fields: { type: Object, default: {} },
 
     // Reserved for the next doctor-profile phase. Keeping these schema fields now is backward compatible
     // because strict:false already allowed them, but defining them documents the intended structure.
@@ -1018,6 +1071,52 @@ const PilotTask = makeModel("PilotTask", "pilot_tasks", {
 });
 PilotTask.schema.index({ pilot_id: 1, status: 1 }, { name: "pilot_task_status_lookup" });
 
+
+
+const TenantMigration = makeModel("TenantMigration", "tenant_migrations", {
+    hospital_id: { type: Number, required: true, index: true },
+    hospital_code: String,
+    hospital_name: String,
+    tenant_db_name: { type: String, required: true, index: true },
+    status: { type: String, default: "preview", index: true },
+    mode: { type: String, default: "copy_only" },
+    collections: { type: [Object], default: [] },
+    total_source: { type: Number, default: 0 },
+    total_target_before: { type: Number, default: 0 },
+    total_ready_to_copy: { type: Number, default: 0 },
+    total_conflicts: { type: Number, default: 0 },
+    total_copied: { type: Number, default: 0 },
+    total_skipped: { type: Number, default: 0 },
+    source_deleted: { type: Number, default: 0 },
+    error_message: String,
+    started_at: Date,
+    completed_at: Date,
+    requested_by: Number,
+    notes: String,
+});
+TenantMigration.schema.index({ hospital_id: 1, created_at: -1 }, { name: "tenant_migration_hospital_recent_lookup" });
+
+const TenantBackup = makeModel("TenantBackup", "tenant_backups", {
+    hospital_id: { type: Number, required: true, index: true },
+    hospital_code: String,
+    hospital_name: String,
+    tenant_db_name: { type: String, required: true, index: true },
+    backup_type: { type: String, default: "manual" },
+    status: { type: String, default: "queued", index: true },
+    storage_provider: { type: String, default: "local" },
+    backup_path: String,
+    file_name: String,
+    size_bytes: Number,
+    started_at: Date,
+    completed_at: Date,
+    verified_at: Date,
+    restore_tested_at: Date,
+    error_message: String,
+    requested_by: Number,
+    notes: String,
+});
+TenantBackup.schema.index({ hospital_id: 1, created_at: -1 }, { name: "tenant_backup_hospital_recent_lookup" });
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -1092,4 +1191,6 @@ module.exports = {
     PolicyAcknowledgement,
     PilotDeployment,
     PilotTask,
+    TenantMigration,
+    TenantBackup,
 };

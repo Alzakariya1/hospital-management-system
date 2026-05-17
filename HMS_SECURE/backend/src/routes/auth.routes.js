@@ -35,8 +35,8 @@ async function ensureDefaultHospital() {
 }
 
 async function audit(req, userId, action, module_name = 'auth', hospital_id = DEFAULT_HOSPITAL_ID, extra = {}) { await auditEvent({ req, userId, action, module_name, hospital_id, ...extra }); }
-const signToken = (user) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, hospital_id: Number(user.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1), permissions: getUserPermissions(user) }, process.env.JWT_SECRET || 'dev_secret_change_me', { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
-const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.hospital_id = Number(x.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); x.permissions = getUserPermissions(x); return x; };
+const signToken = (user, hospital = null) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, hospital_id: Number(user.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1), tenant_db_name: hospital?.tenant_db_name || user.tenant_db_name || null, permissions: getUserPermissions(user) }, process.env.JWT_SECRET || 'dev_secret_change_me', { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
+const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.hospital_id = Number(x.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); x.tenant_db_name = x.tenant_db_name || null; x.permissions = getUserPermissions(x); return x; };
 router.post('/login', asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body.email);
   const password = req.body.password;
@@ -65,7 +65,7 @@ router.post('/login', asyncHandler(async (req, res) => {
   await user.save();
   await loginHistoryEvent({ req, user, email, status: 'success', reason: 'login_success' });
   await audit(req, user.id, 'User logged in', 'auth', user.hospital_id, { entity_type: 'user', entity_id: user.id });
-  res.json({ message: 'Login successful', token: signToken(user), user: publicUser(user) });
+  const outUser = publicUser(user); outUser.tenant_db_name = hospital?.tenant_db_name || null; outUser.tenant_storage_mode = hospital?.tenant_db_name ? 'database-per-tenant' : 'shared-database'; res.json({ message: 'Login successful', token: signToken(user, hospital), user: outUser });
 }));
 router.post('/register', verifyToken, requirePermission('admin.users.manage'), asyncHandler(async (req, res) => createUser(req, res)));
 router.post('/forgot-password', asyncHandler(async (req, res) => { const email = normalizeEmail(req.body.email); if (!email) return res.status(400).json({ message: 'Email is required' }); const rawToken = crypto.randomBytes(32).toString('hex'); const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex'); await User.updateOne({ email, status: 'active' }, { $set: { reset_token: tokenHash, reset_token_expires: new Date(Date.now() + 30 * 60 * 1000) } }); res.json({ message: 'Reset token generated. Configure SMTP before production.', resetToken: rawToken }); }));

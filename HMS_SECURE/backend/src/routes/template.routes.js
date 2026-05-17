@@ -10,6 +10,17 @@ router.use(verifyToken, attachTenant);
 
 const VALID_TYPES = ['invoice', 'prescription', 'lab_report', 'radiology_report', 'discharge_summary'];
 
+
+function renderTemplateText(template, data = {}) {
+  const source = [template.header_text, template.body_template, template.footer_text].filter(Boolean).join('\n\n');
+  return source.replace(/{{\s*([a-zA-Z0-9_\.]+)\s*}}/g, (_, key) => {
+    const parts = String(key).split('.');
+    let value = data;
+    for (const part of parts) value = value && Object.prototype.hasOwnProperty.call(value, part) ? value[part] : '';
+    return value === undefined || value === null ? '' : String(value);
+  });
+}
+
 function sanitize(body = {}) {
   const template_type = String(body.template_type || 'invoice').trim();
   if (!VALID_TYPES.includes(template_type)) {
@@ -55,6 +66,26 @@ router.post('/templates', requirePermission('configuration.manage'), asyncHandle
   const row = await Template.create(tenantCreateData(req, data));
   await auditEvent({ req, action: `Created ${data.template_type} template`, module_name: 'configuration', entity_type: 'template', entity_id: String(row.id), new_value: data });
   res.status(201).json({ message: 'Template created', template: row });
+}));
+
+
+router.post('/templates/:id/preview', requirePermission('configuration.manage'), asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const template = await Template.findOne(tenantFilter(req, { id })).lean();
+  if (!template) return res.status(404).json({ message: 'Template not found.' });
+  const sampleData = {
+    patient_name: 'Sample Patient',
+    doctor_name: 'Dr. Sample',
+    hospital_name: req.hospital?.name || 'Sample Hospital',
+    invoice_number: 'INV-SAMPLE-001',
+    total_amount: '2500',
+    paid_amount: '1500',
+    diagnosis: 'Fever and follow-up care',
+    prescription_items: 'Paracetamol 500mg - twice daily',
+    report_notes: 'Sample report notes',
+    ...(req.body || {}),
+  };
+  res.json({ message: 'Template preview generated', preview: renderTemplateText(template, sampleData), sampleData });
 }));
 
 router.put('/templates/:id', requirePermission('configuration.manage'), asyncHandler(async (req, res) => {

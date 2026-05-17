@@ -1,11 +1,13 @@
 const express = require('express');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
+const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
 const { LegalPolicy, DataRequest, SecurityIncident, PolicyAcknowledgement, AuditLog } = require('../models');
 
 const router = express.Router();
-const canManage = [verifyToken, requirePermission(['security.manage', 'compliance.manage', 'hospital.manage'])];
-const canView = [verifyToken, requirePermission(['audit.view', 'security.manage', 'compliance.view', 'hospital.manage'])];
+router.use(verifyToken, attachTenant);
+const canManage = [requirePermission(['security.manage', 'compliance.manage', 'hospital.manage'])];
+const canView = [requirePermission(['audit.view', 'security.manage', 'compliance.view', 'hospital.manage'])];
 
 const POLICY_TEMPLATES = [
   {
@@ -88,12 +90,12 @@ router.post('/legal-security/policies/:id/acknowledge', verifyToken, asyncHandle
   const policyId = Number(req.params.id);
   const exists = await LegalPolicy.findOne({ id: policyId });
   if (!exists) return res.status(404).json({ message: 'Policy not found' });
-  await PolicyAcknowledgement.updateOne({ policy_id: policyId, user_id: req.user.id }, { $setOnInsert: { hospital_id: req.user.hospital_id || 1, ip_address: req.ip, user_agent: req.get('user-agent') || '', acknowledged_at: new Date() } }, { upsert: true });
+  await PolicyAcknowledgement.updateOne(tenantFilter(req, { policy_id: policyId, user_id: req.user.id }), { $setOnInsert: { ...tenantCreateData(req, {}), ip_address: req.ip, user_agent: req.get('user-agent') || '', acknowledged_at: new Date() } }, { upsert: true });
   res.json({ message: 'Policy acknowledged' });
 }));
 
 router.get('/legal-security/data-requests', ...canView, asyncHandler(async (req, res) => {
-  const filter = req.user.role === 'super_admin' ? {} : { hospital_id: req.user.hospital_id || 1 };
+  const filter = tenantFilter(req);
   res.json(await DataRequest.find(filter).sort({ id: -1 }).limit(300).lean());
 }));
 
@@ -102,7 +104,7 @@ router.post('/legal-security/data-requests', ...canManage, asyncHandler(async (r
   const requester_email = String(req.body.requester_email || '').trim().toLowerCase();
   if (!requester_name || !requester_email) return res.status(400).json({ message: 'requester_name and requester_email are required' });
   const row = await DataRequest.create({
-    hospital_id: req.user.hospital_id || req.body.hospital_id || 1, requester_name, requester_email,
+    ...tenantCreateData(req, {}), requester_name, requester_email,
     requester_phone: req.body.requester_phone || '', request_type: req.body.request_type || 'access', patient_id: req.body.patient_id || null,
     user_id: req.body.user_id || null, description: req.body.description || '', due_date: req.body.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), status: req.body.status || 'open', assigned_to: req.body.assigned_to || null,
   });
@@ -121,7 +123,7 @@ router.patch('/legal-security/data-requests/:id', ...canManage, asyncHandler(asy
 }));
 
 router.get('/legal-security/incidents', ...canView, asyncHandler(async (req, res) => {
-  const filter = req.user.role === 'super_admin' ? {} : { hospital_id: req.user.hospital_id || 1 };
+  const filter = tenantFilter(req);
   res.json(await SecurityIncident.find(filter).sort({ id: -1 }).limit(300).lean());
 }));
 
@@ -129,7 +131,7 @@ router.post('/legal-security/incidents', ...canManage, asyncHandler(async (req, 
   const title = String(req.body.title || '').trim();
   if (!title) return res.status(400).json({ message: 'Incident title is required' });
   const row = await SecurityIncident.create({
-    hospital_id: req.user.hospital_id || req.body.hospital_id || 1, title, severity: req.body.severity || 'medium', category: req.body.category || 'security',
+    ...tenantCreateData(req, {}), title, severity: req.body.severity || 'medium', category: req.body.category || 'security',
     reported_by: req.user.id, affected_systems: Array.isArray(req.body.affected_systems) ? req.body.affected_systems : String(req.body.affected_systems || '').split(',').map(x => x.trim()).filter(Boolean),
     patient_data_involved: Boolean(req.body.patient_data_involved), description: req.body.description || '', containment_actions: req.body.containment_actions || '', status: req.body.status || 'open',
   });
@@ -148,7 +150,7 @@ router.patch('/legal-security/incidents/:id', ...canManage, asyncHandler(async (
 }));
 
 router.get('/legal-security/export/audit-pack', ...canView, asyncHandler(async (req, res) => {
-  const hospitalFilter = req.user.role === 'super_admin' ? {} : { hospital_id: req.user.hospital_id || 1 };
+  const hospitalFilter = tenantFilter(req);
   const [policies, dataRequests, incidents, acknowledgements] = await Promise.all([
     LegalPolicy.find().sort({ policy_key: 1 }).lean(),
     DataRequest.find(hospitalFilter).sort({ id: -1 }).limit(1000).lean(),

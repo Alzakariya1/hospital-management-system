@@ -1,5 +1,5 @@
 const express = require("express");
-const { Patient, Appointment, OpdRecord, Prescription, Billing, LabTest, RadiologyTest, IpdAdmission } = require("../models");
+const { Patient, Appointment, OpdRecord, Prescription, Billing, LabTest, RadiologyTest, IpdAdmission, DynamicField } = require("../models");
 const asyncHandler = require("../utils/asyncHandler");
 const { verifyToken, requirePermission } = require("../middleware/auth");
 const { attachTenant, tenantFilter, tenantCreateData } = require("../middleware/tenant");
@@ -13,6 +13,33 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024,
     },
 });
+
+
+async function validateCustomFields(req, targetModule, customFields = {}) {
+    const fields = await DynamicField.find(tenantFilter(req, { target_module: targetModule, is_active: true })).lean();
+    const cleaned = { ...(customFields || {}) };
+    for (const field of fields) {
+        const value = cleaned[field.field_key];
+        if (field.required && (value === undefined || value === null || value === '' || value === false)) {
+            const err = new Error(`${field.label || field.field_key} is required.`);
+            err.status = 400;
+            throw err;
+        }
+        if (value !== undefined && value !== null && value !== '') {
+            if (field.field_type === 'number' && Number.isNaN(Number(value))) {
+                const err = new Error(`${field.label || field.field_key} must be a number.`);
+                err.status = 400;
+                throw err;
+            }
+            if (field.field_type === 'select' && Array.isArray(field.options) && field.options.length && !field.options.includes(String(value))) {
+                const err = new Error(`${field.label || field.field_key} has an invalid option.`);
+                err.status = 400;
+                throw err;
+            }
+        }
+    }
+    return cleaned;
+}
 
 function patientIdentityFilter(patient) {
     const keys = [patient.patient_id, String(patient.id)].filter(Boolean);
@@ -125,7 +152,8 @@ router.post(
     requirePermission("patient.create"),
     asyncHandler(async (req, res) => {
         const uid = req.body.patient_uid || `PAT-${Date.now()}`;
-        const r = await Patient.create(tenantCreateData(req, { ...req.body, patient_uid: uid }));
+        const custom_fields = await validateCustomFields(req, 'patients', req.body.custom_fields || {});
+        const r = await Patient.create(tenantCreateData(req, { ...req.body, custom_fields, patient_uid: uid }));
         res
             .status(201)
             .json({ message: "Patient created", id: r.id, patient_uid: uid });
@@ -150,6 +178,7 @@ router.put(
             "emergency_contact_phone",
             "insurance_provider",
             "insurance_policy_number",
+            "custom_fields",
 
             "documents",
         ];
@@ -157,6 +186,7 @@ router.put(
         allowed.forEach((k) => {
             if (k in req.body) update[k] = req.body[k];
         });
+        if ('custom_fields' in req.body) update.custom_fields = await validateCustomFields(req, 'patients', req.body.custom_fields || {});
         if (!Object.keys(update).length)
             return res.status(400).json({ message: "No valid fields to update" });
         await Patient.updateOne(tenantFilter(req, { id: Number(req.params.id) }), { $set: update });

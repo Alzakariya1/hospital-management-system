@@ -1,5 +1,6 @@
 const express = require('express');
 const { verifyToken, requirePermission } = require('../middleware/auth');
+const { attachTenant, tenantFilter } = require('../middleware/tenant');
 const {
   Appointment,
   Bed,
@@ -16,12 +17,7 @@ const {
 } = require('../models');
 
 const router = express.Router();
-router.use(verifyToken);
-
-function tenantFilter(req) {
-  if (req.user?.role === 'super_admin' && req.query.hospital_id) return { hospital_id: Number(req.query.hospital_id) };
-  return { hospital_id: Number(req.user?.hospital_id || req.query.hospital_id || 1) };
-}
+router.use(verifyToken, attachTenant);
 
 function startOfDay(date = new Date()) {
   const d = new Date(date);

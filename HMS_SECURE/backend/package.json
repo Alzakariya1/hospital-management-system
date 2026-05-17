@@ -16,7 +16,13 @@
     "verify-backup": "node scripts/verify-backup.js",
     "security-check": "node scripts/security-check.js",
     "check-routes": "node scripts/check-routes.js",
-    "qa:smoke": "node scripts/qa-smoke.js"
+    "qa:smoke": "node scripts/qa-smoke.js",
+    "fix-tenant-indexes": "node scripts/fix-tenant-indexes.js",
+    "tenant:provision": "node scripts/provision-tenant-db.js",
+    "tenant:migrate": "node scripts/migrate-shared-to-tenant.js",
+    "tenant:audit": "node scripts/tenant-isolation-audit.js",
+    "tenant:migration-preview": "node scripts/tenant-migration-preview.js",
+    "tenant:backup-validate": "node scripts/tenant-backup-validate.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

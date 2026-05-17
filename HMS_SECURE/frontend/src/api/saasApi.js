@@ -21,4 +21,13 @@ export const saasApi = {
   licenseStatus: () => api.get('/saas/license/status'),
   onboardHospital: (data) => api.post('/saas/onboarding/hospitals', data),
   onboardingChecklist: () => api.get('/saas/onboarding/checklist'),
+  tenantDbOverview: () => api.get('/tenant-databases/overview'),
+  provisionTenantDb: (hospitalId, data = {}) => api.post(`/tenant-databases/${hospitalId}/provision`, data),
+  backupTenantDb: (hospitalId, data = {}) => api.post(`/tenant-databases/${hospitalId}/backup`, data),
+  tenantBackups: (params = {}) => api.get('/tenant-databases/backups', { params }),
+  verifyTenantBackup: (id) => api.post(`/tenant-databases/backups/${id}/verify`),
+  migrationPreview: (hospitalId) => api.get(`/tenant-databases/${hospitalId}/migration-preview`),
+  runTenantMigration: (hospitalId, data = {}) => api.post(`/tenant-databases/${hospitalId}/migrate`, data),
+  tenantMigrations: (params = {}) => api.get('/tenant-databases/migrations', { params }),
+  restoreDryRun: (backupId) => api.post(`/tenant-databases/backups/${backupId}/restore-dry-run`),
 };

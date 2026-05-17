@@ -1,5 +1,5 @@
 const express = require('express');
-const { Doctor, DoctorSchedule, Department, Appointment, Patient, Bed, Billing, AuditLog } = require('../models');
+const { Doctor, DoctorSchedule, Department, Appointment, Patient, Bed, Billing, AuditLog, DynamicField } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/tenant');
@@ -36,6 +36,33 @@ async function safelyDestroyCloudinary(publicId, resourceType = 'auto') {
     }
 }
 router.use(verifyToken, attachTenant);
+
+
+async function validateCustomFields(req, targetModule, customFields = {}) {
+    const fields = await DynamicField.find(tenantFilter(req, { target_module: targetModule, is_active: true })).lean();
+    const cleaned = { ...(customFields || {}) };
+    for (const field of fields) {
+        const value = cleaned[field.field_key];
+        if (field.required && (value === undefined || value === null || value === '' || value === false)) {
+            const err = new Error(`${field.label || field.field_key} is required.`);
+            err.status = 400;
+            throw err;
+        }
+        if (value !== undefined && value !== null && value !== '') {
+            if (field.field_type === 'number' && Number.isNaN(Number(value))) {
+                const err = new Error(`${field.label || field.field_key} must be a number.`);
+                err.status = 400;
+                throw err;
+            }
+            if (field.field_type === 'select' && Array.isArray(field.options) && field.options.length && !field.options.includes(String(value))) {
+                const err = new Error(`${field.label || field.field_key} has an invalid option.`);
+                err.status = 400;
+                throw err;
+            }
+        }
+    }
+    return cleaned;
+}
 
 async function withNames(req, rows) {
     const plainRows = rows.map(x => x.toJSON?.() || x);
@@ -110,7 +137,8 @@ router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async 
 
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
-    const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_uid: uid, status: req.body.status || 'active' }));
+    const custom_fields = await validateCustomFields(req, 'doctors', req.body.custom_fields || {});
+    const r = await Doctor.create(tenantCreateData(req, { ...req.body, custom_fields, doctor_uid: uid, status: req.body.status || 'active' }));
     res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
 }));
 
@@ -132,11 +160,13 @@ router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async 
         'status',
         'license_number',
         'registration_number',
+        'custom_fields',
     ];
     const update = {};
     allowed.forEach(k => {
         if (k in req.body) update[k] = typeof req.body[k] === 'string' ? req.body[k].trim() : req.body[k];
     });
+    if ('custom_fields' in req.body) update.custom_fields = await validateCustomFields(req, 'doctors', req.body.custom_fields || {});
 
     if (!Object.keys(update).length) return res.status(400).json({ message: 'No valid fields' });
 

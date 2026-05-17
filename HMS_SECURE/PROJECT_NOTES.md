@@ -1137,3 +1137,36 @@ Added a Legal & Security Readiness Center with policy templates, data protection
 
 ## V41 - Pilot Hospital Deployment
 Added pilot deployment management, pilot task tracking, readiness score API and frontend Pilot Deployment Center for first real clinic/hospital rollout planning.
+
+## V42 - Configuration Engine Deep Fix
+- Connected Configuration dynamic fields to Patient and Doctor workflows.
+- Added custom field persistence through `custom_fields`.
+- Added backend validation for required, number and select dynamic field values.
+- Added toast notifications for Configuration actions.
+- Added template preview API and UI.
+- Backend route load, QA smoke and frontend production build passed.
+
+
+## V43 - Tenant Database Isolation + Backup Architecture
+
+- Added hybrid master DB + database-per-tenant architecture.
+- New hospitals onboarded from SaaS Control can create a separate MongoDB tenant database by default.
+- Existing hospitals remain in shared DB fallback mode until provisioned/migrated, preventing data loss.
+- Operational models now route to tenant DB through request tenant context when `tenant_db_name` is available.
+- Patient ID uniqueness is now tenant/hospital-safe instead of globally unique.
+- Added tenant DB provision, backup queue, backup verify APIs and SaaS Control Center UI.
+- Added safe migration scripts that copy data first and do not delete source data unless explicitly requested.
+
+## V43.1 - Tenant Isolation Verification + Route Hardening
+
+V43.1 hardens the V43 tenant database architecture. Command Center, Legal/Security and Pilot Deployment flows now run under tenant context, tenant-aware collections were expanded, and a `tenant:audit` script was added to verify operational route coverage. Existing shared DB fallback remains preserved to avoid data loss.
+
+
+## V44: Tenant Migration + Backup Restore Deep Validation
+
+- Added migration preview and copy-only tenant migration APIs.
+- Added `tenant_migrations` log model.
+- Added restore dry-run validation for tenant backups.
+- Added Super Admin UI controls for migration preview, safe copy, backup verification and restore dry-run.
+- Added CLI scripts for migration preview and backup validation.
+- Existing/shared DB data is not deleted by default.

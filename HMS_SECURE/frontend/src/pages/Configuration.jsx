@@ -3,6 +3,7 @@ import { configurationApi } from '../api/configurationApi';
 import { templateApi } from '../api/templateApi';
 import { subscriptionApi } from '../api/subscriptionApi';
 import { DataTable } from '../components';
+import { toast } from 'react-hot-toast';
 
 const emptyField = {
   target_module: 'patients',
@@ -35,13 +36,14 @@ function buildKey(label = '') {
   return String(label).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
-export default function Configuration({ permissions = {} }) {
+export default function Configuration({ permissions = {}, onChanged }) {
   const [fields, setFields] = useState([]);
   const [form, setForm] = useState(emptyField);
   const [editingId, setEditingId] = useState(null);
   const [moduleFilter, setModuleFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [templatePreview, setTemplatePreview] = useState('');
   const [templates, setTemplates] = useState([]);
   const [templateForm, setTemplateForm] = useState({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true });
   const [editingTemplateId, setEditingTemplateId] = useState(null);
@@ -90,15 +92,20 @@ export default function Configuration({ permissions = {} }) {
       if (editingId) {
         await configurationApi.updateDynamicField(editingId, payload);
         setMessage('Dynamic field updated successfully.');
+        toast.success('Field updated successfully.');
       } else {
         await configurationApi.createDynamicField(payload);
         setMessage('Dynamic field created successfully.');
+        toast.success('Field created successfully. It will now appear in supported forms.');
       }
       setForm(emptyField);
       setEditingId(null);
       await load();
+      await onChanged?.();
     } catch (err) {
-      setMessage(err?.response?.data?.message || 'Unable to save dynamic field.');
+      const msg = err?.response?.data?.message || 'Unable to save dynamic field.';
+      setMessage(msg);
+      toast.error(msg);
     }
   }
 
@@ -121,8 +128,14 @@ export default function Configuration({ permissions = {} }) {
   }
 
   async function toggle(row) {
-    await configurationApi.updateDynamicFieldStatus(row.id, !row.is_active);
-    await load();
+    try {
+      await configurationApi.updateDynamicFieldStatus(row.id, !row.is_active);
+      toast.success(!row.is_active ? 'Field activated successfully.' : 'Field deactivated successfully.');
+      await load();
+      await onChanged?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Unable to update field status.');
+    }
   }
 
 
@@ -133,15 +146,20 @@ export default function Configuration({ permissions = {} }) {
       if (editingTemplateId) {
         await templateApi.update(editingTemplateId, templateForm);
         setMessage('Template updated successfully.');
+        toast.success('Template updated successfully.');
       } else {
         await templateApi.create(templateForm);
         setMessage('Template created successfully.');
+        toast.success('Template created successfully.');
       }
       setTemplateForm({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true });
       setEditingTemplateId(null);
+      setTemplatePreview('');
       await load();
     } catch (err) {
-      setMessage(err?.response?.data?.message || 'Unable to save template.');
+      const msg = err?.response?.data?.message || 'Unable to save template.';
+      setMessage(msg);
+      toast.error(msg);
     }
   }
 
@@ -160,14 +178,35 @@ export default function Configuration({ permissions = {} }) {
 
   async function removeTemplate(row) {
     if (!confirm(`Delete template ${row.name}?`)) return;
-    await templateApi.delete(row.id);
-    await load();
+    try {
+      await templateApi.delete(row.id);
+      toast.success('Template deleted successfully.');
+      await load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Unable to delete template.');
+    }
+  }
+
+  async function previewTemplate(row) {
+    try {
+      const { data } = await templateApi.preview(row.id);
+      setTemplatePreview(data.preview || '');
+      toast.success('Template preview generated.');
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Unable to preview template.');
+    }
   }
 
   async function remove(row) {
     if (!confirm(`Delete field ${row.label || row.field_key}? Existing saved values will remain in records but the field will no longer show in forms.`)) return;
-    await configurationApi.deleteDynamicField(row.id);
-    await load();
+    try {
+      await configurationApi.deleteDynamicField(row.id);
+      toast.success('Field deleted successfully.');
+      await load();
+      await onChanged?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Unable to delete field.');
+    }
   }
 
   return (
@@ -307,7 +346,14 @@ export default function Configuration({ permissions = {} }) {
           cols={['id', 'type_label', 'name', 'default_label', 'active_label']}
           onEdit={permissions.configurationManage ? editTemplate : null}
           onDelete={permissions.configurationManage ? removeTemplate : null}
+          extraActions={permissions.configurationManage ? [{ label: 'Preview', onClick: previewTemplate }] : []}
         />
+        {templatePreview && (
+          <div className="template-preview-box">
+            <h3>Template Preview</h3>
+            <pre>{templatePreview}</pre>
+          </div>
+        )}
       </div>
 
       <div className="card">

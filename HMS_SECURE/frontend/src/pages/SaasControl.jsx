@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Building2, Crown, Download, Gauge, IndianRupee, ShieldAlert, Users, PlayCircle, PauseCircle, XCircle, ReceiptText, CreditCard, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Building2, Crown, Download, Gauge, IndianRupee, ShieldAlert, Users, PlayCircle, PauseCircle, XCircle, ReceiptText, CreditCard, Link as LinkIcon, CheckCircle2, ServerCog, ArrowRightLeft, RotateCcw } from 'lucide-react';
 import { saasApi } from '../api';
 
 const money = (value = 0) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
@@ -38,23 +38,28 @@ export default function SaasControl() {
   const [businessPlans, setBusinessPlans] = useState([]);
   const [license, setLicense] = useState(null);
   const [planForm, setPlanForm] = useState({ plan_id: '', name: '', monthly_price_inr: '', trial_days: 14, support_level: 'standard', modules: 'dashboard,patients,doctors,appointments,billing', limits: '{\"users\":10,\"patients\":2000,\"doctors\":5}' });
-  const [onboardingForm, setOnboardingForm] = useState({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, admin_full_name: '', admin_email: '', admin_password: '' });
+  const [onboardingForm, setOnboardingForm] = useState({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, create_tenant_db: true, admin_full_name: '', admin_email: '', admin_password: '' });
+  const [tenantDb, setTenantDb] = useState({ summary: {}, hospitals: [], backups: [], migrations: [], connection_status: [] });
+  const [migrationPreview, setMigrationPreview] = useState(null);
 
   async function load() {
     setLoading(true);
     try {
-      const [res, invoiceRes, billingRes, intentRes, planRes, licenseRes] = await Promise.all([
+      const [res, invoiceRes, billingRes, intentRes, planRes, licenseRes, tenantDbRes, migrationsRes] = await Promise.all([
         saasApi.overview(),
         saasApi.invoices(),
         saasApi.billingSummary(),
         saasApi.paymentIntents(),
         saasApi.businessPlans(),
         saasApi.licenseStatus().catch(() => ({ data: null })),
+        saasApi.tenantDbOverview().catch(() => ({ data: { summary: {}, hospitals: [], backups: [], connection_status: [] } })),
+        saasApi.tenantMigrations().catch(() => ({ data: [] })),
       ]);
       setData(res.data || { summary: {}, tenants: [], plans: [] });
       setBilling({ invoices: invoiceRes.data || [], summary: billingRes.data || {}, intents: intentRes.data || [] });
       setBusinessPlans(planRes.data || []);
       setLicense(licenseRes.data || null);
+      setTenantDb({ ...(tenantDbRes.data || { summary: {}, hospitals: [], backups: [], connection_status: [] }), migrations: migrationsRes.data || [] });
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to load SaaS control center');
     } finally {
@@ -102,9 +107,9 @@ export default function SaasControl() {
     e.preventDefault();
     if (!onboardingForm.name) return toast.error('Hospital name is required');
     try {
-      await saasApi.onboardHospital({ ...onboardingForm, trial_days: Number(onboardingForm.trial_days || 0) });
+      await saasApi.onboardHospital({ ...onboardingForm, trial_days: Number(onboardingForm.trial_days || 0), create_tenant_db: Boolean(onboardingForm.create_tenant_db) });
       toast.success('Hospital onboarded');
-      setOnboardingForm({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, admin_full_name: '', admin_email: '', admin_password: '' });
+      setOnboardingForm({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, create_tenant_db: true, admin_full_name: '', admin_email: '', admin_password: '' });
       load();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Hospital onboarding failed');
@@ -213,6 +218,71 @@ export default function SaasControl() {
     }
   }
 
+
+  async function provisionTenantDatabase(tenant) {
+    try {
+      const res = await saasApi.provisionTenantDb(tenant.id);
+      toast.success(`Tenant DB ready: ${res.data?.tenant_db_name || tenant.name}`);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Tenant DB provision failed');
+    }
+  }
+
+  async function backupTenantDatabase(tenant) {
+    try {
+      await saasApi.backupTenantDb(tenant.id, { notes: 'Manual backup from SaaS Control Center' });
+      toast.success('Tenant backup queued');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Tenant backup failed');
+    }
+  }
+
+  async function verifyBackup(backup) {
+    try {
+      await saasApi.verifyTenantBackup(backup.id);
+      toast.success('Backup verification completed');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Backup verification failed');
+    }
+  }
+
+
+  async function previewMigration(tenant) {
+    try {
+      const res = await saasApi.migrationPreview(tenant.id);
+      setMigrationPreview(res.data?.preview || res.data);
+      toast.success('Migration preview generated');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Migration preview failed');
+    }
+  }
+
+  async function runTenantMigration(tenant) {
+    if (!window.confirm(`Copy shared data for ${tenant.name} into its tenant database? Source data will not be deleted.`)) return;
+    try {
+      await saasApi.runTenantMigration(tenant.id, { delete_source: false, overwrite_existing: false });
+      toast.success('Tenant migration completed safely');
+      setMigrationPreview(null);
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Tenant migration failed');
+    }
+  }
+
+  async function restoreDryRun(backup) {
+    try {
+      const res = await saasApi.restoreDryRun(backup.id);
+      toast.success(res.data?.message || 'Restore dry-run completed');
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Restore dry-run failed');
+    }
+  }
+
   async function exportInvoices() {
     try {
       const res = await saasApi.exportInvoices();
@@ -309,6 +379,7 @@ export default function SaasControl() {
             <input placeholder="Admin full name optional" value={onboardingForm.admin_full_name} onChange={(e) => setOnboardingForm({ ...onboardingForm, admin_full_name: e.target.value })} />
             <input placeholder="Admin email optional" value={onboardingForm.admin_email} onChange={(e) => setOnboardingForm({ ...onboardingForm, admin_email: e.target.value })} />
             <input type="password" placeholder="Admin password optional" value={onboardingForm.admin_password} onChange={(e) => setOnboardingForm({ ...onboardingForm, admin_password: e.target.value })} />
+            <label className="checkRow"><input type="checkbox" checked={onboardingForm.create_tenant_db !== false} onChange={(e) => setOnboardingForm({ ...onboardingForm, create_tenant_db: e.target.checked })} /> Create separate tenant database</label>
             <button type="submit"><Building2 size={16} /> Onboard hospital</button>
           </form>
         </div>
@@ -337,6 +408,80 @@ export default function SaasControl() {
             ))}
             {!Object.keys(summary.status_breakdown || {}).length && <p className="muted">No status data yet.</p>}
           </div>
+        </div>
+      </div>
+
+
+
+      <div className="card">
+        <div className="sectionTitleRow">
+          <div>
+            <h2>Tenant database isolation & backups</h2>
+            <p>Each new hospital can have a separate MongoDB database. Old shared-database tenants remain safe until provisioned or migrated.</p>
+          </div>
+        </div>
+        <div className="statsGrid saasStats compactStats">
+          <div className="statCard"><span>Isolated DBs</span><strong>{tenantDb.summary?.isolated_databases || 0}</strong><small>Database-per-tenant</small><ServerCog size={24} /></div>
+          <div className="statCard"><span>Shared tenants</span><strong>{tenantDb.summary?.shared_database_hospitals || 0}</strong><small>Backward-compatible mode</small><ShieldAlert size={24} /></div>
+          <div className="statCard"><span>Backup records</span><strong>{tenantDb.summary?.latest_backups || 0}</strong><small>Recent backup queue</small><Download size={24} /></div>
+        </div>
+        <div className="tenantUsageList">
+          {(tenantDb.hospitals || []).slice(0, 10).map((tenant) => (
+            <article className="tenantUsageCard" key={tenant.id}>
+              <div className="tenantUsageHead">
+                <div>
+                  <h3>{tenant.name}</h3>
+                  <p>{tenant.hospital_code} · {tenant.tenant_db_name || 'shared database'} · {tenant.tenant_db_status || 'shared'}</p>
+                </div>
+                <div className="tenantTags"><span className="statusPill mutedPill">{tenant.tenant_db_name ? 'isolated' : 'shared'}</span></div>
+              </div>
+              <div className="invoicePaymentRow">
+                {!tenant.tenant_db_name && <button type="button" className="ghostBtn" onClick={() => provisionTenantDatabase(tenant)}><ServerCog size={14} /> Provision DB</button>}
+                <button type="button" className="ghostBtn" onClick={() => previewMigration(tenant)}><ArrowRightLeft size={14} /> Preview migration</button>
+                <button type="button" className="ghostBtn" onClick={() => runTenantMigration(tenant)}><CheckCircle2 size={14} /> Run safe copy</button>
+                {tenant.tenant_db_name && <button type="button" className="ghostBtn" onClick={() => backupTenantDatabase(tenant)}><Download size={14} /> Backup now</button>}
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {migrationPreview && (
+          <div className="card innerPanel">
+            <div className="sectionTitleRow compact"><div><h3>Last migration preview</h3><p>{migrationPreview.tenant_db_name} · source {migrationPreview.total_source || 0} · ready {migrationPreview.total_ready_to_copy || 0} · conflicts {migrationPreview.total_conflicts || 0}</p></div></div>
+            <div className="miniTable">
+              {(migrationPreview.collections || []).filter((x) => x.source_count || x.target_count || x.conflicts).slice(0, 12).map((row) => (
+                <div className="planLine" key={row.collection}><div><b>{row.collection}</b><span>source {row.source_count} · target {row.target_count}</span></div><strong>{row.conflicts ? `${row.conflicts} conflicts` : `${row.ready_to_copy} ready`}</strong></div>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="sectionTitleRow compact gatewayTitle"><div><h3>Recent tenant backups</h3><p>Super admin can see backup status for all hospitals.</p></div></div>
+        <div className="tenantUsageList invoiceList">
+          {(tenantDb.backups || []).slice(0, 8).map((backup) => (
+            <article className="tenantUsageCard invoiceCard" key={backup.id}>
+              <div className="tenantUsageHead">
+                <div><h3>{backup.hospital_name || backup.tenant_db_name}</h3><p>{backup.file_name || 'Backup file pending'} · {backup.tenant_db_name}</p></div>
+                <div className="tenantTags"><span className={`statusPill statusPill-${backup.status}`}>{backup.status}</span></div>
+              </div>
+              <div className="billingMeta"><span>Size: {backup.size_bytes || 0} bytes</span><span>Completed: {backup.completed_at || 'Pending'}</span><span>Verified: {backup.verified_at || 'Not verified'}</span></div>
+              <div className="invoicePaymentRow"><button type="button" className="ghostBtn" onClick={() => verifyBackup(backup)}>Verify file</button><button type="button" className="ghostBtn" onClick={() => restoreDryRun(backup)}><RotateCcw size={14} /> Restore dry-run</button></div>
+            </article>
+          ))}
+          {!(tenantDb.backups || []).length && <p className="muted">No tenant backups yet.</p>}
+        </div>
+
+        <div className="sectionTitleRow compact gatewayTitle"><div><h3>Recent tenant migrations</h3><p>Copy-only migration logs. Source data remains safe unless explicit delete mode is used.</p></div></div>
+        <div className="tenantUsageList invoiceList">
+          {(tenantDb.migrations || []).slice(0, 8).map((migration) => (
+            <article className="tenantUsageCard invoiceCard" key={migration.id}>
+              <div className="tenantUsageHead">
+                <div><h3>{migration.hospital_name || migration.tenant_db_name}</h3><p>{migration.mode} · {migration.tenant_db_name}</p></div>
+                <div className="tenantTags"><span className={`statusPill statusPill-${migration.status}`}>{migration.status}</span></div>
+              </div>
+              <div className="billingMeta"><span>Source: {migration.total_source || 0}</span><span>Copied: {migration.total_copied || 0}</span><span>Conflicts: {migration.total_conflicts || 0}</span><span>Completed: {migration.completed_at || '—'}</span></div>
+            </article>
+          ))}
+          {!(tenantDb.migrations || []).length && <p className="muted">No tenant migrations yet.</p>}
         </div>
       </div>
 

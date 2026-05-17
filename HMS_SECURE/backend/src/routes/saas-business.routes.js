@@ -5,6 +5,7 @@ const { verifyToken, requirePermission } = require('../middleware/auth');
 const { Hospital, User, SaaSPlan } = require('../models');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
 const { auditEvent } = require('../utils/audit');
+const { buildTenantDbName, ensureTenantDatabase } = require('../config/tenantDb');
 const {
   PLAN_DEFINITIONS,
   getPlanId,
@@ -142,8 +143,15 @@ router.post('/saas/onboarding/hospitals', verifyToken, requirePermission('hospit
     license_expiry: status === 'trial' ? addDays(trialDays) : addDays(30),
     notes: req.body.notes || 'Created from SaaS onboarding flow',
   };
+  const createIsolatedDb = req.body.create_tenant_db !== false;
+  const tenantDbName = createIsolatedDb ? buildTenantDbName({ hospital_code: code, name }) : null;
+  if (tenantDbName) await ensureTenantDatabase(tenantDbName);
+
   const hospital = await Hospital.create({
     hospital_code: code,
+    tenant_db_name: tenantDbName,
+    tenant_db_status: tenantDbName ? 'active' : 'shared',
+    tenant_db_created_at: tenantDbName ? new Date() : null,
     name,
     type,
     status: 'active',
@@ -174,6 +182,7 @@ router.post('/saas/onboarding/hospitals', verifyToken, requirePermission('hospit
       email: adminEmail,
       password: await bcrypt.hash(String(adminPassword), BCRYPT_ROUNDS),
       hospital_id: hospital.id,
+      tenant_db_name: tenantDbName || null,
       role: 'hospital_admin',
       status: 'active',
       phone: req.body.admin_phone || req.body.initial_admin?.phone || '',
@@ -182,7 +191,7 @@ router.post('/saas/onboarding/hospitals', verifyToken, requirePermission('hospit
   }
 
   await auditEvent({ req, userId: req.user.id, hospital_id: Number(req.user.hospital_id || DEFAULT_HOSPITAL_ID), action: `Onboarded hospital ${name}`, module_name: 'saas_onboarding', entity_type: 'hospital', entity_id: hospital.id, new_value: { hospital: hospital.toJSON(), admin_user: publicUser(adminUser) } });
-  res.status(201).json({ message: 'Hospital onboarded successfully', hospital, admin_user: publicUser(adminUser), license: await getHospitalSubscription(hospital.id) });
+  res.status(201).json({ message: 'Hospital onboarded successfully', hospital, admin_user: publicUser(adminUser), tenant_db_name: tenantDbName, storage_mode: tenantDbName ? 'database-per-tenant' : 'shared-database', license: await getHospitalSubscription(hospital.id) });
 }));
 
 router.get('/saas/onboarding/checklist', verifyToken, requirePermission('hospital.manage'), (_req, res) => {

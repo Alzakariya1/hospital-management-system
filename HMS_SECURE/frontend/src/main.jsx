@@ -1588,7 +1588,7 @@ function App() {
               <AuditSecurity permissions={permissions} />
             )}
             {tab === "configuration" && (
-              <Configuration permissions={permissions} />
+              <Configuration permissions={permissions} onChanged={load} />
             )}
             {tab === "communications" && (
               <Communications />
