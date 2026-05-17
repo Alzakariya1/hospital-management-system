@@ -30,6 +30,7 @@ import {
   PackageSearch,
   BarChart3,
   ServerCog,
+  Presentation,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -77,6 +78,7 @@ import {
   IntegrationCenter,
   CommandCenter,
   ProductionOps,
+  SalesDemoCenter,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1085,6 +1087,7 @@ function App() {
     ["configuration", "Configuration", SlidersHorizontal],
     ["communications", "Communications", MessageCircle],
     ["saasControl", "SaaS Control", Crown],
+    ["salesDemo", "Sales Demo", Presentation],
     ["tenants", "Hospitals", Building2],
     ["integration", "FHIR APIs", FileCode2],
     ["hl7", "HL7 Ready", Link2],
@@ -1547,6 +1550,9 @@ function App() {
             )}
             {tab === "saasControl" && (
               <SaasControl />
+            )}
+            {tab === "salesDemo" && (
+              <SalesDemoCenter />
             )}
             {tab === "tenants" && (
               <TenantControl

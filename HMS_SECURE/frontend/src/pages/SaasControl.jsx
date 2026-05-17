@@ -35,18 +35,26 @@ export default function SaasControl() {
   const [billing, setBilling] = useState({ summary: {}, invoices: [], intents: [] });
   const [invoiceForm, setInvoiceForm] = useState({ hospital_id: '', billing_cycle: 'monthly', tax_amount: '0', discount_amount: '0', due_date: '' });
   const [paymentForms, setPaymentForms] = useState({});
+  const [businessPlans, setBusinessPlans] = useState([]);
+  const [license, setLicense] = useState(null);
+  const [planForm, setPlanForm] = useState({ plan_id: '', name: '', monthly_price_inr: '', trial_days: 14, support_level: 'standard', modules: 'dashboard,patients,doctors,appointments,billing', limits: '{\"users\":10,\"patients\":2000,\"doctors\":5}' });
+  const [onboardingForm, setOnboardingForm] = useState({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, admin_full_name: '', admin_email: '', admin_password: '' });
 
   async function load() {
     setLoading(true);
     try {
-      const [res, invoiceRes, billingRes, intentRes] = await Promise.all([
+      const [res, invoiceRes, billingRes, intentRes, planRes, licenseRes] = await Promise.all([
         saasApi.overview(),
         saasApi.invoices(),
         saasApi.billingSummary(),
         saasApi.paymentIntents(),
+        saasApi.businessPlans(),
+        saasApi.licenseStatus().catch(() => ({ data: null })),
       ]);
       setData(res.data || { summary: {}, tenants: [], plans: [] });
       setBilling({ invoices: invoiceRes.data || [], summary: billingRes.data || {}, intents: intentRes.data || [] });
+      setBusinessPlans(planRes.data || []);
+      setLicense(licenseRes.data || null);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to load SaaS control center');
     } finally {
@@ -66,6 +74,42 @@ export default function SaasControl() {
       return matchesSearch && matchesPlan && matchesStatus;
     });
   }, [data.tenants, query, planFilter, statusFilter]);
+
+
+  async function saveBusinessPlan(e) {
+    e.preventDefault();
+    try {
+      const limits = planForm.limits ? JSON.parse(planForm.limits) : {};
+      const payload = {
+        plan_id: planForm.plan_id,
+        name: planForm.name,
+        monthly_price_inr: Number(planForm.monthly_price_inr || 0),
+        trial_days: Number(planForm.trial_days || 0),
+        support_level: planForm.support_level || 'standard',
+        modules: String(planForm.modules || '').split(',').map((x) => x.trim()).filter(Boolean),
+        limits,
+      };
+      await saasApi.createBusinessPlan(payload);
+      toast.success('SaaS plan created');
+      setPlanForm({ plan_id: '', name: '', monthly_price_inr: '', trial_days: 14, support_level: 'standard', modules: 'dashboard,patients,doctors,appointments,billing', limits: '{\"users\":10,\"patients\":2000,\"doctors\":5}' });
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Plan save failed');
+    }
+  }
+
+  async function onboardHospital(e) {
+    e.preventDefault();
+    if (!onboardingForm.name) return toast.error('Hospital name is required');
+    try {
+      await saasApi.onboardHospital({ ...onboardingForm, trial_days: Number(onboardingForm.trial_days || 0) });
+      toast.success('Hospital onboarded');
+      setOnboardingForm({ name: '', hospital_code: '', type: 'hospital', plan: 'clinic', trial_days: 14, admin_full_name: '', admin_email: '', admin_password: '' });
+      load();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Hospital onboarding failed');
+    }
+  }
 
   async function tenantAction(tenant, action) {
     try {
@@ -219,6 +263,55 @@ export default function SaasControl() {
         <div className="statCard"><span>Active MRR</span><strong>{money(summary.monthly_recurring_revenue)}</strong><small>Based on active plan pricing</small><IndianRupee size={24} /></div>
         <div className="statCard"><span>Recorded revenue</span><strong>{money(summary.total_revenue_recorded)}</strong><small>From hospital billing data</small><Gauge size={24} /></div>
         <div className="statCard"><span>Needs attention</span><strong>{riskyTenants.length}</strong><small>Limit/subscription warnings</small><ShieldAlert size={24} /></div>
+      </div>
+
+
+      {license && (
+        <div className="card licenseStrip">
+          <div>
+            <span className="eyebrow">Current tenant license</span>
+            <h3>{license.hospital_name} · {license.status}</h3>
+            <p>{license.blocked ? 'Access should be restricted until billing/license is fixed.' : 'License is currently usable.'} {license.license_expiry ? `Expiry: ${license.license_expiry}` : ''}</p>
+          </div>
+          {!!license.warnings?.length && <div className="warningBox">{license.warnings.join(' · ')}</div>}
+        </div>
+      )}
+
+      <div className="grid twoCol saasPanels">
+        <div className="card">
+          <div className="sectionTitleRow compact"><div><h3>SaaS plan builder</h3><p>Create custom sellable plans without touching code.</p></div></div>
+          <form className="invoiceBuilder planBuilder" onSubmit={saveBusinessPlan}>
+            <input placeholder="Plan ID e.g. pro_plus" value={planForm.plan_id} onChange={(e) => setPlanForm({ ...planForm, plan_id: e.target.value })} />
+            <input placeholder="Plan name" value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} />
+            <input type="number" placeholder="Monthly price INR" value={planForm.monthly_price_inr} onChange={(e) => setPlanForm({ ...planForm, monthly_price_inr: e.target.value })} />
+            <input type="number" placeholder="Trial days" value={planForm.trial_days} onChange={(e) => setPlanForm({ ...planForm, trial_days: e.target.value })} />
+            <input placeholder="Support level" value={planForm.support_level} onChange={(e) => setPlanForm({ ...planForm, support_level: e.target.value })} />
+            <input placeholder="Modules comma separated" value={planForm.modules} onChange={(e) => setPlanForm({ ...planForm, modules: e.target.value })} />
+            <textarea placeholder='Limits JSON' value={planForm.limits} onChange={(e) => setPlanForm({ ...planForm, limits: e.target.value })} />
+            <button type="submit"><Crown size={16} /> Create plan</button>
+          </form>
+          <div className="planBreakdown miniPlanList">
+            {businessPlans.slice(0, 6).map((plan) => <div className="planLine" key={plan.plan_id || plan.id}><div><Crown size={16} /><b>{plan.name}</b><span>{plan.source || 'system'} · {plan.support_level || 'standard'}</span></div><strong>{money(plan.monthly_price_inr)}</strong></div>)}
+          </div>
+        </div>
+        <div className="card">
+          <div className="sectionTitleRow compact"><div><h3>Hospital onboarding</h3><p>Create tenant, attach plan and optional first admin in one flow.</p></div></div>
+          <form className="invoiceBuilder planBuilder" onSubmit={onboardHospital}>
+            <input placeholder="Hospital name" value={onboardingForm.name} onChange={(e) => setOnboardingForm({ ...onboardingForm, name: e.target.value })} />
+            <input placeholder="Hospital code" value={onboardingForm.hospital_code} onChange={(e) => setOnboardingForm({ ...onboardingForm, hospital_code: e.target.value })} />
+            <select value={onboardingForm.type} onChange={(e) => setOnboardingForm({ ...onboardingForm, type: e.target.value })}>
+              <option value="hospital">Hospital</option><option value="clinic">Clinic</option><option value="diagnostic_center">Diagnostic Center</option><option value="nursing_home">Nursing Home</option>
+            </select>
+            <select value={onboardingForm.plan} onChange={(e) => setOnboardingForm({ ...onboardingForm, plan: e.target.value })}>
+              {(businessPlans.length ? businessPlans : data.plans || []).map((plan) => <option key={plan.plan_id || plan.id} value={plan.plan_id || plan.id}>{plan.name}</option>)}
+            </select>
+            <input type="number" placeholder="Trial days" value={onboardingForm.trial_days} onChange={(e) => setOnboardingForm({ ...onboardingForm, trial_days: e.target.value })} />
+            <input placeholder="Admin full name optional" value={onboardingForm.admin_full_name} onChange={(e) => setOnboardingForm({ ...onboardingForm, admin_full_name: e.target.value })} />
+            <input placeholder="Admin email optional" value={onboardingForm.admin_email} onChange={(e) => setOnboardingForm({ ...onboardingForm, admin_email: e.target.value })} />
+            <input type="password" placeholder="Admin password optional" value={onboardingForm.admin_password} onChange={(e) => setOnboardingForm({ ...onboardingForm, admin_password: e.target.value })} />
+            <button type="submit"><Building2 size={16} /> Onboard hospital</button>
+          </form>
+        </div>
       </div>
 
       <div className="grid twoCol saasPanels">

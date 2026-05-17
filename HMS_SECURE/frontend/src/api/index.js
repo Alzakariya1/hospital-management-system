@@ -37,3 +37,5 @@ export { integrationApi } from './integrationApi';
 
 export { commandCenterApi } from './commandCenterApi';
 export { operationsApi } from './operationsApi';
+
+export { salesApi } from './salesApi';

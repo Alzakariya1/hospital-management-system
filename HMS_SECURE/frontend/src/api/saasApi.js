@@ -15,4 +15,10 @@ export const saasApi = {
   confirmPaymentIntent: (id, data = {}) => api.post(`/saas/payment-intents/${id}/confirm`, data),
   markOverdueInvoices: () => api.post('/saas/invoices/mark-overdue'),
   exportInvoices: () => api.get('/saas/invoices/export.csv', { responseType: 'blob' }),
+  businessPlans: () => api.get('/saas/business/plans'),
+  createBusinessPlan: (data) => api.post('/saas/business/plans', data),
+  updateBusinessPlan: (planId, data) => api.patch(`/saas/business/plans/${planId}`, data),
+  licenseStatus: () => api.get('/saas/license/status'),
+  onboardHospital: (data) => api.post('/saas/onboarding/hospitals', data),
+  onboardingChecklist: () => api.get('/saas/onboarding/checklist'),
 };

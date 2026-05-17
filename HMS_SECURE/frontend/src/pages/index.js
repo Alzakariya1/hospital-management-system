@@ -34,3 +34,5 @@ export { default as IntegrationCenter } from './IntegrationCenter';
 
 export { default as CommandCenter } from './CommandCenter';
 export { default as ProductionOps } from './ProductionOps';
+
+export { default as SalesDemoCenter } from './SalesDemoCenter';

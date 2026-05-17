@@ -1109,3 +1109,24 @@ Added enterprise analytics foundation without breaking existing HMS modules.
 - Added backend QA smoke script to verify critical route surface after V31-V36.
 - Added pilot readiness checklist for tenant isolation, RBAC, CRUD, backup and demo flow.
 - No large new clinical module added in this phase; this phase is for stability and pilot readiness.
+
+## V38: SaaS Business Layer + Subscription System
+
+Added dynamic SaaS plan model, SaaS plan management endpoints, hospital onboarding endpoint, license status endpoint, and upgraded SaaS Control Center UI with plan builder and onboarding form. This phase focuses on turning the HMS into a sellable SaaS operating layer with tenant onboarding, trial/license lifecycle, subscription invoices, payment tracking, and plan-based commercial controls.
+
+
+## V39 - Sales Demo + Website Readiness
+
+V39 adds the business-facing sales layer needed before pilot outreach:
+
+- Public marketing content API
+- Demo request capture API
+- Protected demo request pipeline
+- Sales activity notes
+- Sales assets API
+- Frontend Sales Demo Center
+- Pricing/package comparison
+- Demo script and checklist
+- Website integration documentation
+
+This phase does not remove or alter existing V31-V38 hospital workflows. It prepares the HMS for real demos, lead capture, pilot conversations and product website integration.

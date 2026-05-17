@@ -140,6 +140,7 @@ export const MODULES = [
   { id: 'communications', label: 'Communications' },
   { id: 'tenants', label: 'Hospitals' },
   { id: 'saasControl', label: 'SaaS Control' },
+  { id: 'salesDemo', label: 'Sales Demo' },
 ];
 
 export const DEFAULT_ENABLED_MODULES = MODULES.map((module) => module.id);
@@ -209,6 +210,7 @@ export const TAB_PERMISSIONS = {
   communications: 'communication.view',
   tenants: 'hospital.manage',
   saasControl: 'hospital.manage',
+  salesDemo: 'hospital.manage',
 };
 
 export const TAB_MODULES = {
@@ -242,11 +244,12 @@ export const TAB_MODULES = {
   communications: ['communications'],
   tenants: ['tenants'],
   saasControl: ['tenants'],
+  salesDemo: ['tenants'],
 };
 
 // Platform-level tabs are controlled by permission only.
 // They must not be hidden by hospital module ON/OFF settings.
-export const PLATFORM_TABS = ['tenants', 'saasControl', 'auditSecurity', 'configuration'];
+export const PLATFORM_TABS = ['tenants', 'saasControl', 'salesDemo', 'auditSecurity', 'configuration'];
 
 export const TAB_FEATURES = {
   fhir: 'fhir',

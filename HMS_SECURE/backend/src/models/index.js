@@ -872,6 +872,53 @@ const WebhookEvent = makeModel("WebhookEvent", "webhook_events", {
     last_error: String,
 });
 
+
+const SaaSPlan = makeModel("SaaSPlan", "saas_plans", {
+    plan_id: { type: String, unique: true, index: true },
+    name: { type: String, required: true },
+    description: String,
+    monthly_price_inr: { type: Number, default: 0 },
+    billing_cycles: { type: [String], default: ["monthly", "yearly"] },
+    trial_days: { type: Number, default: 14 },
+    support_level: { type: String, default: "standard" },
+    limits: { type: Object, default: {} },
+    modules: { type: [String], default: [] },
+    features: { type: Object, default: {} },
+    is_active: { type: Boolean, default: true },
+});
+SaaSPlan.schema.index({ is_active: 1, monthly_price_inr: 1 }, { name: "saas_plan_active_price_lookup" });
+
+
+const DemoRequest = makeModel("DemoRequest", "demo_requests", {
+    name: { type: String, required: true },
+    email: { type: String, required: true, index: true },
+    phone: String,
+    organization: { type: String, required: true, index: true },
+    organization_type: { type: String, default: "hospital", index: true },
+    city: String,
+    staff_size: String,
+    interest: { type: [String], default: [] },
+    preferred_demo_date: String,
+    follow_up_at: Date,
+    assigned_to: String,
+    message: String,
+    source: { type: String, default: "website" },
+    status: { type: String, default: "new", index: true },
+    notes: String,
+});
+DemoRequest.schema.index({ status: 1, created_at: -1 }, { name: "demo_request_status_recent_lookup" });
+
+const SalesActivity = makeModel("SalesActivity", "sales_activities", {
+    demo_request_id: { type: Number, index: true },
+    activity_type: { type: String, default: "note", index: true },
+    subject: String,
+    notes: String,
+    outcome: String,
+    next_follow_up_at: Date,
+    created_by: Number,
+});
+SalesActivity.schema.index({ demo_request_id: 1, created_at: -1 }, { name: "sales_activity_demo_recent_lookup" });
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -916,6 +963,7 @@ module.exports = {
     DynamicField,
     Template,
     Notification,
+    SaaSPlan,
     SaaSInvoice,
     SaaSPayment,
     SaaSPaymentIntent,
@@ -937,4 +985,6 @@ module.exports = {
     IntegrationLog,
     WebhookSubscription,
     WebhookEvent,
+    DemoRequest,
+    SalesActivity,
 };

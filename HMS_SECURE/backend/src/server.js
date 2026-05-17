@@ -80,6 +80,8 @@ app.use("/api", require("./routes/template.routes"));
 app.use("/api", require("./routes/subscription.routes"));
 app.use("/api", require("./routes/saas.routes"));
 app.use("/api", require("./routes/saas-billing.routes"));
+app.use("/api", require("./routes/saas-business.routes"));
+app.use("/api", require("./routes/sales.routes"));
 app.use(notFound);
 app.use(errorHandler);
 if (require.main === module) {
