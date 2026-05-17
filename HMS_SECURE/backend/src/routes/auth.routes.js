@@ -19,7 +19,7 @@ function validatePassword(password) { const min = Number(process.env.PASSWORD_MI
 
 async function ensureDefaultHospital() {
     const defaultId = DEFAULT_HOSPITAL_ID;
-    let hospital = await Hospital.findOne({ id: defaultId });
+    let hospital = await Hospital.findOne({ hospital_code: 'DEFAULT' }) || await Hospital.findOne({ id: defaultId, hospital_code: { $in: ['DEFAULT', null, undefined] } });
     if (!hospital) {
         hospital = await Hospital.create({
             id: defaultId,
@@ -37,8 +37,25 @@ async function ensureDefaultHospital() {
 }
 
 async function audit(req, userId, action, module_name = 'auth', hospital_id = DEFAULT_HOSPITAL_ID, extra = {}) { await auditEvent({ req, userId, action, module_name, hospital_id, ...extra }); }
-const signToken = (user, hospital = null) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, hospital_id: Number(user.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1), tenant_db_name: hospital?.tenant_db_name || user.tenant_db_name || null, permissions: getUserPermissions(user) }, process.env.JWT_SECRET || 'dev_secret_change_me', { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
+const jwtSecret = () => process.env.JWT_SECRET || 'dev_secret_change_me';
+const signToken = (user, hospital = null) => jwt.sign({ id: user.id, email: user.email, role: user.role, full_name: user.full_name, hospital_id: Number(user.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1), tenant_db_name: hospital?.tenant_db_name || user.tenant_db_name || null, permissions: getUserPermissions(user) }, jwtSecret(), { expiresIn: process.env.JWT_EXPIRES_IN || '8h' });
 const publicUser = (u) => { const x = u.toJSON ? u.toJSON() : { ...u }; delete x.password; delete x.reset_token; delete x.reset_token_expires; x.hospital_id = Number(x.hospital_id || process.env.DEFAULT_HOSPITAL_ID || 1); x.tenant_db_name = x.tenant_db_name || null; x.permissions = getUserPermissions(x); return x; };
+
+router.get('/login-status', asyncHandler(async (req, res) => {
+  const email = normalizeEmail(req.query.email || process.env.SEED_ADMIN_EMAIL || 'admin@hospital.com');
+  const user = await User.findOne({ email }).select('id email role status hospital_id tenant_db_name password_changed_at last_login_at').lean();
+  const hospital = user?.hospital_id ? await Hospital.findOne({ id: Number(user.hospital_id) }).select('id hospital_code name status tenant_db_name tenant_db_status').lean() : null;
+  res.json({
+    ok: true,
+    email,
+    user_exists: Boolean(user),
+    user: user || null,
+    hospital: hospital || null,
+    jwt_secret_configured: Boolean(process.env.JWT_SECRET && process.env.JWT_SECRET !== 'dev_secret_change_me'),
+    hint: user ? 'If password still fails, run npm run seed on Render Shell to reset admin password.' : 'Admin user missing. Run npm run seed on Render Shell.',
+  });
+}));
+
 router.post('/login', asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body.email);
   const password = req.body.password;
@@ -48,13 +65,13 @@ router.post('/login', asyncHandler(async (req, res) => {
   if (!user) {
     await loginHistoryEvent({ req, email, status: 'failed', reason: 'user_not_found_or_inactive' });
     await audit(req, null, `Failed login for ${email}`, 'security', DEFAULT_HOSPITAL_ID, { status: 'failed', severity: 'warning' });
-    return res.status(401).json({ message: 'Invalid email or password' });
+    return res.status(401).json({ message: 'Invalid email or password. Run backend `npm run seed` on Render Shell to reset the admin login if needed.', code: 'AUTH_INVALID_CREDENTIALS' });
   }
   const ok = await bcrypt.compare(String(password), user.password || '');
   if (!ok) {
     await loginHistoryEvent({ req, user, email, status: 'failed', reason: 'invalid_password' });
     await audit(req, user.id, `Failed login for ${email}`, 'security', user.hospital_id, { status: 'failed', severity: 'warning' });
-    return res.status(401).json({ message: 'Invalid email or password' });
+    return res.status(401).json({ message: 'Invalid email or password. Run backend `npm run seed` on Render Shell to reset the admin password.', code: 'AUTH_INVALID_CREDENTIALS' });
   }
   if (!user.hospital_id) user.hospital_id = DEFAULT_HOSPITAL_ID;
   const hospital = await Hospital.findOne({ id: Number(user.hospital_id || DEFAULT_HOSPITAL_ID) });
