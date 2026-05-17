@@ -4,7 +4,7 @@ const ROLE_PERMISSIONS = {
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'appointment.view', 'portal.patient.view', 'portal.doctor.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
@@ -19,7 +19,7 @@ const ROLE_PERMISSIONS = {
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
@@ -33,7 +33,7 @@ const ROLE_PERMISSIONS = {
   doctor: [
     'dashboard.view',
     'patient.view',
-    'appointment.view', 'appointment.status.update',
+    'appointment.view', 'appointment.status.update', 'portal.doctor.view',
     'opd.view', 'opd.create', 'ipd.view',
     'lab.view', 'radiology.view',
     'admin.profile.manage',
@@ -51,7 +51,7 @@ const ROLE_PERMISSIONS = {
   receptionist: [
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.document.manage',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view',
     'bed.view',
     'opd.view', 'opd.create',
     'billing.view', 'billing.create',
@@ -79,7 +79,7 @@ const ROLE_PERMISSIONS = {
   ],
   patient: [
     'dashboard.view',
-    'appointment.view',
+    'appointment.view', 'portal.patient.view',
     'billing.view',
     'admin.profile.manage',
     'notification.view'

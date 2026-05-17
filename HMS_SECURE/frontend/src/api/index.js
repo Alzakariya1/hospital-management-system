@@ -24,3 +24,5 @@ export { subscriptionApi } from './subscriptionApi';
 
 export { saasApi } from './saasApi';
 export { communicationApi } from './communicationApi';
+
+export { portalApi } from './portalApi';

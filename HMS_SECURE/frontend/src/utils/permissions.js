@@ -6,7 +6,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹2,999/mo',
     description: 'Best for single clinics and small practices.',
     limits: { users: 8, patients: 1500, doctors: 5, appointments_per_month: 1200, medicines: 250, branches: 1, storage_gb: 5 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'billing', 'profile', 'configuration', 'communications'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'billing', 'profile', 'configuration', 'communications'],
   },
   hospital: {
     id: 'hospital',
@@ -14,7 +14,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹9,999/mo',
     description: 'For hospitals that need OPD/IPD, lab, radiology, pharmacy and billing.',
     limits: { users: 50, patients: 25000, doctors: 50, appointments_per_month: 15000, medicines: 5000, branches: 3, storage_gb: 100 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications'],
   },
   enterprise: {
     id: 'enterprise',
@@ -22,7 +22,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹24,999/mo',
     description: 'For chains and enterprise hospitals with advanced controls and integrations.',
     limits: { users: 500, patients: 500000, doctors: 500, appointments_per_month: 200000, medicines: 50000, branches: 50, storage_gb: 1000 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications', 'tenants'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications', 'tenants'],
   },
 };
 
@@ -47,7 +47,7 @@ export const ROLE_PERMISSIONS = {
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
@@ -60,7 +60,7 @@ export const ROLE_PERMISSIONS = {
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view', 'appointment.status.update',
     'bed.view', 'bed.create', 'bed.status.update',
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
@@ -73,8 +73,8 @@ export const ROLE_PERMISSIONS = {
   doctor: [
     'dashboard.view',
     'patient.view',
-    'appointment.view', 'appointment.status.update',
-    'lab.view', 'radiology.view',
+    'appointment.view', 'appointment.status.update', 'portal.doctor.view',
+    'lab.view', 'radiology.view', 'portal.doctor.view',
     'admin.profile.manage'
   ],
   nurse: [
@@ -87,7 +87,7 @@ export const ROLE_PERMISSIONS = {
   receptionist: [
     'dashboard.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.document.manage',
-    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete',
+    'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view',
     'bed.view',
     'billing.view', 'billing.create',
     'admin.profile.manage'
@@ -110,7 +110,7 @@ export const ROLE_PERMISSIONS = {
   ],
   patient: [
     'dashboard.view',
-    'appointment.view',
+    'appointment.view', 'portal.patient.view',
     'billing.view',
     'admin.profile.manage'
   ]
@@ -121,6 +121,8 @@ export const MODULES = [
   { id: 'patients', label: 'Patients' },
   { id: 'doctors', label: 'Doctors' },
   { id: 'appointments', label: 'Appointments' },
+  { id: 'patientPortal', label: 'Patient Portal' },
+  { id: 'doctorPortal', label: 'Doctor Portal' },
   { id: 'beds', label: 'Beds' },
   { id: 'lab', label: 'Laboratory' },
   { id: 'radiology', label: 'Radiology' },
@@ -184,6 +186,8 @@ export const TAB_PERMISSIONS = {
   patients: 'patient.view',
   doctors: 'doctor.view',
   appointments: 'appointment.view',
+  patientPortal: 'portal.patient.view',
+  doctorPortal: 'portal.doctor.view',
   beds: 'bed.view',
   labs: ['lab.view', 'radiology.view'],
   pharmacy: 'pharmacy.view',
@@ -211,6 +215,8 @@ export const TAB_MODULES = {
   patients: ['patients'],
   doctors: ['doctors'],
   appointments: ['appointments'],
+  patientPortal: ['appointments'],
+  doctorPortal: ['appointments'],
   beds: ['beds'],
   labs: ['lab', 'radiology'],
   pharmacy: ['pharmacy'],

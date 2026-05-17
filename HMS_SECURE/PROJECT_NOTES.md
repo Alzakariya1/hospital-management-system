@@ -936,3 +936,17 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added safe placeholder pages for enabled advanced features so the flags visibly work.
 - Hospital/Enterprise modules remain controlled by selected SaaS plan and enabled module settings.
 - Frontend build passed and backend syntax checks passed.
+
+## V28 - Patient Portal + Doctor Portal Upgrade
+- Added backend portal endpoints:
+  - `GET /api/portal/patient`
+  - `GET /api/portal/doctor`
+- Patient Portal now shows linked patient profile, appointments, prescriptions, bills, lab/radiology reports, documents, and timeline.
+- Doctor Portal now shows linked doctor profile, today queue, schedule, recent consultations, lab/radiology orders, and clinical stats.
+- Staff/admin users can select a patient/doctor from dropdown for review.
+- Patient and doctor logins are auto-linked by email/phone/user id where available.
+- Added role permissions: `portal.patient.view` and `portal.doctor.view`.
+- Added sidebar tabs: Patient Portal and Doctor Portal.
+- Added portal UI styling with theme-aware cards, stats, timeline and status badges.
+- Full frontend production build passed.
+- Backend syntax checks passed for server, portal routes and permission config.

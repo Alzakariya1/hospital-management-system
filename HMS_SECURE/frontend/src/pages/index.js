@@ -17,3 +17,7 @@ export { default as Configuration } from './Configuration';
 export { default as SaasControl } from './SaasControl';
 
 export { default as Communications } from './Communications';
+
+export { default as PatientPortal } from './PatientPortal';
+
+export { default as DoctorPortal } from './DoctorPortal';

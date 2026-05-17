@@ -62,6 +62,8 @@ import {
   Configuration,
   SaasControl,
   Communications,
+  PatientPortal,
+  DoctorPortal,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1021,6 +1023,8 @@ function App() {
     ["patients", "Patients", Users],
     ["doctors", "Doctors", Stethoscope],
     ["appointments", "Appointments", Calendar],
+    ["patientPortal", "Patient Portal", UserCircle],
+    ["doctorPortal", "Doctor Portal", Stethoscope],
     ["beds", "Beds", Bed],
     ["labs", "Lab/Radiology", TestTube2],
     ["pharmacy", "Pharmacy", Pill],
@@ -1365,6 +1369,21 @@ function App() {
                 activeView="doctorProfile"
               />
             )}
+
+            {tab === "patientPortal" && (
+              <PatientPortal
+                user={user}
+                patients={patients}
+              />
+            )}
+
+            {tab === "doctorPortal" && (
+              <DoctorPortal
+                user={user}
+                doctors={doctors}
+              />
+            )}
+
             {tab === "appointments" && (
               <Appointments
                 appointment={appointment}
