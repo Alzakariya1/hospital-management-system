@@ -1025,3 +1025,29 @@ Validation performed:
 Packaging rule:
 - `.env`, `node_modules`, and `dist` are excluded from delivery zip.
 - `package.json`, `package-lock.json`, and `.env.example` are included.
+
+## V32 Advanced LIS/RIS Upgrade
+
+Added enterprise diagnostics workflow without removing previous Lab/Radiology endpoints.
+
+### Backend
+- Added `LabTestTemplate` model with parameter templates, normal ranges, sample type, machine code/API-ready fields.
+- Extended `LabTest` with sample barcode, accession number, result parameters, approval data, PDF URL, and integration payload.
+- Extended `RadiologyTest` with modality, body part, DICOM Study ID, PACS viewer URL, radiologist workflow fields, findings/impression, PDF URL, and integration payload.
+- Added endpoints:
+  - `GET/POST/PUT /api/lab/templates`
+  - `PATCH /api/lab/tests/:id/results`
+  - `PATCH /api/lab/tests/:id/approve`
+  - `GET /api/lab/machine-api/orders`
+  - `PATCH /api/radiology/tests/:id/report`
+  - `PATCH /api/radiology/tests/:id/approve`
+- Kept old endpoints such as `/api/lab/tests`, `/api/lab/upload-report/:id`, `/api/radiology/tests`, and `/api/radiology/upload-report/:id` backward compatible.
+
+### Frontend
+- Upgraded Lab & Radiology screen to Advanced LIS/RIS command view.
+- Added template builder, sample barcode display, accession number display, result entry panel, approval action, DICOM/PACS fields, and radiologist report workflow.
+
+### Testing
+- Backend syntax check passed.
+- Backend route require/load check passed after dependency install.
+- Frontend production build passed.

@@ -128,8 +128,8 @@ const emptyAppointment = {
   notes: "",
 };
 const emptyBed = { ward: "", bed_number: "", status: "available" };
-const emptyLab = { patient_id: "", doctor_id: "", test_name: "", test_category: "General", priority: "routine", notes: "" };
-const emptyRad = { patient_id: "", doctor_id: "", scan_name: "", scan_category: "General", priority: "routine", notes: "" };
+const emptyLab = { patient_id: "", doctor_id: "", template_id: "", test_name: "", test_category: "General", sample_type: "Blood", priority: "routine", notes: "" };
+const emptyRad = { patient_id: "", doctor_id: "", scan_name: "", scan_category: "General", modality: "XRAY", body_part: "", priority: "routine", dicom_study_id: "", pacs_viewer_url: "", notes: "" };
 const emptyMed = { name: "", generic_name: "", category: "", batch_number: "", vendor: "", expiry_date: "", quantity: "", low_stock_threshold: 10, cost_price: "", selling_price: "", unit: "pcs", status: "active" };
 const emptyBill = { patient_id: "", amount: "", status: "unpaid" };
 
@@ -239,6 +239,7 @@ function App() {
   const [bed, setBed] = useState(emptyBed);
   const [lab, setLab] = useState(emptyLab);
   const [rad, setRad] = useState(emptyRad);
+  const [labTemplates, setLabTemplates] = useState([]);
   const [med, setMed] = useState(emptyMed);
   const [bill, setBill] = useState(emptyBill);
   const [editingPatientId, setEditingPatientId] = useState(null);
@@ -266,12 +267,13 @@ function App() {
       bedApi.list(),
       labApi.list(),
       radiologyApi.list(),
+      labApi.templates(),
       pharmacyApi.list(),
       billingApi.list(),
       authApi.getUsers(),
       configurationApi.listPublicFields(),
     ];
-    const [s, p, d, a, ds, b, l, r, m, bi, u, cf] = await Promise.allSettled(calls);
+    const [s, p, d, a, ds, b, l, r, lt, m, bi, u, cf] = await Promise.allSettled(calls);
     if (s.value) setStats(s.value.data);
     if (p.value) setPatients(p.value.data);
     if (d.value) setDoctors(d.value.data);
@@ -280,6 +282,7 @@ function App() {
     if (b.value) setBeds(b.value.data);
     if (l.value) setLabs(l.value.data);
     if (r.value) setRads(r.value.data);
+    if (lt.value) setLabTemplates(lt.value.data);
     if (m.value) setMeds(m.value.data);
     if (bi.value) setBills(bi.value.data);
     if (u.value) setUsersList(u.value.data);
@@ -784,6 +787,36 @@ function App() {
     await radiologyApi.create(rad);
     setRad(emptyRad);
     toast.success("Radiology order created");
+    await load();
+  }
+
+  async function createLabTemplate(payload) {
+    await labApi.createTemplate(payload);
+    toast.success("Lab template created");
+    await load();
+  }
+
+  async function saveLabResults(id, payload) {
+    await labApi.saveResults(id, payload);
+    toast.success("Lab results saved");
+    await load();
+  }
+
+  async function approveLabReport(id, payload = {}) {
+    await labApi.approve(id, payload);
+    toast.success("Lab report approved");
+    await load();
+  }
+
+  async function saveRadiologyReport(id, payload) {
+    await radiologyApi.saveReport(id, payload);
+    toast.success("Radiology report saved");
+    await load();
+  }
+
+  async function approveRadiologyReport(id, payload = {}) {
+    await radiologyApi.approve(id, payload);
+    toast.success("Radiology report approved");
     await load();
   }
 
@@ -1436,6 +1469,10 @@ function App() {
                 setLab={setLab}
                 addLab={addLab}
                 labs={labs}
+                labTemplates={labTemplates}
+                createLabTemplate={createLabTemplate}
+                saveLabResults={saveLabResults}
+                approveLabReport={approveLabReport}
                 rad={rad}
                 setRad={setRad}
                 addRadiology={addRadiology}
@@ -1446,6 +1483,8 @@ function App() {
                 uploadLabReport={uploadLabReport}
                 updateRadiologyStatus={updateRadiologyStatus}
                 uploadRadiologyReport={uploadRadiologyReport}
+                saveRadiologyReport={saveRadiologyReport}
+                approveRadiologyReport={approveRadiologyReport}
                 permissions={permissions}
               />
             )}

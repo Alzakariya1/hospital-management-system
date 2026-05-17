@@ -215,21 +215,57 @@ const Bed = makeModel("Bed", "beds", { hospital_id: { type: Number, default: 1, 
 const OpdRecord = makeModel("OpdRecord", "opd_records", { hospital_id: { type: Number, default: 1, index: true } });
 const IpdAdmission = makeModel("IpdAdmission", "ipd_admissions", { hospital_id: { type: Number, default: 1, index: true } });
 const NursingNote = makeModel("NursingNote", "nursing_notes", { hospital_id: { type: Number, default: 1, index: true } });
+const LabTestTemplate = makeModel("LabTestTemplate", "lab_test_templates", {
+    hospital_id: { type: Number, default: 1, index: true },
+    template_code: { type: String, trim: true, index: true },
+    test_name: { type: String, trim: true, required: true, index: true },
+    test_category: { type: String, default: "General", index: true },
+    sample_type: { type: String, default: "Blood" },
+    container: String,
+    turnaround_hours: { type: Number, default: 24 },
+    price: { type: Number, default: 0 },
+    machine_code: String,
+    loinc_code: String,
+    method: String,
+    parameters: { type: [Object], default: [] }, // name, unit, normal_range, min, max, input_type
+    report_template: String,
+    status: { type: String, default: "active", index: true },
+});
+LabTestTemplate.schema.index({ hospital_id: 1, test_name: 1 }, { name: "lab_template_hospital_test_lookup" });
+
 const LabTest = makeModel("LabTest", "lab_tests", {
     hospital_id: { type: Number, default: 1, index: true },
     patient_id: { type: String, trim: true, index: true },
     doctor_id: { type: String, trim: true, index: true },
     appointment_id: Number,
     opd_id: Number,
+    template_id: Number,
     test_name: String,
     test_category: String,
+    sample_type: String,
+    sample_barcode: { type: String, trim: true, index: true },
+    accession_number: { type: String, trim: true, index: true },
+    machine_order_id: String,
     priority: { type: String, default: "routine" },
-    test_status: { type: String, default: "ordered" },
+    test_status: { type: String, default: "ordered", index: true },
+    collected_by: String,
     sample_collected_at: Date,
+    received_at: Date,
+    processing_started_at: Date,
     completed_at: Date,
+    approved_at: Date,
+    approved_by: String,
+    result_parameters: { type: [Object], default: [] },
+    interpretation: String,
     report_file: String,
+    report_pdf_url: String,
     report_notes: String,
+    report_version: { type: Number, default: 1 },
+    integration_payload: { type: Object, default: {} },
 });
+LabTest.schema.index({ hospital_id: 1, sample_barcode: 1 }, { name: "lab_sample_barcode_lookup" });
+LabTest.schema.index({ hospital_id: 1, test_status: 1, created_at: -1 }, { name: "lab_status_recent_lookup" });
+
 const RadiologyTest = makeModel("RadiologyTest", "radiology_tests", {
     hospital_id: { type: Number, default: 1, index: true },
     patient_id: { type: String, trim: true, index: true },
@@ -238,15 +274,32 @@ const RadiologyTest = makeModel("RadiologyTest", "radiology_tests", {
     opd_id: Number,
     scan_name: String,
     scan_category: String,
+    modality: { type: String, default: "XRAY", index: true },
+    body_part: String,
     priority: { type: String, default: "routine" },
-    status: { type: String, default: "ordered" },
+    status: { type: String, default: "ordered", index: true },
+    accession_number: { type: String, trim: true, index: true },
+    dicom_study_id: { type: String, trim: true, index: true },
+    pacs_viewer_url: String,
     scheduled_at: Date,
     scanned_at: Date,
     reported_at: Date,
+    approved_at: Date,
+    radiologist_id: String,
+    radiologist_name: String,
+    technician_name: String,
+    findings: String,
+    impression: String,
+    recommendation: String,
     image_file: String,
     report_file: String,
+    report_pdf_url: String,
     report_notes: String,
+    report_version: { type: Number, default: 1 },
+    integration_payload: { type: Object, default: {} },
 });
+RadiologyTest.schema.index({ hospital_id: 1, dicom_study_id: 1 }, { name: "radiology_dicom_lookup" });
+RadiologyTest.schema.index({ hospital_id: 1, status: 1, created_at: -1 }, { name: "radiology_status_recent_lookup" });
 const Medicine = makeModel("Medicine", "medicines", {
     hospital_id: { type: Number, default: 1, index: true },
     name: { type: String, trim: true, index: true },
@@ -681,6 +734,7 @@ module.exports = {
     OpdRecord,
     IpdAdmission,
     NursingNote,
+    LabTestTemplate,
     LabTest,
     RadiologyTest,
     Medicine,
