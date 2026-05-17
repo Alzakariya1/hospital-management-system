@@ -1104,3 +1104,8 @@ Added enterprise analytics foundation without breaking existing HMS modules.
 - Backend route syntax and require/load checks passed.
 - Frontend production build passed.
 - Clean package excludes `.env`, `node_modules`, and `dist`.
+
+## V37: SaaS Stabilization + QA + Pilot Readiness
+- Added backend QA smoke script to verify critical route surface after V31-V36.
+- Added pilot readiness checklist for tenant isolation, RBAC, CRUD, backup and demo flow.
+- No large new clinical module added in this phase; this phase is for stability and pilot readiness.

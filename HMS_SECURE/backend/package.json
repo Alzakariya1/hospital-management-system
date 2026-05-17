@@ -15,7 +15,8 @@
     "restore": "node scripts/restore-json.js",
     "verify-backup": "node scripts/verify-backup.js",
     "security-check": "node scripts/security-check.js",
-    "check-routes": "node scripts/check-routes.js"
+    "check-routes": "node scripts/check-routes.js",
+    "qa:smoke": "node scripts/qa-smoke.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
