@@ -185,3 +185,36 @@ Production:
 Frontend: https://your-vercel-app.vercel.app
 Backend:  https://your-render-backend.onrender.com/api
 ```
+
+## V36 DevOps + Production Hardening
+
+This package adds production readiness assets without removing existing HMS modules:
+
+- Docker setup for backend and frontend
+- `docker-compose.yml` for local production smoke testing
+- GitHub Actions CI workflow
+- public liveness/readiness endpoints: `/api/health/live` and `/api/health/ready`
+- backend scripts for route checks, security checks, JSON backup, restore, and backup verification
+- Production Ops UI module for health/backup readiness
+- deployment, security, monitoring, backup/restore and production checklist docs in `/docs`
+
+Useful commands:
+
+```bash
+cd backend
+npm run check-routes
+npm run security-check
+npm run backup
+npm run verify-backup
+npm run health
+```
+
+Docker smoke test:
+
+```bash
+cp backend/.env.example backend/.env
+# update backend/.env
+VITE_API_URL=http://localhost:5000/api docker compose up --build
+```
+
+Important packaging rule for this project: `.env`, `node_modules`, and `dist` must not be committed or included in handover zips. `package.json`, `package-lock.json`, and `.env.example` must stay included.

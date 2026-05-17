@@ -1051,3 +1051,56 @@ Added enterprise diagnostics workflow without removing previous Lab/Radiology en
 - Backend syntax check passed.
 - Backend route require/load check passed after dependency install.
 - Frontend production build passed.
+
+## V33 - NABH / Compliance Center Upgrade
+
+Added enterprise compliance readiness without removing any V32/V31 modules.
+
+### Backend
+- Added compliance models: ConsentForm, IncidentReport, SopDocument, ComplianceChecklist, BackupVerification.
+- Added tenant-safe compliance routes under `/api/compliance/*`.
+- Added role permissions: `compliance.view`, `compliance.manage` for admin and hospital_admin.
+- Added audit logging for compliance creates, updates, checklist seeding and CSV exports.
+- Added CSV exports for consents, incidents, SOPs, checklists and backup verification.
+- Added NABH default checklist seed endpoint.
+
+### Frontend
+- Added Compliance module in sidebar and plan/module configuration.
+- Added Compliance Center UI with summary cards, records table, search, CSV exports and forms.
+- Added workflows for consent forms, incident reporting, SOP approvals, NABH checklist status, and backup/restore verification.
+
+### Testing
+- Backend route/model syntax checked.
+- Backend route require/load checked.
+- Frontend production build checked.
+- Clean package rules verified: no `.env`, no `node_modules`, no `dist`; package files and `.env.example` retained.
+
+
+## V35 Analytics + Hospital Command Center Upgrade
+
+Added enterprise analytics foundation without breaking existing HMS modules.
+
+### Backend
+- Added `backend/src/routes/command-center.routes.js`.
+- Added protected analytics APIs under `/api/command-center/*`:
+  - `/summary` for command KPIs and alerts.
+  - `/revenue` for revenue dashboard and status breakdown.
+  - `/occupancy` for bed status and ward-wise occupancy.
+  - `/doctor-performance` for appointment completion and linked revenue.
+  - `/queue` for live appointment queue monitoring.
+  - `/pharmacy` for stock, sales, low-stock and expiry stats.
+  - `/lab-tat` for lab/radiology turnaround time and pending reports.
+  - `/emergency` for urgent workload monitoring.
+- Added `analytics.view` permission for admin roles.
+- Added `commandCenter` to default enabled hospital modules.
+
+### Frontend
+- Added `frontend/src/api/commandCenterApi.js`.
+- Added `frontend/src/pages/CommandCenter.jsx`.
+- Added sidebar tab: `Command Center`.
+- Added dashboard cards/charts/tables for revenue, occupancy, doctor performance, queue, pharmacy, lab TAT and emergency workload.
+
+### Testing
+- Backend route syntax and require/load checks passed.
+- Frontend production build passed.
+- Clean package excludes `.env`, `node_modules`, and `dist`.

@@ -27,3 +27,10 @@ export { default as EMR } from './EMR';
 export { default as InsuranceTPA } from './InsuranceTPA';
 
 export { default as Inventory } from './Inventory';
+
+export { default as ComplianceCenter } from './ComplianceCenter';
+
+export { default as IntegrationCenter } from './IntegrationCenter';
+
+export { default as CommandCenter } from './CommandCenter';
+export { default as ProductionOps } from './ProductionOps';

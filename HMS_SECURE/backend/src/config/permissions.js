@@ -1,7 +1,7 @@
 const ROLE_PERMISSIONS = {
   super_admin: ['*'],
   admin: [
-    'dashboard.view',
+    'dashboard.view', 'analytics.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
@@ -15,10 +15,10 @@ const ROLE_PERMISSIONS = {
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
-    'audit.view', 'security.manage', 'configuration.manage', 'hospital.manage',
+    'audit.view', 'security.manage', 'compliance.view', 'compliance.manage', 'configuration.manage', 'hospital.manage',
   ],
   hospital_admin: [
-    'dashboard.view',
+    'dashboard.view', 'analytics.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete', 'doctor.document.manage',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'appointment.status.update',
@@ -32,7 +32,7 @@ const ROLE_PERMISSIONS = {
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
-    'audit.view', 'security.manage', 'configuration.manage',
+    'audit.view', 'security.manage', 'compliance.view', 'compliance.manage', 'configuration.manage',
   ],
   doctor: [
     'dashboard.view', 'patient.view',

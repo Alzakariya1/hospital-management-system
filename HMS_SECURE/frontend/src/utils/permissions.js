@@ -14,7 +14,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹9,999/mo',
     description: 'For hospitals that need OPD/IPD, lab, radiology, pharmacy and billing.',
     limits: { users: 50, patients: 25000, doctors: 50, appointments_per_month: 15000, medicines: 5000, branches: 3, storage_gb: 100 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'compliance', 'integration', 'profile', 'auditSecurity', 'operations', 'configuration', 'communications'],
   },
   enterprise: {
     id: 'enterprise',
@@ -22,7 +22,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹24,999/mo',
     description: 'For chains and enterprise hospitals with advanced controls and integrations.',
     limits: { users: 500, patients: 500000, doctors: 500, appointments_per_month: 200000, medicines: 50000, branches: 50, storage_gb: 1000 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications', 'tenants'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'compliance', 'integration', 'profile', 'auditSecurity', 'operations', 'configuration', 'communications', 'integration', 'tenants'],
   },
 };
 
@@ -54,7 +54,7 @@ export const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'billing.view', 'billing.create', 'billing.edit', 'insurance.view', 'insurance.manage',
     'admin.profile.manage', 'admin.users.manage',
-    'audit.view', 'security.manage', 'configuration.manage', 'communication.view', 'communication.manage', 'communication.view', 'communication.manage', 'hospital.manage'
+    'audit.view', 'security.manage', 'compliance.view', 'compliance.manage', 'configuration.manage', 'communication.view', 'communication.manage', 'communication.view', 'communication.manage', 'hospital.manage'
   ],
   hospital_admin: [
     'dashboard.view',
@@ -68,7 +68,7 @@ export const ROLE_PERMISSIONS = {
     'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'billing.view', 'billing.create', 'billing.edit', 'insurance.view', 'insurance.manage',
     'admin.profile.manage', 'admin.users.manage',
-    'audit.view', 'security.manage', 'configuration.manage', 'communication.view', 'communication.manage'
+    'audit.view', 'security.manage', 'compliance.view', 'compliance.manage', 'configuration.manage', 'communication.view', 'communication.manage'
   ],
   doctor: [
     'dashboard.view',
@@ -118,6 +118,7 @@ export const ROLE_PERMISSIONS = {
 
 export const MODULES = [
   { id: 'dashboard', label: 'Dashboard' },
+  { id: 'commandCenter', label: 'Command Center' },
   { id: 'patients', label: 'Patients' },
   { id: 'doctors', label: 'Doctors' },
   { id: 'appointments', label: 'Appointments' },
@@ -132,6 +133,9 @@ export const MODULES = [
   { id: 'billing', label: 'Billing' },
   { id: 'profile', label: 'Profile' },
   { id: 'auditSecurity', label: 'Security' },
+  { id: 'operations', label: 'Production Ops' },
+  { id: 'compliance', label: 'Compliance' },
+  { id: 'integration', label: 'FHIR APIs' },
   { id: 'configuration', label: 'Configuration' },
   { id: 'communications', label: 'Communications' },
   { id: 'tenants', label: 'Hospitals' },
@@ -185,6 +189,7 @@ export const TAB_PERMISSIONS = {
   two_factor_auth: 'security.manage',
   audit_compliance: ['audit.view', 'security.manage'],
   dashboard: 'dashboard.view',
+  commandCenter: 'analytics.view',
   patients: 'patient.view',
   doctors: 'doctor.view',
   appointments: 'appointment.view',
@@ -198,6 +203,8 @@ export const TAB_PERMISSIONS = {
   billing: 'billing.view',
   profile: 'admin.profile.manage',
   auditSecurity: ['audit.view', 'security.manage'],
+  operations: ['security.manage', 'audit.view'],
+  compliance: ['compliance.view', 'compliance.manage', 'audit.view'],
   configuration: 'configuration.manage',
   communications: 'communication.view',
   tenants: 'hospital.manage',
@@ -216,6 +223,7 @@ export const TAB_MODULES = {
   two_factor_auth: ['auditSecurity'],
   audit_compliance: ['auditSecurity'],
   dashboard: ['dashboard'],
+  commandCenter: ['commandCenter', 'dashboard'],
   patients: ['patients'],
   doctors: ['doctors'],
   appointments: ['appointments'],
@@ -229,6 +237,7 @@ export const TAB_MODULES = {
   billing: ['billing'],
   profile: ['profile'],
   auditSecurity: ['profile'],
+  operations: ['operations', 'auditSecurity'],
   configuration: ['profile'],
   communications: ['communications'],
   tenants: ['tenants'],

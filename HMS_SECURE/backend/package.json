@@ -9,7 +9,13 @@
     "check-db": "node scripts/check-db.js",
     "fix-doctor-indexes": "node scripts/fix-doctor-indexes.js",
     "fix-security-indexes": "node scripts/fix-security-indexes.js",
-    "fix-hospital-indexes": "node scripts/fix-hospital-indexes.js"
+    "fix-hospital-indexes": "node scripts/fix-hospital-indexes.js",
+    "health": "node scripts/health-check.js",
+    "backup": "node scripts/backup-json.js",
+    "restore": "node scripts/restore-json.js",
+    "verify-backup": "node scripts/verify-backup.js",
+    "security-check": "node scripts/security-check.js",
+    "check-routes": "node scripts/check-routes.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

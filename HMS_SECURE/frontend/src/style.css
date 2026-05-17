@@ -3597,3 +3597,22 @@ button.ghost.danger { background:transparent; color:#dc2626; border:1px solid #f
 [data-theme="dark"] .soft-card,
 [data-theme="dark"] .badge-soft { background: color-mix(in srgb, var(--theme-primary,#14b8a6) 16%, #0f172a); }
 @media (max-width: 1100px) { .grid.two-col { grid-template-columns:1fr; } }
+
+/* V35 Command Center */
+.commandHero { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.commandHero h1 { margin: 4px 0; }
+.commandAlertGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin: 18px 0; }
+.commandAlert { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 16px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-sm); }
+.commandAlert strong { font-size: 24px; }
+.commandAlert.warn { border-color: rgba(245, 158, 11, .35); }
+.commandAlert.danger { border-color: rgba(239, 68, 68, .35); }
+.commandAlert.ok { border-color: rgba(34, 197, 94, .28); }
+.commandCard { padding: 22px; }
+.chartBox { width: 100%; height: 280px; margin-top: 10px; }
+.chartBox.small { height: 210px; }
+.compactTable table { font-size: 13px; }
+.dashboardThreeCol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-top: 18px; }
+.bigMetric { font-size: 34px; font-weight: 800; margin: 10px 0 0; color: var(--text); }
+.emergencyPanel { border-color: rgba(239, 68, 68, .3); }
+@media (max-width: 1100px) { .commandAlertGrid, .dashboardThreeCol { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .commandHero { align-items: flex-start; flex-direction: column; } .commandAlertGrid, .dashboardThreeCol { grid-template-columns: 1fr; } }

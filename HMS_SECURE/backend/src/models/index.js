@@ -59,7 +59,7 @@ const Hospital = makeModel("Hospital", "hospitals", {
             notes: "",
         },
     },
-    enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'profile', 'tenants'] },
+    enabled_modules: { type: [String], default: ['dashboard', 'commandCenter', 'patients', 'doctors', 'appointments', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'compliance', 'integration', 'profile', 'operations', 'tenants'] },
     feature_flags: {
         type: Object,
         default: {
@@ -536,6 +536,118 @@ const ClinicalRecord = makeModel("ClinicalRecord", "clinical_records", {
 ClinicalRecord.schema.index({ hospital_id: 1, patient_id: 1, record_date: -1 }, { name: "clinical_record_patient_timeline_lookup" });
 ClinicalRecord.schema.index({ hospital_id: 1, record_type: 1, status: 1 }, { name: "clinical_record_type_status_lookup" });
 
+
+const ConsentForm = makeModel("ConsentForm", "consent_forms", {
+    hospital_id: { type: Number, default: 1, index: true },
+    consent_number: { type: String, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    patient_name: String,
+    consent_type: { type: String, default: "general", index: true },
+    title: String,
+    form_text: String,
+    language: { type: String, default: "English" },
+    status: { type: String, default: "draft", index: true }, // draft, signed, revoked, expired
+    signed_by: String,
+    relationship: String,
+    signed_at: Date,
+    witness_name: String,
+    doctor_id: String,
+    doctor_name: String,
+    valid_until: String,
+    digital_signature: String,
+    document_url: String,
+    notes: String,
+    created_by: Number,
+});
+ConsentForm.schema.index({ hospital_id: 1, consent_number: 1 }, { unique: true, name: "consent_hospital_number_unique" });
+ConsentForm.schema.index({ hospital_id: 1, patient_id: 1, created_at: -1 }, { name: "consent_patient_recent_lookup" });
+
+const IncidentReport = makeModel("IncidentReport", "incident_reports", {
+    hospital_id: { type: Number, default: 1, index: true },
+    incident_number: { type: String, index: true },
+    incident_type: { type: String, default: "clinical", index: true },
+    severity: { type: String, default: "medium", index: true },
+    status: { type: String, default: "open", index: true }, // open, investigating, corrective_action, closed
+    incident_date: String,
+    department: String,
+    location: String,
+    patient_id: String,
+    patient_name: String,
+    reported_by: String,
+    description: String,
+    immediate_action: String,
+    root_cause: String,
+    corrective_action: String,
+    preventive_action: String,
+    closed_at: Date,
+    attachments: { type: [Object], default: [] },
+    created_by: Number,
+});
+IncidentReport.schema.index({ hospital_id: 1, incident_number: 1 }, { unique: true, name: "incident_hospital_number_unique" });
+IncidentReport.schema.index({ hospital_id: 1, status: 1, severity: 1 }, { name: "incident_status_severity_lookup" });
+
+const SopDocument = makeModel("SopDocument", "sop_documents", {
+    hospital_id: { type: Number, default: 1, index: true },
+    sop_number: { type: String, index: true },
+    title: { type: String, required: true, index: true },
+    department: String,
+    category: { type: String, default: "general", index: true },
+    version: { type: String, default: "1.0" },
+    status: { type: String, default: "draft", index: true }, // draft, under_review, approved, retired
+    effective_date: String,
+    review_date: String,
+    owner_name: String,
+    approved_by: String,
+    approved_at: Date,
+    document_text: String,
+    file_url: String,
+    training_required: { type: Boolean, default: false },
+    created_by: Number,
+});
+SopDocument.schema.index({ hospital_id: 1, sop_number: 1 }, { unique: true, name: "sop_hospital_number_unique" });
+SopDocument.schema.index({ hospital_id: 1, department: 1, status: 1 }, { name: "sop_department_status_lookup" });
+
+const ComplianceChecklist = makeModel("ComplianceChecklist", "compliance_checklists", {
+    hospital_id: { type: Number, default: 1, index: true },
+    checklist_code: { type: String, index: true },
+    standard: { type: String, default: "NABH", index: true },
+    title: { type: String, required: true },
+    department: String,
+    category: String,
+    status: { type: String, default: "pending", index: true }, // pending, compliant, partial, non_compliant, not_applicable
+    priority: { type: String, default: "medium" },
+    due_date: String,
+    evidence_url: String,
+    evidence_notes: String,
+    owner_name: String,
+    last_reviewed_at: Date,
+    reviewed_by: String,
+    corrective_action: String,
+    created_by: Number,
+});
+ComplianceChecklist.schema.index({ hospital_id: 1, checklist_code: 1 }, { unique: true, name: "compliance_checklist_hospital_code_unique" });
+ComplianceChecklist.schema.index({ hospital_id: 1, standard: 1, status: 1 }, { name: "compliance_standard_status_lookup" });
+
+const BackupVerification = makeModel("BackupVerification", "backup_verifications", {
+    hospital_id: { type: Number, default: 1, index: true },
+    verification_number: { type: String, index: true },
+    backup_type: { type: String, default: "database" },
+    backup_date: String,
+    restore_test_date: String,
+    status: { type: String, default: "pending", index: true }, // pending, passed, failed, partial
+    storage_location: String,
+    verified_by: String,
+    restore_duration_minutes: Number,
+    records_checked: Number,
+    issue_found: String,
+    action_taken: String,
+    next_test_due: String,
+    notes: String,
+    created_by: Number,
+});
+BackupVerification.schema.index({ hospital_id: 1, verification_number: 1 }, { unique: true, name: "backup_verification_hospital_number_unique" });
+BackupVerification.schema.index({ hospital_id: 1, status: 1, backup_date: -1 }, { name: "backup_verification_status_lookup" });
+
 const AuditLog = makeModel("AuditLog", "audit_logs", {
     hospital_id: { type: Number, default: 1, index: true },
     user_id: { type: Number, index: true },
@@ -705,6 +817,61 @@ const CommunicationLog = makeModel("CommunicationLog", "communication_logs", {
 CommunicationLog.schema.index({ hospital_id: 1, created_at: -1 }, { name: "communication_hospital_recent_lookup" });
 CommunicationLog.schema.index({ hospital_id: 1, channel: 1, status: 1 }, { name: "communication_channel_status_lookup" });
 
+const ApiKey = makeModel("ApiKey", "api_keys", {
+    hospital_id: { type: Number, default: 1, index: true },
+    key_id: { type: String, index: true },
+    name: String,
+    key_hash: String,
+    key_preview: String,
+    scopes: { type: [String], default: [] },
+    status: { type: String, default: "active", index: true },
+    last_used_at: Date,
+    expires_at: Date,
+    created_by: Number,
+});
+ApiKey.schema.index({ hospital_id: 1, key_id: 1 }, { unique: true, name: "api_key_hospital_key_unique", partialFilterExpression: { key_id: { $type: "string" } } });
+
+const IntegrationLog = makeModel("IntegrationLog", "integration_logs", {
+    hospital_id: { type: Number, default: 1, index: true },
+    direction: { type: String, default: "inbound", index: true },
+    system: { type: String, default: "fhir", index: true },
+    resource_type: String,
+    resource_id: String,
+    method: String,
+    endpoint: String,
+    status: { type: String, default: "success", index: true },
+    status_code: Number,
+    api_key_id: String,
+    request_payload: Object,
+    response_payload: Object,
+    error_message: String,
+    ip_address: String,
+});
+IntegrationLog.schema.index({ hospital_id: 1, created_at: -1 }, { name: "integration_recent_lookup" });
+
+const WebhookSubscription = makeModel("WebhookSubscription", "webhook_subscriptions", {
+    hospital_id: { type: Number, default: 1, index: true },
+    name: String,
+    target_url: String,
+    events: { type: [String], default: [] },
+    secret: String,
+    status: { type: String, default: "active", index: true },
+    last_triggered_at: Date,
+    failure_count: { type: Number, default: 0 },
+    created_by: Number,
+});
+
+const WebhookEvent = makeModel("WebhookEvent", "webhook_events", {
+    hospital_id: { type: Number, default: 1, index: true },
+    event_type: { type: String, index: true },
+    resource_type: String,
+    resource_id: String,
+    payload: Object,
+    delivery_status: { type: String, default: "queued", index: true },
+    attempts: { type: Number, default: 0 },
+    last_error: String,
+});
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -761,4 +928,13 @@ module.exports = {
     StockReceiving,
     StockReturn,
     InventoryTransaction,
+    ConsentForm,
+    IncidentReport,
+    SopDocument,
+    ComplianceChecklist,
+    BackupVerification,
+    ApiKey,
+    IntegrationLog,
+    WebhookSubscription,
+    WebhookEvent,
 };

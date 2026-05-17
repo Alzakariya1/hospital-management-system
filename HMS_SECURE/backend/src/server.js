@@ -8,7 +8,7 @@ const { connectDB, mongoose } = require("./config/db");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 const app = express();
 const PORT = process.env.PORT || 5000;
-app.set("trust proxy", 1);
+app.set("trust proxy", Number(process.env.TRUST_PROXY || 1));
 app.use(helmet());
 const allowedOrigins = (
     process.env.FRONTEND_URL
@@ -71,6 +71,10 @@ app.use("/api", require("./routes/communication.routes"));
 app.use("/api", require("./routes/portal.routes"));
 app.use("/api", require("./routes/emr.routes"));
 app.use("/api", require("./routes/audit-security.routes"));
+app.use("/api", require("./routes/compliance.routes"));
+app.use("/api", require("./routes/integration.routes"));
+app.use("/api", require("./routes/command-center.routes"));
+app.use("/api", require("./routes/operations.routes"));
 app.use("/api", require("./routes/configuration.routes"));
 app.use("/api", require("./routes/template.routes"));
 app.use("/api", require("./routes/subscription.routes"));
@@ -78,11 +82,15 @@ app.use("/api", require("./routes/saas.routes"));
 app.use("/api", require("./routes/saas-billing.routes"));
 app.use(notFound);
 app.use(errorHandler);
-connectDB()
-    .then(() =>
-        app.listen(PORT, () => console.log(`API running on port ${PORT}`)),
-    )
-    .catch((err) => {
-        console.error("MongoDB connection failed:", err.message);
-        process.exit(1);
-    });
+if (require.main === module) {
+    connectDB()
+        .then(() =>
+            app.listen(PORT, () => console.log(`API running on port ${PORT}`)),
+        )
+        .catch((err) => {
+            console.error("MongoDB connection failed:", err.message);
+            process.exit(1);
+        });
+}
+
+module.exports = app;

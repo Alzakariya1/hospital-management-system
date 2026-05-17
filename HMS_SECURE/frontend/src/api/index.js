@@ -31,3 +31,9 @@ export { emrApi } from './emrApi';
 export { insuranceApi } from './insuranceApi';
 
 export { inventoryApi } from './inventoryApi';
+
+export { complianceApi } from './complianceApi';
+export { integrationApi } from './integrationApi';
+
+export { commandCenterApi } from './commandCenterApi';
+export { operationsApi } from './operationsApi';

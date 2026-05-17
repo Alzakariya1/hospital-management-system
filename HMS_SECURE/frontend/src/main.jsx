@@ -28,6 +28,8 @@ import {
   ClipboardCheck,
   FileHeart,
   PackageSearch,
+  BarChart3,
+  ServerCog,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -47,6 +49,7 @@ import {
   configurationApi,
   saasApi,
   emrApi,
+  integrationApi,
 } from "./api";
 import { AppLayout } from "./layouts";
 import {
@@ -70,6 +73,10 @@ import {
   EMR,
   InsuranceTPA,
   Inventory,
+  ComplianceCenter,
+  IntegrationCenter,
+  CommandCenter,
+  ProductionOps,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1059,6 +1066,7 @@ function App() {
   }
   const allTabs = [
     ["dashboard", "Dashboard", Activity],
+    ["commandCenter", "Command Center", BarChart3],
     ["patients", "Patients", Users],
     ["doctors", "Doctors", Stethoscope],
     ["appointments", "Appointments", Calendar],
@@ -1069,14 +1077,16 @@ function App() {
     ["labs", "Lab/Radiology", TestTube2],
     ["pharmacy", "Pharmacy", Pill],
     ["inventory", "Inventory", PackageSearch],
+    ["compliance", "Compliance", ClipboardCheck],
     ["billing", "Billing", ReceiptText],
     ["profile", "Profile", UserCircle],
     ["auditSecurity", "Security", ShieldCheck],
+    ["operations", "Production Ops", ServerCog],
     ["configuration", "Configuration", SlidersHorizontal],
     ["communications", "Communications", MessageCircle],
     ["saasControl", "SaaS Control", Crown],
     ["tenants", "Hospitals", Building2],
-    ["fhir", "FHIR APIs", FileCode2],
+    ["integration", "FHIR APIs", FileCode2],
     ["hl7", "HL7 Ready", Link2],
     ["pacs", "PACS/DICOM", ScanLine],
     ["biometric", "Biometric", Fingerprint],
@@ -1129,6 +1139,8 @@ function App() {
     hospitalManage: can("hospital.manage"),
     auditView: can("audit.view"),
     securityManage: can("security.manage"),
+    complianceView: can("compliance.view") || can("audit.view"),
+    complianceManage: can("compliance.manage") || can("security.manage"),
     configurationManage: can("configuration.manage"),
     featureFlags: normalizeFeatureFlags(currentHospital?.feature_flags),
     insuranceManage: can("insurance.manage") || can("billing.edit") || can("configuration.manage"),
@@ -1502,6 +1514,18 @@ function App() {
 
             {tab === "inventory" && (
               <Inventory permissions={permissions} />
+            )}
+
+            {tab === "compliance" && (
+              <ComplianceCenter permissions={permissions} />
+            )}
+
+            {tab === "integration" && (
+              <IntegrationCenter permissions={permissions} />
+            )}
+
+            {tab === "operations" && (
+              <ProductionOps permissions={permissions} />
             )}
 
 
