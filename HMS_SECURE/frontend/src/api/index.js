@@ -41,3 +41,4 @@ export { operationsApi } from './operationsApi';
 export { salesApi } from './salesApi';
 
 export { legalSecurityApi } from './legalSecurityApi';
+export { pilotApi } from './pilotApi';

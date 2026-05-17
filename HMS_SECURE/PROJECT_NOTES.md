@@ -1134,3 +1134,6 @@ This phase does not remove or alter existing V31-V38 hospital workflows. It prep
 ## V40 - Security + Legal Readiness
 
 Added a Legal & Security Readiness Center with policy templates, data protection request tracking, security incident register, policy acknowledgements and audit pack export. This phase helps move the HMS from demo software toward a safer pilot-ready SaaS product.
+
+## V41 - Pilot Hospital Deployment
+Added pilot deployment management, pilot task tracking, readiness score API and frontend Pilot Deployment Center for first real clinic/hospital rollout planning.

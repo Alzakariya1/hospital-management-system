@@ -982,6 +982,42 @@ const PolicyAcknowledgement = makeModel("PolicyAcknowledgement", "policy_acknowl
 });
 PolicyAcknowledgement.schema.index({ policy_id: 1, user_id: 1 }, { unique: true, name: "policy_ack_policy_user_unique" });
 
+
+const PilotDeployment = makeModel("PilotDeployment", "pilot_deployments", {
+    hospital_id: { type: Number, index: true },
+    hospital_name: { type: String, required: true },
+    contact_name: String,
+    contact_email: String,
+    contact_phone: String,
+    deployment_stage: { type: String, default: "planning", index: true },
+    go_live_target_date: Date,
+    pilot_start_date: Date,
+    pilot_end_date: Date,
+    assigned_owner: String,
+    scope_modules: { type: [String], default: [] },
+    success_criteria: { type: [String], default: [] },
+    risks: { type: [Object], default: [] },
+    training_sessions: { type: [Object], default: [] },
+    migration_items: { type: [Object], default: [] },
+    checklist: { type: [Object], default: [] },
+    feedback: { type: [Object], default: [] },
+    notes: String,
+});
+PilotDeployment.schema.index({ deployment_stage: 1, go_live_target_date: 1 }, { name: "pilot_stage_go_live_lookup" });
+
+const PilotTask = makeModel("PilotTask", "pilot_tasks", {
+    pilot_id: { type: Number, required: true, index: true },
+    title: { type: String, required: true },
+    category: { type: String, default: "general", index: true },
+    status: { type: String, default: "open", index: true },
+    priority: { type: String, default: "medium" },
+    owner: String,
+    due_date: Date,
+    completed_at: Date,
+    notes: String,
+});
+PilotTask.schema.index({ pilot_id: 1, status: 1 }, { name: "pilot_task_status_lookup" });
+
 const Notification = makeModel("Notification", "notifications", {
     hospital_id: { type: Number, default: 1, index: true },
     title: { type: String, required: true },
@@ -1054,4 +1090,6 @@ module.exports = {
     DataRequest,
     SecurityIncident,
     PolicyAcknowledgement,
+    PilotDeployment,
+    PilotTask,
 };
