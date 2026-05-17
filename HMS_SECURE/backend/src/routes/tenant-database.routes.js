@@ -13,6 +13,7 @@ const {
   listTenantConnectionStatus,
   sanitizeDbName,
   uriForDb,
+  getExpectedStructure,
 } = require('../config/tenantDb');
 
 const router = express.Router();
@@ -78,7 +79,41 @@ router.get('/tenant-databases/overview', asyncHandler(async (_req, res) => {
     shared_database_hospitals: hospitals.filter((h) => !h.tenant_db_name).length,
     latest_backups: backups.length,
   };
-  res.json({ summary, hospitals, backups, connection_status: status });
+  res.json({ summary, expected_structure: getExpectedStructure(), hospitals, backups, connection_status: status });
+}));
+
+
+router.get('/tenant-databases/structure-check', asyncHandler(async (_req, res) => {
+  const admin = mongoose.connection.db.admin();
+  const listed = await admin.listDatabases();
+  const dbs = listed.databases.map((d) => d.name).sort();
+  const expected = getExpectedStructure();
+  const tenantDbs = dbs.filter((name) => name.startsWith(`${expected.tenant_db_prefix}_`));
+  const legacyDbs = dbs.filter((name) => ['test', 'hms_db', 'hms_secure'].includes(name));
+  const masterExists = dbs.includes(expected.master_db_name);
+  const warnings = [];
+  if (!masterExists) warnings.push(`Master DB ${expected.master_db_name} is not visible yet. It appears after first write.`);
+  if (dbs.includes('test')) warnings.push('A test database exists. Do not delete it until data is migrated and backed up.');
+  if (!tenantDbs.length) warnings.push('No tenant DBs are visible yet. Provision a tenant DB and create tenant_meta/patient data.');
+  res.json({ expected, master_exists: masterExists, tenant_databases: tenantDbs, legacy_databases: legacyDbs, all_databases: dbs, warnings });
+}));
+
+router.post('/tenant-databases/:hospitalId/verify-provision', asyncHandler(async (req, res) => {
+  const hospital = await Hospital.findOne({ id: Number(req.params.hospitalId) });
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const requested = sanitizeDbName(req.body.tenant_db_name);
+  const dbName = requested || hospital.tenant_db_name || buildTenantDbName({ hospital_code: hospital.hospital_code, id: hospital.id, name: hospital.name });
+  const meta = await ensureTenantDatabase(dbName);
+  hospital.tenant_db_name = dbName;
+  hospital.tenant_db_status = 'active';
+  hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
+  await hospital.save();
+  const conn = require('../config/tenantDb').getTenantConnection(dbName);
+  await conn.asPromise?.();
+  const collections = await conn.db.listCollections().toArray();
+  const hasMeta = collections.some((c) => c.name === '_tenant_meta');
+  await auditEvent({ req, userId: req.user.id, hospital_id: hospital.id, action: `Verified tenant database ${dbName}`, module_name: 'tenant_database', entity_type: 'hospital', entity_id: hospital.id });
+  res.json({ message: 'Tenant database provision verified', tenant_db_name: dbName, hospital: publicHospital(hospital), meta, visible_collections: collections.map((c) => c.name).sort(), checks: { tenant_meta_exists: hasMeta, ready_state: conn.readyState } });
 }));
 
 router.post('/tenant-databases/:hospitalId/provision', asyncHandler(async (req, res) => {

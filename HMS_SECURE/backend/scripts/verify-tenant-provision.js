@@ -1,0 +1,30 @@
+require('dotenv').config();
+const { connectDB } = require('../src/config/db');
+const { Hospital } = require('../src/models');
+const { buildTenantDbName, ensureTenantDatabase, getTenantConnection, sanitizeDbName } = require('../src/config/tenantDb');
+
+(async () => {
+  const key = process.argv[2];
+  if (!key) throw new Error('Usage: node scripts/verify-tenant-provision.js <hospital_id_or_code>');
+  await connectDB();
+  const query = Number(key) ? { id: Number(key) } : { hospital_code: String(key).trim().toUpperCase() };
+  const hospital = await Hospital.findOne(query);
+  if (!hospital) throw new Error('Hospital not found');
+  const dbName = sanitizeDbName(hospital.tenant_db_name) || buildTenantDbName({ hospital_code: hospital.hospital_code, id: hospital.id, name: hospital.name });
+  const meta = await ensureTenantDatabase(dbName);
+  hospital.tenant_db_name = dbName;
+  hospital.tenant_db_status = 'active';
+  hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
+  await hospital.save();
+  const conn = getTenantConnection(dbName);
+  await conn.asPromise?.();
+  const collections = await conn.db.listCollections().toArray();
+  const names = collections.map((x) => x.name).sort();
+  if (!names.includes('_tenant_meta')) throw new Error(`Tenant DB ${dbName} did not create _tenant_meta`);
+  console.log(`Tenant DB provision verified for ${hospital.name || hospital.hospital_code}`);
+  console.log(`tenant_db_name: ${dbName}`);
+  console.log(`ready_state: ${conn.readyState}`);
+  console.log(`collections: ${names.join(', ')}`);
+  console.log(JSON.stringify(meta));
+  process.exit(0);
+})().catch((err) => { console.error('Tenant provision verification failed:', err.message); process.exit(1); });

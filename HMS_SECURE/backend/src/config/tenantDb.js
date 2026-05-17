@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const { AsyncLocalStorage } = require('async_hooks');
+const { getMasterDbName, parseUriDatabaseName } = require('./db');
 
 const tenantContext = new AsyncLocalStorage();
 const connections = new Map();
@@ -35,6 +36,19 @@ function uriForDb(dbName) {
   const slash = base.lastIndexOf('/');
   if (slash < 0) return `${base}/${safeDb}${query}`;
   return `${base.slice(0, slash + 1)}${safeDb}${query}`;
+}
+
+function getTenantDbPrefix() {
+  return sanitizeDbName(process.env.TENANT_DB_PREFIX || 'hms_tenant');
+}
+
+function getExpectedStructure() {
+  return {
+    master_db_name: getMasterDbName(),
+    tenant_db_prefix: getTenantDbPrefix(),
+    uri_db_name: parseUriDatabaseName(process.env.MONGODB_URI || '') || null,
+    tenant_mode: process.env.TENANT_DATABASE_MODE || process.env.TENANT_DB_ISOLATION || 'hybrid',
+  };
 }
 
 function getCurrentTenantDbName() {
@@ -92,6 +106,8 @@ module.exports = {
   tenantIsolationEnabled,
   sanitizeDbName,
   buildTenantDbName,
+  getTenantDbPrefix,
+  getExpectedStructure,
   uriForDb,
   getCurrentTenantDbName,
   runWithTenantDbName,

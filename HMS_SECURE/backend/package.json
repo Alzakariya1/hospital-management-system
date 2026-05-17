@@ -22,7 +22,9 @@
     "tenant:migrate": "node scripts/migrate-shared-to-tenant.js",
     "tenant:audit": "node scripts/tenant-isolation-audit.js",
     "tenant:migration-preview": "node scripts/tenant-migration-preview.js",
-    "tenant:backup-validate": "node scripts/tenant-backup-validate.js"
+    "tenant:backup-validate": "node scripts/tenant-backup-validate.js",
+    "db:structure": "node scripts/atlas-structure-check.js",
+    "tenant:verify-provision": "node scripts/verify-tenant-provision.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

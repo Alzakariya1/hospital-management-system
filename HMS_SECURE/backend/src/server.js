@@ -4,7 +4,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-const { connectDB, mongoose } = require("./config/db");
+const { connectDB, mongoose, getMongoDbStructureWarnings } = require("./config/db");
 const { notFound, errorHandler } = require("./middleware/errorHandler");
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -51,6 +51,8 @@ app.get("/api/health", async (req, res, next) => {
             status: "ok",
             database:
                 mongoose.connection.readyState === 1 ? "connected" : "connecting",
+            database_name: mongoose.connection.name,
+            structure: getMongoDbStructureWarnings(),
         });
     } catch (e) {
         next(e);
