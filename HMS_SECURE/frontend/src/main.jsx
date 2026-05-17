@@ -27,6 +27,7 @@ import {
   KeyRound,
   ClipboardCheck,
   FileHeart,
+  PackageSearch,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -68,6 +69,7 @@ import {
   DoctorPortal,
   EMR,
   InsuranceTPA,
+  Inventory,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
 import "./style.css";
@@ -1033,6 +1035,7 @@ function App() {
     ["beds", "Beds", Bed],
     ["labs", "Lab/Radiology", TestTube2],
     ["pharmacy", "Pharmacy", Pill],
+    ["inventory", "Inventory", PackageSearch],
     ["billing", "Billing", ReceiptText],
     ["profile", "Profile", UserCircle],
     ["auditSecurity", "Security", ShieldCheck],
@@ -1087,6 +1090,7 @@ function App() {
     radiologyCreate: can("radiology.create"),
     pharmacyCreate: can("pharmacy.create"),
     pharmacyStockManage: can("pharmacy.stock.manage"),
+    inventoryManage: can("inventory.manage") || can("pharmacy.stock.manage"),
     billingCreate: can("billing.create"),
     adminUsersManage: can("admin.users.manage"),
     hospitalManage: can("hospital.manage"),
@@ -1455,6 +1459,10 @@ function App() {
                 permissions={permissions}
                 onChanged={load}
               />
+            )}
+
+            {tab === "inventory" && (
+              <Inventory permissions={permissions} />
             )}
 
 

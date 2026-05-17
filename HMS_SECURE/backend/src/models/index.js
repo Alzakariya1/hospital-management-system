@@ -59,7 +59,7 @@ const Hospital = makeModel("Hospital", "hospitals", {
             notes: "",
         },
     },
-    enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'tenants'] },
+    enabled_modules: { type: [String], default: ['dashboard', 'patients', 'doctors', 'appointments', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'profile', 'tenants'] },
     feature_flags: {
         type: Object,
         default: {
@@ -280,6 +280,144 @@ const PharmacySale = makeModel("PharmacySale", "pharmacy_sales", {
     sale_type: { type: String, default: 'direct' },
     sold_at: { type: Date, default: Date.now },
 });
+
+
+// V31 Enterprise Inventory + Purchase Order models
+const Supplier = makeModel("Supplier", "suppliers", {
+    hospital_id: { type: Number, default: 1, index: true },
+    supplier_code: { type: String, trim: true, index: true },
+    name: { type: String, trim: true, required: true, index: true },
+    contact_person: String,
+    phone: String,
+    email: String,
+    gst_number: String,
+    address: String,
+    payment_terms: String,
+    status: { type: String, default: "active", index: true },
+});
+Supplier.schema.index({ hospital_id: 1, supplier_code: 1 }, { name: "supplier_hospital_code_lookup" });
+
+const InventoryItem = makeModel("InventoryItem", "inventory_items", {
+    hospital_id: { type: Number, default: 1, index: true },
+    item_code: { type: String, trim: true, index: true },
+    name: { type: String, trim: true, required: true, index: true },
+    item_type: { type: String, default: "medicine", index: true }, // medicine, consumable, equipment, general
+    category: String,
+    unit: { type: String, default: "pcs" },
+    barcode: { type: String, trim: true, index: true },
+    sku: String,
+    hsn_code: String,
+    reorder_level: { type: Number, default: 10 },
+    reorder_quantity: { type: Number, default: 0 },
+    default_supplier_id: Number,
+    location: String,
+    status: { type: String, default: "active", index: true },
+});
+InventoryItem.schema.index({ hospital_id: 1, item_code: 1 }, { name: "inventory_item_hospital_code_lookup" });
+InventoryItem.schema.index({ hospital_id: 1, barcode: 1 }, { name: "inventory_item_hospital_barcode_lookup" });
+
+const InventoryBatch = makeModel("InventoryBatch", "inventory_batches", {
+    hospital_id: { type: Number, default: 1, index: true },
+    item_id: { type: Number, required: true, index: true },
+    medicine_id: Number,
+    item_name: String,
+    batch_number: { type: String, trim: true, index: true },
+    barcode: { type: String, trim: true, index: true },
+    expiry_date: String,
+    manufacture_date: String,
+    quantity: { type: Number, default: 0 },
+    received_quantity: { type: Number, default: 0 },
+    cost_price: { type: Number, default: 0 },
+    selling_price: { type: Number, default: 0 },
+    supplier_id: Number,
+    supplier_name: String,
+    location: String,
+    status: { type: String, default: "active", index: true },
+});
+InventoryBatch.schema.index({ hospital_id: 1, item_id: 1, batch_number: 1 }, { name: "inventory_batch_item_batch_lookup" });
+InventoryBatch.schema.index({ hospital_id: 1, expiry_date: 1 }, { name: "inventory_batch_expiry_lookup" });
+
+const PurchaseOrder = makeModel("PurchaseOrder", "purchase_orders", {
+    hospital_id: { type: Number, default: 1, index: true },
+    po_number: { type: String, index: true },
+    supplier_id: { type: Number, index: true },
+    supplier_name: String,
+    order_date: String,
+    expected_date: String,
+    status: { type: String, default: "draft", index: true }, // draft, ordered, partially_received, received, cancelled
+    subtotal: { type: Number, default: 0 },
+    tax_amount: { type: Number, default: 0 },
+    discount_amount: { type: Number, default: 0 },
+    total_amount: { type: Number, default: 0 },
+    notes: String,
+    items: { type: [Object], default: [] },
+    created_by: Number,
+});
+PurchaseOrder.schema.index({ hospital_id: 1, po_number: 1 }, { unique: true, name: "po_hospital_number_unique" });
+
+const SupplierBill = makeModel("SupplierBill", "supplier_bills", {
+    hospital_id: { type: Number, default: 1, index: true },
+    bill_number: { type: String, index: true },
+    supplier_id: { type: Number, index: true },
+    supplier_name: String,
+    purchase_order_id: Number,
+    invoice_number: String,
+    invoice_date: String,
+    due_date: String,
+    amount: { type: Number, default: 0 },
+    paid_amount: { type: Number, default: 0 },
+    balance_amount: { type: Number, default: 0 },
+    status: { type: String, default: "pending", index: true }, // pending, partial, paid, cancelled
+    notes: String,
+});
+SupplierBill.schema.index({ hospital_id: 1, bill_number: 1 }, { unique: true, name: "supplier_bill_hospital_number_unique" });
+
+const StockReceiving = makeModel("StockReceiving", "stock_receivings", {
+    hospital_id: { type: Number, default: 1, index: true },
+    receiving_number: { type: String, index: true },
+    purchase_order_id: Number,
+    supplier_id: Number,
+    supplier_name: String,
+    received_date: String,
+    status: { type: String, default: "received", index: true },
+    items: { type: [Object], default: [] },
+    notes: String,
+    received_by: Number,
+});
+StockReceiving.schema.index({ hospital_id: 1, receiving_number: 1 }, { unique: true, name: "stock_receiving_hospital_number_unique" });
+
+const StockReturn = makeModel("StockReturn", "stock_returns", {
+    hospital_id: { type: Number, default: 1, index: true },
+    return_number: { type: String, index: true },
+    supplier_id: Number,
+    supplier_name: String,
+    return_date: String,
+    reason: String,
+    status: { type: String, default: "returned", index: true },
+    items: { type: [Object], default: [] },
+    notes: String,
+    returned_by: Number,
+});
+StockReturn.schema.index({ hospital_id: 1, return_number: 1 }, { unique: true, name: "stock_return_hospital_number_unique" });
+
+const InventoryTransaction = makeModel("InventoryTransaction", "inventory_transactions", {
+    hospital_id: { type: Number, default: 1, index: true },
+    transaction_number: { type: String, index: true },
+    transaction_type: { type: String, index: true }, // receive, return, dispense, adjustment
+    item_id: Number,
+    batch_id: Number,
+    medicine_id: Number,
+    item_name: String,
+    batch_number: String,
+    quantity: { type: Number, default: 0 },
+    balance_after: { type: Number, default: 0 },
+    reference_type: String,
+    reference_id: Number,
+    notes: String,
+    performed_by: Number,
+});
+InventoryTransaction.schema.index({ hospital_id: 1, item_id: 1, created_at: -1 }, { name: "inventory_transaction_item_recent" });
+
 const Billing = makeModel("Billing", "billing", { hospital_id: { type: Number, default: 1, index: true } });
 const InsuranceClaim = makeModel("InsuranceClaim", "insurance_claims", {
     hospital_id: { type: Number, default: 1, index: true },
@@ -561,4 +699,12 @@ module.exports = {
     SaaSPayment,
     SaaSPaymentIntent,
     CommunicationLog,
+    Supplier,
+    InventoryItem,
+    InventoryBatch,
+    PurchaseOrder,
+    SupplierBill,
+    StockReceiving,
+    StockReturn,
+    InventoryTransaction,
 };

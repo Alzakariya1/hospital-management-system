@@ -25,3 +25,5 @@ export { default as DoctorPortal } from './DoctorPortal';
 export { default as EMR } from './EMR';
 
 export { default as InsuranceTPA } from './InsuranceTPA';
+
+export { default as Inventory } from './Inventory';

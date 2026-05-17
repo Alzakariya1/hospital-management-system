@@ -63,6 +63,7 @@ app.use("/api", require("./routes/core.routes"));
 app.use("/api", require("./routes/opd-ipd.routes"));
 app.use("/api", require("./routes/lab-radiology.routes"));
 app.use("/api/pharmacy", require("./routes/pharmacy.routes"));
+app.use("/api/inventory", require("./routes/inventory.routes"));
 app.use("/api/billing", require("./routes/billing.routes"));
 app.use("/api", require("./routes/insurance-tpa.routes"));
 app.use("/api", require("./routes/notification.routes"));

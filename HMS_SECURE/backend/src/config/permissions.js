@@ -11,7 +11,7 @@ const ROLE_PERMISSIONS = {
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
-    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
@@ -28,7 +28,7 @@ const ROLE_PERMISSIONS = {
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
-    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'billing.view', 'billing.create', 'billing.edit',
     'admin.profile.manage', 'admin.users.manage',
     'notification.view', 'notification.manage', 'communication.view', 'communication.manage',
@@ -61,7 +61,7 @@ const ROLE_PERMISSIONS = {
     'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   pharmacist: [
-    'dashboard.view', 'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'dashboard.view', 'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'admin.profile.manage', 'notification.view', 'communication.view',
   ],
   lab_technician: [

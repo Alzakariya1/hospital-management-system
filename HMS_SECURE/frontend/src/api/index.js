@@ -29,3 +29,5 @@ export { portalApi } from './portalApi';
 export { emrApi } from './emrApi';
 
 export { insuranceApi } from './insuranceApi';
+
+export { inventoryApi } from './inventoryApi';

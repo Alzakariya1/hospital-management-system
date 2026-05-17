@@ -975,3 +975,53 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Claim register supports provider, TPA, policy, claim number, claim type, claim amount, approved amount, paid amount, status, priority, admission/discharge dates and notes.
 - Insurance/TPA can link claims to existing bills/invoices.
 - Frontend build passed and backend syntax checks passed.
+
+## V31 Inventory + Purchase Order Deep Upgrade
+
+Added enterprise inventory layer without removing existing Pharmacy functionality.
+
+Backend additions:
+- `/api/inventory/suppliers`
+- `/api/inventory/items`
+- `/api/inventory/batches`
+- `/api/inventory/purchase-orders`
+- `/api/inventory/stock-receivings`
+- `/api/inventory/stock-returns`
+- `/api/inventory/supplier-bills`
+- `/api/inventory/batch-dispense`
+- `/api/inventory/expiry-alerts`
+- `/api/inventory/transactions`
+- `/api/inventory/summary`
+
+Database models added:
+- Supplier
+- InventoryItem
+- InventoryBatch
+- PurchaseOrder
+- SupplierBill
+- StockReceiving
+- StockReturn
+- InventoryTransaction
+
+Frontend additions:
+- New Inventory sidebar module
+- Supplier master form
+- Consumables/item master form
+- Purchase order form
+- Stock receiving / GRN form
+- Stock return form
+- Supplier bill form
+- Batch-wise dispensing form
+- Batch stock register
+- Expiry alerts
+- Recent inventory transactions
+
+Validation performed:
+- Backend model syntax check passed
+- Backend route syntax check passed
+- Backend route require/load check passed
+- Frontend production build passed
+
+Packaging rule:
+- `.env`, `node_modules`, and `dist` are excluded from delivery zip.
+- `package.json`, `package-lock.json`, and `.env.example` are included.

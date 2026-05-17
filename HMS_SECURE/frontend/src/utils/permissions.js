@@ -14,7 +14,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹9,999/mo',
     description: 'For hospitals that need OPD/IPD, lab, radiology, pharmacy and billing.',
     limits: { users: 50, patients: 25000, doctors: 50, appointments_per_month: 15000, medicines: 5000, branches: 3, storage_gb: 100 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications'],
   },
   enterprise: {
     id: 'enterprise',
@@ -22,7 +22,7 @@ export const PLAN_DEFINITIONS = {
     price: '₹24,999/mo',
     description: 'For chains and enterprise hospitals with advanced controls and integrations.',
     limits: { users: 500, patients: 500000, doctors: 500, appointments_per_month: 200000, medicines: 50000, branches: 50, storage_gb: 1000 },
-    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications', 'tenants'],
+    modules: ['dashboard', 'patients', 'doctors', 'appointments', 'patientPortal', 'doctorPortal', 'emr', 'beds', 'lab', 'radiology', 'pharmacy', 'inventory', 'billing', 'profile', 'auditSecurity', 'configuration', 'communications', 'tenants'],
   },
 };
 
@@ -51,7 +51,7 @@ export const ROLE_PERMISSIONS = {
     'bed.view', 'bed.create', 'bed.status.update',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
-    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'billing.view', 'billing.create', 'billing.edit', 'insurance.view', 'insurance.manage',
     'admin.profile.manage', 'admin.users.manage',
     'audit.view', 'security.manage', 'configuration.manage', 'communication.view', 'communication.manage', 'communication.view', 'communication.manage', 'hospital.manage'
@@ -65,7 +65,7 @@ export const ROLE_PERMISSIONS = {
     'opd.view', 'opd.create', 'ipd.view', 'ipd.create',
     'lab.view', 'lab.create',
     'radiology.view', 'radiology.create',
-    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'billing.view', 'billing.create', 'billing.edit', 'insurance.view', 'insurance.manage',
     'admin.profile.manage', 'admin.users.manage',
     'audit.view', 'security.manage', 'configuration.manage', 'communication.view', 'communication.manage'
@@ -94,7 +94,7 @@ export const ROLE_PERMISSIONS = {
   ],
   pharmacist: [
     'dashboard.view',
-    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage',
+    'pharmacy.view', 'pharmacy.create', 'pharmacy.stock.manage', 'inventory.view', 'inventory.manage',
     'admin.profile.manage'
   ],
   lab_technician: [
@@ -128,6 +128,7 @@ export const MODULES = [
   { id: 'lab', label: 'Laboratory' },
   { id: 'radiology', label: 'Radiology' },
   { id: 'pharmacy', label: 'Pharmacy' },
+  { id: 'inventory', label: 'Inventory' },
   { id: 'billing', label: 'Billing' },
   { id: 'profile', label: 'Profile' },
   { id: 'auditSecurity', label: 'Security' },
@@ -193,6 +194,7 @@ export const TAB_PERMISSIONS = {
   beds: 'bed.view',
   labs: ['lab.view', 'radiology.view'],
   pharmacy: 'pharmacy.view',
+  inventory: ['inventory.view', 'pharmacy.view'],
   billing: 'billing.view',
   profile: 'admin.profile.manage',
   auditSecurity: ['audit.view', 'security.manage'],
@@ -223,6 +225,7 @@ export const TAB_MODULES = {
   beds: ['beds'],
   labs: ['lab', 'radiology'],
   pharmacy: ['pharmacy'],
+  inventory: ['inventory', 'pharmacy'],
   billing: ['billing'],
   profile: ['profile'],
   auditSecurity: ['profile'],
