@@ -929,3 +929,10 @@ Built from: HMS_SECURE_PHASE3_STEP11B3_AUDIT_SECURITY_V17.zip
 - Added duplicate hospital code handling so raw MongoDB `E11000 duplicate key` errors are converted into clear 409 messages.
 - Added `npm run fix-hospital-indexes` to repair old duplicate hospital numeric ids, normalize hospital codes, reset the hospitals counter, and recreate the safe hospital code index.
 - Added UI note explaining why modules show `Upgrade`: Clinic Plan intentionally locks Beds, Lab, Radiology, Pharmacy, Security, Hospitals, and SaaS Control. Switch the hospital plan to Hospital/Enterprise to unlock them.
+
+## V27 Fix2 - Module/sidebar and feature flag visibility
+- Fixed plan/module gating refresh issue by making sidebar filtering feature-flag aware.
+- Advanced feature flags now appear in sidebar when enabled for the active hospital.
+- Added safe placeholder pages for enabled advanced features so the flags visibly work.
+- Hospital/Enterprise modules remain controlled by selected SaaS plan and enabled module settings.
+- Frontend build passed and backend syntax checks passed.

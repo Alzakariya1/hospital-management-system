@@ -16,6 +16,16 @@ import {
   SlidersHorizontal,
   Crown,
   MessageCircle,
+  FileCode2,
+  Link2,
+  ScanLine,
+  Fingerprint,
+  ShieldPlus,
+  Landmark,
+  Send,
+  BadgeCheck,
+  KeyRound,
+  ClipboardCheck,
 } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
 import {
@@ -1021,10 +1031,21 @@ function App() {
     ["communications", "Communications", MessageCircle],
     ["saasControl", "SaaS Control", Crown],
     ["tenants", "Hospitals", Building2],
+    ["fhir", "FHIR APIs", FileCode2],
+    ["hl7", "HL7 Ready", Link2],
+    ["pacs", "PACS/DICOM", ScanLine],
+    ["biometric", "Biometric", Fingerprint],
+    ["insurance_tpa", "Insurance/TPA", ShieldPlus],
+    ["erp", "ERP/Tally", Landmark],
+    ["whatsapp_sms", "WhatsApp/SMS", Send],
+    ["abdm_abha", "ABDM/ABHA", BadgeCheck],
+    ["two_factor_auth", "2FA Security", KeyRound],
+    ["audit_compliance", "Audit Compliance", ClipboardCheck],
   ];
 
   const enabledModules = currentHospital?.enabled_modules || DEFAULT_ENABLED_MODULES;
-  const tabs = filterTabsByPermissions(user, allTabs, enabledModules);
+  const activeFeatureFlags = normalizeFeatureFlags(currentHospital?.feature_flags);
+  const tabs = filterTabsByPermissions(user, allTabs, enabledModules, activeFeatureFlags);
 
   useEffect(() => {
     const internalViews = ["patientProfile", "doctorProfile"];
@@ -1185,6 +1206,22 @@ function App() {
           }
         }}
       >
+            {["fhir", "hl7", "pacs", "biometric", "insurance_tpa", "erp", "whatsapp_sms", "abdm_abha", "two_factor_auth", "audit_compliance"].includes(tab) && (
+              <section className="card enterpriseFeaturePage">
+                <div className="sectionHead">
+                  <div>
+                    <h2>{tabs.find((t) => t[0] === tab)?.[1] || "Enterprise Feature"}</h2>
+                    <p className="muted">This advanced feature flag is enabled for the active hospital. Detailed workflows and integrations can be expanded in the next dedicated phase.</p>
+                  </div>
+                  <span className="statusPill success">Enabled</span>
+                </div>
+                <div className="featureNotice">
+                  <strong>Active hospital:</strong> {currentHospital?.name || user?.hospital_name || "Current hospital"}
+                  <br />
+                  <span>Use Configuration → Advanced Feature Flags to turn this feature on or off per hospital.</span>
+                </div>
+              </section>
+            )}
             {tab === "dashboard" && (
               <Dashboard
                 stats={stats}

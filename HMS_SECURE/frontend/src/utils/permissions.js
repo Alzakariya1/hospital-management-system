@@ -170,6 +170,16 @@ export function hasFeature(featureFlags, featureId) {
 }
 
 export const TAB_PERMISSIONS = {
+  fhir: 'configuration.manage',
+  hl7: 'configuration.manage',
+  pacs: 'configuration.manage',
+  biometric: 'configuration.manage',
+  insurance_tpa: 'configuration.manage',
+  erp: 'configuration.manage',
+  whatsapp_sms: 'communication.manage',
+  abdm_abha: 'configuration.manage',
+  two_factor_auth: 'security.manage',
+  audit_compliance: ['audit.view', 'security.manage'],
   dashboard: 'dashboard.view',
   patients: 'patient.view',
   doctors: 'doctor.view',
@@ -187,6 +197,16 @@ export const TAB_PERMISSIONS = {
 };
 
 export const TAB_MODULES = {
+  fhir: ['configuration'],
+  hl7: ['configuration'],
+  pacs: ['configuration'],
+  biometric: ['configuration'],
+  insurance_tpa: ['billing'],
+  erp: ['billing'],
+  whatsapp_sms: ['communications'],
+  abdm_abha: ['patients'],
+  two_factor_auth: ['auditSecurity'],
+  audit_compliance: ['auditSecurity'],
   dashboard: ['dashboard'],
   patients: ['patients'],
   doctors: ['doctors'],
@@ -206,6 +226,19 @@ export const TAB_MODULES = {
 // Platform-level tabs are controlled by permission only.
 // They must not be hidden by hospital module ON/OFF settings.
 export const PLATFORM_TABS = ['tenants', 'saasControl', 'auditSecurity', 'configuration'];
+
+export const TAB_FEATURES = {
+  fhir: 'fhir',
+  hl7: 'hl7',
+  pacs: 'pacs',
+  biometric: 'biometric',
+  insurance_tpa: 'insurance_tpa',
+  erp: 'erp',
+  whatsapp_sms: 'whatsapp_sms',
+  abdm_abha: 'abdm_abha',
+  two_factor_auth: 'two_factor_auth',
+  audit_compliance: 'audit_compliance',
+};
 
 export function getUserPermissions(user) {
   if (!user || typeof user !== 'object') return [];
@@ -236,10 +269,12 @@ export function hasModuleAccess(enabledModules, moduleIds) {
   return requiredModules.some((moduleId) => normalizedModules.includes(moduleId));
 }
 
-export function filterTabsByPermissions(user, tabs = [], enabledModules) {
+export function filterTabsByPermissions(user, tabs = [], enabledModules, featureFlags) {
   if (!user) return [];
   return tabs.filter(([id]) => {
     const allowedByPermission = hasPermission(user, TAB_PERMISSIONS[id]);
+    const requiredFeature = TAB_FEATURES[id];
+    if (requiredFeature && !hasFeature(featureFlags, requiredFeature)) return false;
 
     if (PLATFORM_TABS.includes(id)) {
       return allowedByPermission;
