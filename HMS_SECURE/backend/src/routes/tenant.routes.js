@@ -6,6 +6,7 @@ const cloudinary = require('../config/cloudinary');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
+const { buildTenantDbName, ensureTenantDatabase, sanitizeDbName } = require('../config/tenantDb');
 const { getPlan, getAllowedModules, getAllowedFeatures, normalizePlanModules, normalizePlanFeatureFlags, mergePlanLimits, ensureWithinLimit } = require('../utils/subscription');
 
 const router = express.Router();
@@ -248,9 +249,24 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
     }
     throw err;
   }
+
   let adminUser = null;
+  let tenantDbName = null;
 
   try {
+    // Phase V44: every newly added hospital gets its own physical MongoDB database immediately.
+    // Platform/super-admin data remains in the master DB; patient/doctor/billing/etc. go to this tenant DB.
+    tenantDbName = sanitizeDbName(req.body.tenant_db_name) || buildTenantDbName({
+      hospital_code: hospital.hospital_code,
+      id: hospital.id,
+      name: hospital.name,
+    });
+    await ensureTenantDatabase(tenantDbName);
+    hospital.tenant_db_name = tenantDbName;
+    hospital.tenant_db_status = 'active';
+    hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
+    await hospital.save();
+
     const adminPayload = await buildInitialAdminPayload(req, hospital.id);
     if (adminPayload) {
       const limitCheck = await ensureWithinLimit(hospital.id, 'users', 1);
@@ -276,7 +292,7 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
   });
 
   res.status(201).json({
-    message: adminUser ? 'Hospital and admin user created successfully' : 'Hospital created successfully',
+    message: adminUser ? 'Hospital, tenant database and admin user created successfully' : 'Hospital and tenant database created successfully',
     hospital: publicHospital(hospital),
     admin_user: publicUser(adminUser),
   });
