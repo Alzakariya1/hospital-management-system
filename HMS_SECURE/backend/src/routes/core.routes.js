@@ -6,7 +6,6 @@ const { attachTenant, tenantFilter, tenantCreateData } = require('../middleware/
 const multer = require('multer');
 const { cloudinary, hasCloudinaryConfig } = require('../config/cloudinary');
 const { createNotification } = require('../utils/notifications');
-const { ensureUniqueCode } = require('../utils/identifiers');
 
 const router = express.Router();
 const upload = multer({
@@ -139,8 +138,7 @@ router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async 
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
     const custom_fields = await validateCustomFields(req, 'doctors', req.body.custom_fields || {});
-    const doctor_id = await ensureUniqueCode(Doctor, req, tenantFilter(req), 'doctor_id', req.body.doctor_id, { width: 3 });
-    const r = await Doctor.create(tenantCreateData(req, { ...req.body, doctor_id, custom_fields, doctor_uid: uid, status: req.body.status || 'active' }));
+    const r = await Doctor.create(tenantCreateData(req, { ...req.body, custom_fields, doctor_uid: uid, status: req.body.status || 'active' }));
     res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
 }));
 

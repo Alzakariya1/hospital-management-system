@@ -3,7 +3,6 @@ const { Patient, Appointment, OpdRecord, Prescription, Billing, LabTest, Radiolo
 const asyncHandler = require("../utils/asyncHandler");
 const { verifyToken, requirePermission } = require("../middleware/auth");
 const { attachTenant, tenantFilter, tenantCreateData } = require("../middleware/tenant");
-const { ensureUniqueCode } = require("../utils/identifiers");
 const router = express.Router();
 const multer = require("multer");
 const cloudinary = require("../config/cloudinary");
@@ -154,8 +153,7 @@ router.post(
     asyncHandler(async (req, res) => {
         const uid = req.body.patient_uid || `PAT-${Date.now()}`;
         const custom_fields = await validateCustomFields(req, 'patients', req.body.custom_fields || {});
-        const patient_id = await ensureUniqueCode(Patient, req, tenantFilter(req), "patient_id", req.body.patient_id, { width: 3 });
-        const r = await Patient.create(tenantCreateData(req, { ...req.body, patient_id, custom_fields, patient_uid: uid }));
+        const r = await Patient.create(tenantCreateData(req, { ...req.body, custom_fields, patient_uid: uid }));
         res
             .status(201)
             .json({ message: "Patient created", id: r.id, patient_uid: uid });
