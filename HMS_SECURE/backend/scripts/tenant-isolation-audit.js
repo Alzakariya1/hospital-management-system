@@ -64,7 +64,7 @@ for (const file of masterOnlyRoutes) {
 
 const modelsSource = fs.readFileSync(path.join(ROOT, 'src', 'models', 'index.js'), 'utf8');
 const tenantCollections = [
-  'patients', 'doctors', 'appointments', 'billings', 'medicines', 'pharmacy_sales',
+  'patients', 'doctors', 'appointments', 'billing', 'medicines', 'pharmacy_sales',
   'lab_tests', 'radiology_tests', 'inventory_items', 'inventory_batches', 'purchase_orders',
   'consent_forms', 'incident_reports', 'audit_logs', 'dynamic_fields', 'templates',
   'data_requests', 'security_incidents', 'pilot_deployments', 'pilot_tasks'

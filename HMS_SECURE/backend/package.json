@@ -22,7 +22,8 @@
     "tenant:migrate": "node scripts/migrate-shared-to-tenant.js",
     "tenant:audit": "node scripts/tenant-isolation-audit.js",
     "tenant:verify-architecture": "node scripts/verify-tenant-architecture.js",
-    "db:fresh-master-reset": "node scripts/fresh-master-reset.js"
+    "db:fresh-master-reset": "node scripts/fresh-master-reset.js",
+    "tenant:safety-check": "node scripts/tenant-operational-safety-check.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

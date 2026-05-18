@@ -22,7 +22,7 @@ async function nextId(name, db) {
 const TENANT_COLLECTIONS = new Set([
     "departments", "patients", "doctors", "doctor_schedules", "appointments", "beds",
     "opd_records", "ipd_admissions", "nursing_notes", "lab_test_templates", "lab_tests",
-    "radiology_tests", "medicines", "pharmacy_sales", "billings", "insurance_claims",
+    "radiology_tests", "medicines", "pharmacy_sales", "billing", "insurance_claims",
     "prescriptions", "clinical_records", "audit_logs", "login_history", "security_settings",
     "dynamic_fields", "templates", "notifications", "communication_logs", "suppliers",
     "inventory_items", "inventory_batches", "purchase_orders", "supplier_bills",

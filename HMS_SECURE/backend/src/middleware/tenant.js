@@ -1,5 +1,5 @@
 const { Hospital } = require('../models');
-const { runWithTenantDbName, sanitizeDbName } = require('../config/tenantDb');
+const { runWithTenantDbName, sanitizeDbName, buildTenantDbName, ensureTenantDatabase } = require('../config/tenantDb');
 
 const DEFAULT_HOSPITAL_ID = Number(process.env.DEFAULT_HOSPITAL_ID || 1);
 
@@ -12,13 +12,42 @@ function resolveHospitalId(req) {
 }
 
 async function resolveTenantDatabase(req, hospitalId) {
+  const numericHospitalId = Number(hospitalId || DEFAULT_HOSPITAL_ID);
   const explicitDb = sanitizeDbName(req.headers['x-tenant-db'] || req.headers['x-tenant-db-name']);
   // Only super admins can force a tenant DB from headers for support/backup/tenant-switch use cases.
   if (explicitDb && req.user?.role === 'super_admin') return explicitDb;
   const tokenDb = sanitizeDbName(req.user?.tenant_db_name || req.user?.db_name);
-  if (tokenDb && Number(req.user?.hospital_id) === Number(hospitalId)) return tokenDb;
-  const hospital = await Hospital.findOne({ id: Number(hospitalId) }).lean();
-  return sanitizeDbName(hospital?.tenant_db_name || hospital?.db_name || '');
+  if (tokenDb && Number(req.user?.hospital_id) === numericHospitalId) return tokenDb;
+
+  let hospital = await Hospital.findOne({ id: numericHospitalId });
+  if (!hospital && numericHospitalId === DEFAULT_HOSPITAL_ID) {
+    hospital = await Hospital.create({
+      id: DEFAULT_HOSPITAL_ID,
+      hospital_code: process.env.DEFAULT_HOSPITAL_CODE || 'DEFAULT',
+      name: process.env.DEFAULT_HOSPITAL_NAME || 'Default Hospital',
+      type: 'hospital',
+      status: 'active',
+      plan: 'enterprise',
+    });
+  }
+  if (!hospital) return '';
+
+  let dbName = sanitizeDbName(hospital.tenant_db_name || hospital.db_name || '');
+  // Enterprise safety rule: every hospital, including Default Hospital, must have its own tenant DB.
+  // This prevents patients/doctors/billing/etc. from ever being written into hms_super_admin.
+  if (!dbName) {
+    dbName = buildTenantDbName({
+      id: hospital.id,
+      hospital_code: hospital.hospital_code,
+      name: hospital.name,
+    });
+    await ensureTenantDatabase(dbName);
+    await Hospital.updateOne(
+      { id: hospital.id },
+      { $set: { tenant_db_name: dbName, tenant_db_status: 'active', tenant_db_created_at: new Date() } },
+    );
+  }
+  return dbName;
 }
 
 async function attachTenant(req, _res, next) {
