@@ -12,6 +12,7 @@ const {
   listTenantConnectionStatus,
   sanitizeDbName,
   uriForDb,
+  getTenantConnection,
 } = require('../config/tenantDb');
 
 const router = express.Router();
@@ -92,6 +93,39 @@ router.post('/tenant-databases/:hospitalId/backup', asyncHandler(async (req, res
 
   await auditEvent({ req, userId: req.user.id, hospital_id: hospital.id, action: `Queued tenant backup for ${dbName}`, module_name: 'tenant_backup', entity_type: 'tenant_backup', entity_id: backup.id });
   res.status(202).json({ message: 'Tenant backup queued', backup });
+}));
+
+
+
+router.get('/tenant-databases/:hospitalId/data-summary', asyncHandler(async (req, res) => {
+  const hospital = await Hospital.findOne({ id: Number(req.params.hospitalId) }).lean();
+  if (!hospital) return res.status(404).json({ message: 'Hospital not found' });
+  const dbName = sanitizeDbName(hospital.tenant_db_name);
+  if (!dbName) return res.status(400).json({ message: 'This hospital is still using shared database mode. Provision a tenant DB first.' });
+
+  const conn = getTenantConnection(dbName);
+  await conn.asPromise?.();
+  const businessCollections = [
+    'patients', 'doctors', 'appointments', 'beds', 'opd_records', 'ipd_admissions',
+    'lab_tests', 'radiology_tests', 'medicines', 'pharmacy_sales', 'billings',
+    'inventory_items', 'purchase_orders', 'audit_logs', 'login_history'
+  ];
+  const counts = {};
+  for (const name of businessCollections) {
+    try {
+      counts[name] = await conn.db.collection(name).countDocuments({});
+    } catch (_) {
+      counts[name] = 0;
+    }
+  }
+  const collections = await conn.db.listCollections().toArray();
+  res.json({
+    hospital,
+    tenant_db_name: dbName,
+    storage_mode: 'database-per-tenant',
+    collections: collections.map((c) => c.name).sort(),
+    counts,
+  });
 }));
 
 router.get('/tenant-databases/backups', asyncHandler(async (req, res) => {

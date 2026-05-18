@@ -11,4 +11,9 @@ export const tenantApi = {
   createAdmin: (id, payload) => api.post(`/tenants/${id}/admins`, payload),
   uploadLogo: (id, formData) => api.post(`/tenants/${id}/logo`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   archive: (id) => api.delete(`/tenants/${id}`),
+  databaseOverview: () => api.get('/tenant-databases/overview'),
+  provisionDatabase: (hospitalId, payload = {}) => api.post(`/tenant-databases/${hospitalId}/provision`, payload),
+  backupDatabase: (hospitalId, payload = {}) => api.post(`/tenant-databases/${hospitalId}/backup`, payload),
+  databaseSummary: (hospitalId) => api.get(`/tenant-databases/${hospitalId}/data-summary`),
+  databaseBackups: (params = {}) => api.get('/tenant-databases/backups', { params }),
 };
