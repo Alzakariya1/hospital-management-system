@@ -25,24 +25,34 @@ async function addPatient(req, rows) {
 }
 
 function buildInvoicePayload(req) {
-  const b = req.body;
-  const subtotal = ['consultation_fee', 'room_charges', 'icu_charges', 'lab_charges', 'medicine_charges', 'nursing_charges', 'ambulance_charges']
+  const b = req.body || {};
+  const lineItems = Array.isArray(b.items) ? b.items : [];
+  const itemTotal = lineItems.reduce((sum, item) => sum + (Number(item.amount || item.total || 0) || 0), 0);
+  const legacySubtotal = ['consultation_fee', 'room_charges', 'icu_charges', 'lab_charges', 'medicine_charges', 'nursing_charges', 'ambulance_charges']
     .reduce((s, k) => s + Number(b[k] || 0), 0);
-  const gst_amount = subtotal * Number(b.gst_percent || 0) / 100;
-  const total_amount = subtotal + gst_amount - Number(b.discount || 0);
-  const paid_amount = Number(b.paid_amount || 0);
-  const payment_status = paid_amount >= total_amount ? 'paid' : paid_amount > 0 ? 'partial' : 'pending';
-  const invoice_number = `INV-${Date.now()}`;
+  const rawAmount = Number(b.total_amount || b.amount || 0);
+  const subtotal = itemTotal || legacySubtotal || rawAmount;
+  const gst_amount = Number(b.gst_amount || (subtotal * Number(b.gst_percent || 0) / 100));
+  const discount = Number(b.discount || 0);
+  const total_amount = Math.max(0, Number(b.total_amount || (subtotal + gst_amount - discount)) || 0);
+  const paid_amount = Math.max(0, Number(b.paid_amount || 0));
+  const due_amount = Math.max(0, total_amount - paid_amount);
+  const payment_status = b.payment_status || b.status || (paid_amount >= total_amount && total_amount > 0 ? 'paid' : paid_amount > 0 ? 'partial' : 'pending');
+  const invoice_number = b.invoice_number || `INV-${Date.now()}`;
   return tenantCreateData(req, {
     ...b,
     invoice_number,
-    total_amount,
-    paid_amount,
-    payment_status,
+    items: lineItems,
+    amount: total_amount,
     subtotal,
     gst_amount,
-    discount: b.discount || 0,
-    billing_date: new Date(),
+    discount,
+    total_amount,
+    paid_amount,
+    due_amount,
+    status: payment_status,
+    payment_status,
+    billing_date: b.billing_date ? new Date(b.billing_date) : new Date(),
   });
 }
 
@@ -67,7 +77,7 @@ router.get('/all', requirePermission('billing.view'), asyncHandler(async (req, r
 
 router.get('/summary', requirePermission('billing.view'), asyncHandler(async (req, res) => {
   const bills = await Billing.find(tenantFilter(req)).lean();
-  const totalBilling = bills.reduce((s, b) => s + Number(b.total_amount || 0), 0);
+  const totalBilling = bills.reduce((s, b) => s + Number(b.total_amount || b.amount || 0), 0);
   const totalPaid = bills.reduce((s, b) => s + Number(b.paid_amount || 0), 0);
   res.json({ invoices: bills.length, totalBilling, totalPaid, dueAmount: totalBilling - totalPaid });
 }));

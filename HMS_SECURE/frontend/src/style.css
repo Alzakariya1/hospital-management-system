@@ -3655,3 +3655,31 @@ button.ghost.danger { background:transparent; color:#dc2626; border:1px solid #f
 .template-preview-box pre{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;background:white;border-radius:12px;padding:14px;border:1px solid #e2e8f0;color:#334155;max-height:320px;overflow:auto}
 .dynamic-fields-block{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:18px}
 .config-checkbox-field{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;font-weight:700;color:#334155}
+
+/* V45 safe UI/UX hardening */
+body { letter-spacing: normal; }
+.enterpriseTableWrap, .tableWrap { width: 100%; overflow-x: auto; }
+.enterpriseTable { min-width: 920px; }
+.compactTable table { min-width: 640px; }
+.labeledGrid label { display: flex; flex-direction: column; gap: 7px; font-weight: 700; color: var(--text, #0f172a); }
+.labeledGrid label span { font-size: 12px; color: var(--muted, #64748b); text-transform: uppercase; letter-spacing: .04em; }
+.polishedForm { margin-bottom: 24px; }
+.polishedForm input, .polishedForm select, .polishedForm textarea { min-height: 46px; }
+.inventoryPage .page-intro-card, .inventory-hero, .inventoryHero, .inventoryHeader {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  color: #fff !important;
+}
+.inventoryPage .page-intro-card .muted, .inventory-hero .muted, .inventoryHero .muted, .inventoryHeader .muted { color: rgba(255,255,255,.86) !important; }
+.emptyState { text-align: center; border: 1px dashed var(--border, #d9e2ef); background: color-mix(in srgb, var(--purple, #5b3fb4) 8%, transparent); border-radius: 18px; padding: 22px; color: var(--muted, #64748b); }
+.commandHero { display: flex !important; visibility: visible !important; }
+.commandAlertGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin: 18px 0; }
+.commandAlert { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid var(--border, #e5e7eb); box-shadow: 0 8px 22px rgba(15,23,42,.06); }
+.commandAlert strong { font-size: 24px; }
+.commandAlert.warn { border-color: #fed7aa; }
+.commandAlert.danger { border-color: #fecaca; }
+.commandAlert.ok { border-color: #bbf7d0; }
+.alert.danger { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; padding: 12px 14px; border-radius: 14px; display: flex; gap: 8px; align-items: center; }
+.template-preview-box pre { white-space: pre-wrap; overflow-x: auto; background: #0f172a; color: #fff; padding: 14px; border-radius: 12px; }
+@media (max-width: 900px) { .labeledGrid { grid-template-columns: 1fr !important; } .enterpriseTable { min-width: 760px; } }
+.inventoryPage .pharmacyHero { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; color: #fff !important; }
+.inventoryPage .pharmacyHero p, .inventoryPage .pharmacyHero .eyebrow { color: rgba(255,255,255,.9) !important; }

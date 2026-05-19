@@ -47,7 +47,7 @@ export default function PatientPortal({ user, patients = [] }) {
         <div className="portalHeroActions">
           {canSelectPatient && (
             <select value={selectedPatientId} onChange={(e) => { setSelectedPatientId(e.target.value); load(e.target.value); }}>
-              <option value="">Auto-linked patient</option>
+              <option value="">Auto-link from my login / select patient below</option>
               {patients.map((p) => <option key={p.id} value={p.id}>{p.full_name} · {p.patient_id || p.id}</option>)}
             </select>
           )}
@@ -56,7 +56,7 @@ export default function PatientPortal({ user, patients = [] }) {
       </div>
 
       {!patient ? (
-        <div className="card emptyState">{data?.message || "No patient profile found for this login yet."}</div>
+        <div className="card emptyState">{data?.message || "No patient profile found. Admin/staff can select a patient from the dropdown above."}</div>
       ) : (
         <>
           <div className="portalProfile card">

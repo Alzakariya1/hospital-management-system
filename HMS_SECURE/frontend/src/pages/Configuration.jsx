@@ -43,6 +43,7 @@ export default function Configuration({ permissions = {}, onChanged }) {
   const [moduleFilter, setModuleFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [templatePreview, setTemplatePreview] = useState('');
   const [templates, setTemplates] = useState([]);
   const [templateForm, setTemplateForm] = useState({ template_type: 'invoice', name: '', header_text: '', body_template: '', footer_text: '', is_default: false, is_active: true });
@@ -52,6 +53,7 @@ export default function Configuration({ permissions = {}, onChanged }) {
 
   async function load() {
     setLoading(true);
+    setLoadError('');
     try {
       const [{ data }, tpl] = await Promise.all([
         configurationApi.listDynamicFields(moduleFilter === 'all' ? {} : { module: moduleFilter }),
@@ -67,6 +69,12 @@ export default function Configuration({ permissions = {}, onChanged }) {
         setSubscription(null);
         setPlans([]);
       }
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Configuration data could not be loaded. Please check API route and permissions.';
+      setLoadError(msg);
+      setFields([]);
+      setTemplates([]);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -256,6 +264,7 @@ export default function Configuration({ permissions = {}, onChanged }) {
         <form className="card form configuration-form" onSubmit={submit}>
           <h2>{editingId ? 'Edit Dynamic Field' : 'Create Dynamic Field'}</h2>
           {message && <p className="muted">{message}</p>}
+          {loadError && <p className="alert danger">{loadError}</p>}
           <div className="formGrid">
             <select value={form.target_module} onChange={e => setForm({ ...form, target_module: e.target.value })}>
               {Object.entries(moduleLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
@@ -367,6 +376,7 @@ export default function Configuration({ permissions = {}, onChanged }) {
             {Object.entries(moduleLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
           </select>
         </div>
+        {loadError && <div className="emptyState">{loadError}</div>}
         {loading ? <p className="muted">Loading fields...</p> : (
           <DataTable
             rows={fields.map(row => ({ ...row, module_label: moduleLabels[row.target_module] || row.target_module, options_text: Array.isArray(row.options) ? row.options.join(', ') : '' }))}

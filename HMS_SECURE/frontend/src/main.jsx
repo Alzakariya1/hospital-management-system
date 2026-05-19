@@ -1551,6 +1551,7 @@ function App() {
                 setBill={setBill}
                 addBill={addBill}
                 bills={bills}
+                patients={patients}
                 permissions={permissions}
               />
             )}

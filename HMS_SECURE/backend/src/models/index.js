@@ -264,7 +264,16 @@ Appointment.schema.index(
     { hospital_id: 1, doctor_id: 1, appointment_date: 1, appointment_time: 1 },
     { name: "appointment_doctor_slot_lookup" },
 );
-const Bed = makeModel("Bed", "beds", { hospital_id: { type: Number, default: 1, index: true } });
+const Bed = makeModel("Bed", "beds", {
+    hospital_id: { type: Number, default: 1, index: true },
+    ward: { type: String, trim: true, default: "General", index: true },
+    bed_number: { type: String, trim: true, required: true },
+    status: { type: String, default: "available", index: true },
+});
+Bed.schema.index(
+    { hospital_id: 1, ward: 1, bed_number: 1 },
+    { unique: true, name: "bed_hospital_ward_number_unique", partialFilterExpression: { bed_number: { $type: "string" } } },
+);
 const OpdRecord = makeModel("OpdRecord", "opd_records", { hospital_id: { type: Number, default: 1, index: true } });
 const IpdAdmission = makeModel("IpdAdmission", "ipd_admissions", { hospital_id: { type: Number, default: 1, index: true } });
 const NursingNote = makeModel("NursingNote", "nursing_notes", { hospital_id: { type: Number, default: 1, index: true } });
@@ -524,7 +533,26 @@ const InventoryTransaction = makeModel("InventoryTransaction", "inventory_transa
 });
 InventoryTransaction.schema.index({ hospital_id: 1, item_id: 1, created_at: -1 }, { name: "inventory_transaction_item_recent" });
 
-const Billing = makeModel("Billing", "billing", { hospital_id: { type: Number, default: 1, index: true } });
+const Billing = makeModel("Billing", "billing", {
+    hospital_id: { type: Number, default: 1, index: true },
+    invoice_number: { type: String, trim: true, index: true },
+    patient_id: { type: String, trim: true, index: true },
+    doctor_id: { type: String, trim: true, index: true },
+    items: { type: [Object], default: [] },
+    amount: { type: Number, default: 0 },
+    subtotal: { type: Number, default: 0 },
+    discount: { type: Number, default: 0 },
+    gst_amount: { type: Number, default: 0 },
+    total_amount: { type: Number, default: 0 },
+    paid_amount: { type: Number, default: 0 },
+    due_amount: { type: Number, default: 0 },
+    status: { type: String, default: "pending", index: true },
+    payment_status: { type: String, default: "pending", index: true },
+    payment_mode: String,
+    notes: String,
+    billing_date: Date,
+});
+Billing.schema.index({ hospital_id: 1, invoice_number: 1 }, { unique: true, name: "billing_hospital_invoice_unique", partialFilterExpression: { invoice_number: { $type: "string" } } });
 const InsuranceClaim = makeModel("InsuranceClaim", "insurance_claims", {
     hospital_id: { type: Number, default: 1, index: true },
     patient_id: { type: String, trim: true, index: true },

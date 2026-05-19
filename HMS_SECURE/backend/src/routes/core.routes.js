@@ -913,7 +913,13 @@ router.get('/beds', requirePermission('bed.view'), asyncHandler(async (req, res)
 }));
 
 router.post('/beds', requirePermission('bed.create'), asyncHandler(async (req, res) => {
-    const r = await Bed.create(tenantCreateData(req, { ...req.body, status: req.body.status || 'available' }));
+    const ward = String(req.body.ward || 'General').trim();
+    const bed_number = String(req.body.bed_number || '').trim();
+    if (!bed_number) return res.status(400).json({ message: 'Bed number is required' });
+    const status = ['available', 'occupied', 'reserved', 'cleaning', 'maintenance', 'inactive'].includes(req.body.status) ? req.body.status : 'available';
+    const exists = await Bed.findOne(tenantFilter(req, { ward, bed_number })).lean();
+    if (exists) return res.status(409).json({ message: `Bed ${bed_number} already exists in ${ward} ward for this hospital.` });
+    const r = await Bed.create(tenantCreateData(req, { ...req.body, ward, bed_number, status }));
     res.status(201).json({ message: 'Bed created', id: r.id });
 }));
 

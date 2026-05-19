@@ -51,28 +51,23 @@ export default function CommandCenter() {
     setLoading(true);
     setError('');
     try {
+      const safe = async (fn, fallback) => {
+        try { const res = await fn(); return res.data ?? fallback; }
+        catch (err) { return fallback; }
+      };
       const [summary, revenue, occupancy, doctors, queue, pharmacy, labTat, emergency] = await Promise.all([
-        commandCenterApi.summary(),
-        commandCenterApi.revenue(),
-        commandCenterApi.occupancy(),
-        commandCenterApi.doctorPerformance(),
-        commandCenterApi.queue(),
-        commandCenterApi.pharmacy(),
-        commandCenterApi.labTat(),
-        commandCenterApi.emergency(),
+        safe(commandCenterApi.summary, { kpis: {} }),
+        safe(commandCenterApi.revenue, { byDay: [], byStatus: {} }),
+        safe(commandCenterApi.occupancy, { byStatus: {}, byWard: [] }),
+        safe(commandCenterApi.doctorPerformance, []),
+        safe(commandCenterApi.queue, { byStatus: {}, queue: [] }),
+        safe(commandCenterApi.pharmacy, {}),
+        safe(commandCenterApi.labTat, {}),
+        safe(commandCenterApi.emergency, {}),
       ]);
-      setData({
-        summary: summary.data,
-        revenue: revenue.data,
-        occupancy: occupancy.data,
-        doctors: doctors.data || [],
-        queue: queue.data,
-        pharmacy: pharmacy.data,
-        labTat: labTat.data,
-        emergency: emergency.data,
-      });
+      setData({ summary, revenue, occupancy, doctors: doctors || [], queue, pharmacy, labTat, emergency });
     } catch (err) {
-      setError(err.response?.data?.message || 'Command Center data could not be loaded.');
+      setError(err.response?.data?.message || 'Some command center data could not be loaded. Showing safe zero-state widgets.');
     } finally {
       setLoading(false);
     }

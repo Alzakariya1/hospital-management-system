@@ -85,10 +85,17 @@ export default function Form({ title, data, setData, submit, customFields = [] }
               value={data[k] ?? ""}
               onChange={(e) => setData({ ...data, [k]: e.target.value })}
             >
+              <option value="available">available</option>
+              <option value="occupied">occupied</option>
+              <option value="reserved">reserved</option>
+              <option value="cleaning">cleaning</option>
+              <option value="maintenance">maintenance</option>
+              <option value="pending">pending</option>
+              <option value="partial">partial</option>
+              <option value="paid">paid</option>
               <option value="scheduled">scheduled</option>
               <option value="completed">completed</option>
               <option value="cancelled">cancelled</option>
-              <option value="pending">pending</option>
               <option value="active">active</option>
               <option value="inactive">inactive</option>
             </select>
