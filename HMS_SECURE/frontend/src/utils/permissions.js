@@ -44,7 +44,7 @@ export function normalizePlanModules(plan = 'enterprise', modules = []) {
 export const ROLE_PERMISSIONS = {
   super_admin: ['*'],
   admin: [
-    'dashboard.view',
+    'dashboard.view', 'analytics.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view', 'appointment.status.update', 'emr.view', 'emr.create', 'emr.edit', 'emr.delete',
@@ -57,7 +57,7 @@ export const ROLE_PERMISSIONS = {
     'audit.view', 'security.manage', 'compliance.view', 'compliance.manage', 'configuration.manage', 'communication.view', 'communication.manage', 'communication.view', 'communication.manage', 'hospital.manage'
   ],
   hospital_admin: [
-    'dashboard.view',
+    'dashboard.view', 'analytics.view',
     'patient.view', 'patient.create', 'patient.edit', 'patient.delete', 'patient.document.manage',
     'doctor.view', 'doctor.create', 'doctor.edit', 'doctor.delete',
     'appointment.view', 'appointment.create', 'appointment.edit', 'appointment.delete', 'portal.patient.view', 'portal.doctor.view', 'appointment.status.update', 'emr.view', 'emr.create', 'emr.edit', 'emr.delete',
@@ -231,8 +231,8 @@ export const TAB_MODULES = {
   patients: ['patients'],
   doctors: ['doctors'],
   appointments: ['appointments'],
-  patientPortal: ['appointments'],
-  doctorPortal: ['appointments'],
+  patientPortal: ['patientPortal', 'appointments', 'patients'],
+  doctorPortal: ['doctorPortal', 'appointments', 'doctors'],
   emr: ['emr'],
   beds: ['beds'],
   labs: ['lab', 'radiology'],
@@ -240,9 +240,9 @@ export const TAB_MODULES = {
   inventory: ['inventory', 'pharmacy'],
   billing: ['billing'],
   profile: ['profile'],
-  auditSecurity: ['profile'],
+  auditSecurity: ['auditSecurity', 'profile'],
   operations: ['operations', 'auditSecurity'],
-  configuration: ['profile'],
+  configuration: ['configuration', 'profile'],
   communications: ['communications'],
   tenants: ['tenants'],
   saasControl: ['tenants'],

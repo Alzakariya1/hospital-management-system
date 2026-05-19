@@ -1,202 +1,161 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, Bed, Clock3, FlaskConical, PackageSearch, RefreshCw, Stethoscope, Users, WalletCards } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { commandCenterApi } from '../api';
-import { StatCard } from '../components';
+import { AlertTriangle, Bed, CalendarCheck, ClipboardList, FlaskConical, PackageSearch, ReceiptText, RefreshCw, Stethoscope, Users } from 'lucide-react';
+import { commandCenterApi, dashboardApi, patientApi, doctorApi, appointmentApi, bedApi, billingApi, labApi, pharmacyApi, auditApi } from '../api';
+import { StatCard, DataTable } from '../components';
 
-const empty = {
-  summary: null,
-  revenue: null,
-  occupancy: null,
-  doctors: [],
-  queue: null,
-  pharmacy: null,
-  labTat: null,
-  emergency: null,
-};
+const zero = { totalPatients: 0, totalDoctors: 0, appointmentsToday: 0, availableBeds: 0 };
+const normalizeArray = (value) => Array.isArray(value) ? value : [];
 
-function money(value) {
-  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(Number(value || 0));
-}
-
-function statusRows(obj = {}) {
-  return Object.entries(obj).map(([name, value]) => ({ name, value }));
-}
-
-function MiniTable({ columns, rows = [], emptyText = 'No data yet' }) {
-  return (
-    <div className="tableWrap compactTable">
-      <table>
-        <thead>
-          <tr>{columns.map((col) => <th key={col.key}>{col.label}</th>)}</tr>
-        </thead>
-        <tbody>
-          {rows.length ? rows.map((row, index) => (
-            <tr key={row.id || row._id || index}>
-              {columns.map((col) => <td key={col.key}>{col.render ? col.render(row) : row[col.key]}</td>)}
-            </tr>
-          )) : <tr><td colSpan={columns.length} className="muted">{emptyText}</td></tr>}
-        </tbody>
-      </table>
-    </div>
-  );
+function countStatus(rows, field, values) {
+  const allowed = values.map((x) => String(x).toLowerCase());
+  return normalizeArray(rows).filter((row) => allowed.includes(String(row?.[field] || '').toLowerCase())).length;
 }
 
 export default function CommandCenter() {
-  const [data, setData] = useState(empty);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [stats, setStats] = useState(zero);
+  const [patients, setPatients] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [appointments, setAppointments] = useState([]);
+  const [beds, setBeds] = useState([]);
+  const [bills, setBills] = useState([]);
+  const [labs, setLabs] = useState([]);
+  const [meds, setMeds] = useState([]);
+  const [auditRows, setAuditRows] = useState([]);
+  const [advanced, setAdvanced] = useState(null);
+
+  async function safe(call, fallback) {
+    try {
+      const res = await call();
+      return res?.data ?? fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
 
   async function load() {
     setLoading(true);
     setError('');
-    try {
-      const safe = async (fn, fallback) => {
-        try { const res = await fn(); return res.data ?? fallback; }
-        catch (err) { return fallback; }
-      };
-      const [summary, revenue, occupancy, doctors, queue, pharmacy, labTat, emergency] = await Promise.all([
-        safe(commandCenterApi.summary, { kpis: {} }),
-        safe(commandCenterApi.revenue, { byDay: [], byStatus: {} }),
-        safe(commandCenterApi.occupancy, { byStatus: {}, byWard: [] }),
-        safe(commandCenterApi.doctorPerformance, []),
-        safe(commandCenterApi.queue, { byStatus: {}, queue: [] }),
-        safe(commandCenterApi.pharmacy, {}),
-        safe(commandCenterApi.labTat, {}),
-        safe(commandCenterApi.emergency, {}),
-      ]);
-      setData({ summary, revenue, occupancy, doctors: doctors || [], queue, pharmacy, labTat, emergency });
-    } catch (err) {
-      setError(err.response?.data?.message || 'Some command center data could not be loaded. Showing safe zero-state widgets.');
-    } finally {
-      setLoading(false);
-    }
+    const [dash, p, d, a, bedRows, billRows, labRows, medRows, audits] = await Promise.all([
+      safe(() => dashboardApi.getStats(), zero),
+      safe(() => patientApi.list(), []),
+      safe(() => doctorApi.list(), []),
+      safe(() => appointmentApi.list(), []),
+      safe(() => bedApi.list(), []),
+      safe(() => billingApi.list(), []),
+      safe(() => labApi.list(), []),
+      safe(() => pharmacyApi.list(), []),
+      safe(() => auditApi.list({ limit: 8 }), []),
+    ]);
+    setStats({ ...zero, ...(dash || {}) });
+    setPatients(normalizeArray(p));
+    setDoctors(normalizeArray(d));
+    setAppointments(normalizeArray(a));
+    setBeds(normalizeArray(bedRows));
+    setBills(normalizeArray(billRows));
+    setLabs(normalizeArray(labRows));
+    setMeds(normalizeArray(medRows));
+    setAuditRows(normalizeArray(audits));
+
+    const [summary, queue, pharmacy, labTat] = await Promise.all([
+      safe(() => commandCenterApi.summary(), null),
+      safe(() => commandCenterApi.queue(), null),
+      safe(() => commandCenterApi.pharmacy(), null),
+      safe(() => commandCenterApi.labTat(), null),
+    ]);
+    setAdvanced({ summary, queue, pharmacy, labTat });
+    setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
-  const kpis = data.summary?.kpis || {};
-  const revenueTrend = data.revenue?.byDay?.length ? data.revenue.byDay : [{ date: 'No data', amount: 0 }];
-  const occupancyRows = data.occupancy?.byWard || [];
-  const queueRows = statusRows(data.queue?.byStatus || {});
-  const revenueStatus = statusRows(data.revenue?.byStatus || {});
-  const palette = ['var(--purple)', 'var(--chart-blue)', 'var(--chart-green)', 'var(--chart-amber)', 'var(--chart-rose)'];
+  const today = new Date().toISOString().slice(0, 10);
+  const todayAppointments = useMemo(() => appointments.filter((a) => String(a.appointment_date || '').slice(0, 10) === today), [appointments, today]);
+  const pendingBills = useMemo(() => bills.filter((b) => ['pending', 'unpaid', 'partial'].includes(String(b.payment_status || b.status || '').toLowerCase())), [bills]);
+  const lowStock = useMemo(() => meds.filter((m) => Number(m.stock || m.quantity || 0) <= Number(m.reorder_level || m.min_stock || 0)), [meds]);
+  const pendingLabs = useMemo(() => labs.filter((l) => !['approved', 'completed'].includes(String(l.test_status || l.status || '').toLowerCase())), [labs]);
+  const availableBeds = countStatus(beds, 'status', ['available', 'active']);
 
-  const commandAlerts = useMemo(() => [
-    { label: 'Low stock medicines', value: kpis.lowStockCount || 0, tone: (kpis.lowStockCount || 0) > 0 ? 'warn' : 'ok' },
-    { label: 'Expiring batches', value: kpis.expiringBatchCount || 0, tone: (kpis.expiringBatchCount || 0) > 0 ? 'warn' : 'ok' },
-    { label: 'Pending lab reports', value: kpis.pendingLabReports || 0, tone: (kpis.pendingLabReports || 0) > 0 ? 'warn' : 'ok' },
-    { label: 'Emergency workload', value: data.emergency?.activeEmergencyCount || 0, tone: (data.emergency?.activeEmergencyCount || 0) > 0 ? 'danger' : 'ok' },
-  ], [kpis, data.emergency]);
+  const quickActions = [
+    { title: 'Register patient', text: 'Open Patients and add demographics, insurance and documents.' },
+    { title: 'Book appointment', text: 'Create appointment with date, time, doctor and status.' },
+    { title: 'Create bill', text: 'Create invoice and track paid or pending amount.' },
+    { title: 'Receive stock', text: 'Add supplier stock, batches, barcode and expiry details.' },
+  ];
 
   return (
-    <section>
-      <div className="quickPanel commandHero">
+    <section className="commandCenterPage">
+      <div className="commandHeroFixed card">
         <div>
-          <p className="eyebrow">Analytics + Hospital Command Center</p>
-          <h1>Hospital Command Center</h1>
-          <p>Monitor revenue, occupancy, doctors, queues, pharmacy, lab TAT and emergency workload from one control room.</p>
+          <span className="eyebrow">Live Command Center</span>
+          <h1>Hospital operations control room</h1>
+          <p className="muted">This screen now stays useful even when advanced analytics APIs return empty data. It falls back to core patients, doctors, appointments, beds, lab, pharmacy, billing and audit data.</p>
         </div>
-        <button className="btnGhost" onClick={load} disabled={loading}><RefreshCw size={16} /> Refresh</button>
+        <button className="primaryBtn" onClick={load} disabled={loading}><RefreshCw size={16} /> {loading ? 'Refreshing...' : 'Refresh'}</button>
       </div>
 
       {error && <div className="alert danger"><AlertTriangle size={16} /> {error}</div>}
 
-      <div className="grid" style={{ marginTop: 18 }}>
-        <StatCard icon={WalletCards} title="30-Day Revenue" value={money(kpis.revenue30)} />
-        <StatCard icon={Bed} title="Occupancy Rate" value={`${kpis.occupancyRate || 0}%`} />
-        <StatCard icon={Users} title="Today Queue" value={kpis.appointmentsToday || 0} />
-        <StatCard icon={Clock3} title="Avg Lab TAT" value={`${data.labTat?.averageTatHours || 0}h`} />
+      <div className="grid commandStatsGrid">
+        <StatCard icon={Users} title="Total Patients" value={stats.totalPatients || patients.length} />
+        <StatCard icon={Stethoscope} title="Total Doctors" value={stats.totalDoctors || doctors.length} />
+        <StatCard icon={CalendarCheck} title="Today Appointments" value={stats.appointmentsToday || todayAppointments.length} />
+        <StatCard icon={Bed} title="Available Beds" value={stats.availableBeds || availableBeds} />
       </div>
 
-      <div className="commandAlertGrid">
-        {commandAlerts.map((alert) => <div key={alert.label} className={`commandAlert ${alert.tone}`}><span>{alert.label}</span><strong>{alert.value}</strong></div>)}
+      <div className="commandAlertGrid fixedAlerts">
+        <div className={`commandAlert ${todayAppointments.length ? 'warn' : 'ok'}`}><span>Today Queue</span><strong>{todayAppointments.length}</strong></div>
+        <div className={`commandAlert ${pendingBills.length ? 'warn' : 'ok'}`}><span>Pending Bills</span><strong>{pendingBills.length}</strong></div>
+        <div className={`commandAlert ${pendingLabs.length ? 'warn' : 'ok'}`}><span>Pending Lab Reports</span><strong>{pendingLabs.length}</strong></div>
+        <div className={`commandAlert ${lowStock.length ? 'danger' : 'ok'}`}><span>Low Stock</span><strong>{lowStock.length}</strong></div>
       </div>
 
-      <div className="dashboardTwoCol">
-        <div className="card commandCard">
-          <div className="kekaPanelTitle"><h2>Revenue Dashboard</h2><small className="muted">Last 30 days</small></div>
-          <div className="chartBox">
-            <ResponsiveContainer>
-              <LineChart data={revenueTrend}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} stroke="var(--muted)" />
-                <YAxis axisLine={false} tickLine={false} stroke="var(--muted)" />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }} />
-                <Line type="monotone" dataKey="amount" stroke="var(--purple)" strokeWidth={3} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+      <div className="dashboardTwoCol commandTwoColFixed">
+        <div className="card commandPanelFixed">
+          <div className="sectionTitleRow"><h2><CalendarCheck size={18} /> Today Queue</h2><span className="muted">{todayAppointments.length} appointments</span></div>
+          <DataTable rows={todayAppointments.slice(0, 8)} cols={["appointment_time", "patient_name", "doctor_name", "status"]} />
+        </div>
+        <div className="card commandPanelFixed">
+          <div className="sectionTitleRow"><h2><ReceiptText size={18} /> Billing Watch</h2><span className="muted">{pendingBills.length} pending</span></div>
+          <DataTable rows={pendingBills.slice(0, 8)} cols={["invoice_number", "patient_name", "total_amount", "paid_amount", "payment_status"]} />
+        </div>
+      </div>
+
+      <div className="dashboardThreeCol commandThreeColFixed">
+        <div className="card commandMiniPanel">
+          <h3><Bed size={17} /> Bed Pressure</h3>
+          <p className="bigMetric">{availableBeds}</p>
+          <p className="muted">Available out of {beds.length || 0} registered beds.</p>
+          <DataTable rows={beds.slice(0, 5)} cols={["ward", "bed_number", "status"]} />
+        </div>
+        <div className="card commandMiniPanel">
+          <h3><FlaskConical size={17} /> Lab / Radiology</h3>
+          <p className="bigMetric">{pendingLabs.length}</p>
+          <p className="muted">Pending or in-process lab orders.</p>
+          <DataTable rows={pendingLabs.slice(0, 5)} cols={["barcode", "patient_name", "test_name", "test_status"]} />
+        </div>
+        <div className="card commandMiniPanel">
+          <h3><PackageSearch size={17} /> Pharmacy / Stock</h3>
+          <p className="bigMetric">{lowStock.length}</p>
+          <p className="muted">Medicines at or below reorder level.</p>
+          <DataTable rows={lowStock.slice(0, 5)} cols={["name", "stock", "reorder_level", "status"]} />
+        </div>
+      </div>
+
+      <div className="dashboardTwoCol commandTwoColFixed">
+        <div className="card commandPanelFixed">
+          <div className="sectionTitleRow"><h2><ClipboardList size={18} /> Recent Activity</h2><span className="muted">Latest audit events</span></div>
+          <DataTable rows={auditRows.slice(0, 8)} cols={["user_name", "action", "module_name", "status", "severity"]} />
+        </div>
+        <div className="card commandPanelFixed quickActionsPanel">
+          <h2>Quick operational actions</h2>
+          <div className="quickActionGrid">
+            {quickActions.map((x) => <div className="quickActionCard" key={x.title}><strong>{x.title}</strong><p>{x.text}</p></div>)}
           </div>
-          <MiniTable columns={[{ key: 'name', label: 'Status' }, { key: 'value', label: 'Amount', render: (r) => money(r.value) }]} rows={revenueStatus} />
-        </div>
-
-        <div className="card commandCard">
-          <div className="kekaPanelTitle"><h2>Occupancy Dashboard</h2><small className="muted">Ward-wise bed pressure</small></div>
-          <div className="chartBox small">
-            <ResponsiveContainer>
-              <PieChart>
-                <Pie data={statusRows(data.occupancy?.byStatus || {})} dataKey="value" nameKey="name" outerRadius={90} label>
-                  {statusRows(data.occupancy?.byStatus || {}).map((entry, index) => <Cell key={entry.name} fill={palette[index % palette.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <MiniTable columns={[{ key: 'ward', label: 'Ward' }, { key: 'total', label: 'Total' }, { key: 'occupied', label: 'Occupied' }, { key: 'available', label: 'Available' }]} rows={occupancyRows} />
+          <p className="muted">Advanced analytics status: {advanced?.summary ? 'Connected' : 'Using safe fallback from core modules'}.</p>
         </div>
       </div>
-
-      <div className="dashboardTwoCol">
-        <div className="card commandCard">
-          <div className="kekaPanelTitle"><h2>Doctor Performance</h2><small className="muted">Appointments, completion and linked revenue</small></div>
-          <MiniTable columns={[
-            { key: 'full_name', label: 'Doctor' },
-            { key: 'specialization', label: 'Specialization' },
-            { key: 'appointments', label: 'Appts' },
-            { key: 'completionRate', label: 'Done %', render: (r) => `${r.completionRate || 0}%` },
-            { key: 'revenue', label: 'Revenue', render: (r) => money(r.revenue) },
-          ]} rows={data.doctors.slice(0, 10)} />
-        </div>
-
-        <div className="card commandCard">
-          <div className="kekaPanelTitle"><h2>Queue Monitoring</h2><small className="muted">Today's appointment movement</small></div>
-          <div className="chartBox small">
-            <ResponsiveContainer>
-              <BarChart data={queueRows}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} stroke="var(--muted)" />
-                <YAxis axisLine={false} tickLine={false} stroke="var(--muted)" />
-                <Tooltip contentStyle={{ borderRadius: 12, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)' }} />
-                <Bar dataKey="value" radius={[8, 8, 0, 0]} fill="var(--chart-blue)" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <MiniTable columns={[{ key: 'appointment_time', label: 'Time' }, { key: 'patient_id', label: 'Patient' }, { key: 'doctor_id', label: 'Doctor' }, { key: 'status', label: 'Status' }]} rows={data.queue?.queue?.slice(0, 8) || []} />
-        </div>
-      </div>
-
-      <div className="dashboardThreeCol">
-        <div className="card commandCard">
-          <div className="kekaPanelTitle"><h2><PackageSearch size={18} /> Pharmacy Stats</h2></div>
-          <p className="bigMetric">{data.pharmacy?.salesCount || 0}</p><p className="muted">Sales in last 30 days</p>
-          <p><strong>{data.pharmacy?.lowStockCount || 0}</strong> low-stock medicines</p>
-          <p><strong>{data.pharmacy?.expiringBatchCount || 0}</strong> batches near expiry</p>
-        </div>
-        <div className="card commandCard">
-          <div className="kekaPanelTitle"><h2><FlaskConical size={18} /> Lab Turnaround</h2></div>
-          <p className="bigMetric">{data.labTat?.averageTatHours || 0}h</p><p className="muted">Average TAT</p>
-          <p><strong>{data.labTat?.completedReports || 0}</strong> completed reports</p>
-          <p><strong>{data.labTat?.pendingReports || 0}</strong> pending reports</p>
-        </div>
-        <div className="card commandCard emergencyPanel">
-          <div className="kekaPanelTitle"><h2><Activity size={18} /> Emergency Dashboard</h2></div>
-          <p className="bigMetric">{data.emergency?.activeEmergencyCount || 0}</p><p className="muted">Active emergency workload</p>
-          <p><strong>{data.emergency?.urgentAppointments?.length || 0}</strong> urgent appointments</p>
-          <p><strong>{data.emergency?.urgentLabs?.length || 0}</strong> urgent lab cases</p>
-        </div>
-      </div>
-
-      {loading && <p className="muted" style={{ marginTop: 12 }}>Loading command center data...</p>}
     </section>
   );
 }

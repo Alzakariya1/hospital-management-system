@@ -3683,3 +3683,48 @@ body { letter-spacing: normal; }
 @media (max-width: 900px) { .labeledGrid { grid-template-columns: 1fr !important; } .enterpriseTable { min-width: 760px; } }
 .inventoryPage .pharmacyHero { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; color: #fff !important; }
 .inventoryPage .pharmacyHero p, .inventoryPage .pharmacyHero .eyebrow { color: rgba(255,255,255,.9) !important; }
+
+/* V45 REAL FIX PASS - UI/UX hardening and broken-screen prevention */
+body { letter-spacing: normal; }
+.card, .quickPanel, .page-intro-card, .appointmentHero { overflow: visible; }
+.tableWrap, .enterpriseTableWrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.enterpriseTable { min-width: 860px; }
+.tableCellText { white-space: normal; word-break: break-word; }
+.actionsCol { min-width: 120px; }
+.emptyState, .emptyTableState { border: 1px dashed var(--border); border-radius: 18px; padding: 28px; text-align: center; background: rgba(124, 58, 237, 0.04); color: var(--muted); }
+.sectionTitleRow { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.polishedForm label, .invoiceForm label { display: flex; flex-direction: column; gap: 7px; font-weight: 700; color: var(--text); }
+.polishedForm label span, .invoiceForm label span { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.labeledGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.labeledGrid input, .labeledGrid select, .labeledGrid textarea { width: 100%; }
+.commandHeroFixed { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 28px; background: linear-gradient(135deg, rgba(99, 102, 241, .14), rgba(124, 58, 237, .08)); border: 1px solid rgba(124, 58, 237, .18); }
+.commandHeroFixed h1 { margin: 6px 0 8px; font-size: clamp(28px, 4vw, 44px); }
+.commandStatsGrid, .bedStatusGrid, .billingSummaryGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; margin: 18px 0; }
+.bedStatusGrid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.fixedAlerts { margin: 18px 0; }
+.commandTwoColFixed { margin-top: 18px; align-items: stretch; }
+.commandThreeColFixed { margin-top: 18px; }
+.commandPanelFixed, .commandMiniPanel, .quickActionsPanel { min-height: 260px; }
+.commandMiniPanel h3, .commandPanelFixed h2 { display: flex; align-items: center; gap: 8px; }
+.bigMetric { font-size: 42px; line-height: 1; font-weight: 900; margin: 12px 0 6px; color: var(--purple); }
+.quickActionGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.quickActionCard { padding: 14px; border: 1px solid var(--border); border-radius: 16px; background: var(--soft); }
+.quickActionCard p { margin: 6px 0 0; color: var(--muted); }
+.billingMetric, .bedMetric { padding: 18px; }
+.billingMetric span, .bedMetric span { display: block; color: var(--muted); text-transform: capitalize; }
+.billingMetric strong, .bedMetric strong { display: block; font-size: 28px; margin-top: 6px; color: var(--text); }
+.invoiceDueBox { border: 1px solid var(--border); border-radius: 16px; padding: 12px 16px; background: var(--soft); min-width: 160px; }
+.invoiceDueBox span { display: block; color: var(--muted); font-size: 12px; }
+.invoiceDueBox strong { font-size: 24px; }
+.inventoryPage .appointmentHero, .inventoryPage .pharmacyHero { background: linear-gradient(135deg, #4f46e5, #7c3aed) !important; color: #fff !important; border: 0; }
+.inventoryPage .appointmentHero h1, .inventoryPage .appointmentHero p, .inventoryPage .appointmentHero span { color: #fff !important; }
+.inventoryPage .appointmentStat { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 18px; }
+.details-grid { display: grid; grid-template-columns: minmax(160px, 220px) minmax(0, 1fr); gap: 12px 18px; align-items: center; }
+.details-grid span { color: var(--muted); }
+.details-grid strong { word-break: break-word; }
+.form-grid label, .configuration-form label { display: flex; flex-direction: column; gap: 6px; }
+.portalHeroActions select { min-width: 300px; }
+.portalHero.card { align-items: center; }
+.alert.danger { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(239, 68, 68, .09); color: #991b1b; margin: 12px 0; }
+@media (max-width: 1100px) { .commandStatsGrid, .billingSummaryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bedStatusGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .labeledGrid { grid-template-columns: 1fr; } .quickActionGrid { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .commandHeroFixed, .portalHero.card { flex-direction: column; align-items: flex-start; } .commandStatsGrid, .billingSummaryGrid, .bedStatusGrid { grid-template-columns: 1fr; } .portalHeroActions, .portalHeroActions select { width: 100%; min-width: 0; } }

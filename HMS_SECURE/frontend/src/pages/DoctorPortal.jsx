@@ -22,7 +22,15 @@ export default function DoctorPortal({ user, doctors = [] }) {
     }
   }
 
-  useEffect(() => { load(""); }, []);
+  useEffect(() => {
+    if (canSelectDoctor && doctors.length && !selectedDoctorId) {
+      const first = doctors[0]?.id || doctors[0]?.doctor_id || '';
+      setSelectedDoctorId(String(first));
+      load(first);
+    } else {
+      load('');
+    }
+  }, [doctors.length]);
 
   const doctor = data?.doctor;
   const summary = data?.summary || {};
@@ -39,7 +47,7 @@ export default function DoctorPortal({ user, doctors = [] }) {
         <div className="portalHeroActions">
           {canSelectDoctor && (
             <select value={selectedDoctorId} onChange={(e) => { setSelectedDoctorId(e.target.value); load(e.target.value); }}>
-              <option value="">Auto-link from my login / select doctor below</option>
+              <option value="">Select doctor / try auto-link from login</option>
               {doctors.map((d) => <option key={d.id} value={d.id}>{d.full_name} · {d.doctor_id || d.id}</option>)}
             </select>
           )}
@@ -48,7 +56,7 @@ export default function DoctorPortal({ user, doctors = [] }) {
       </div>
 
       {!doctor ? (
-        <div className="card emptyState">{data?.message || "No doctor profile found. Admin/staff can select a doctor from the dropdown above."}</div>
+        <div className="card emptyState">{data?.message || "No doctor profile is linked yet. Admin/staff can select a doctor above, or create/link a doctor using matching email, phone or user ID."}</div>
       ) : (
         <>
           <div className="portalProfile card">

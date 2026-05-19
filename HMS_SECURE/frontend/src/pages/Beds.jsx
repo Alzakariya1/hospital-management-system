@@ -1,17 +1,28 @@
 import React from "react";
+import toast from "react-hot-toast";
 import { DataTable } from "../components";
 
 const BED_STATUSES = ["available", "occupied", "reserved", "cleaning", "maintenance", "inactive"];
 
-export default function Beds({ bed, setBed, addBed, beds, permissions = {} }) {
+export default function Beds({ bed, setBed, addBed, beds = [], permissions = {} }) {
+  function submit(e) {
+    e.preventDefault();
+    const duplicate = beds.some((b) => String(b.ward || '').trim().toLowerCase() === String(bed.ward || '').trim().toLowerCase() && String(b.bed_number || '').trim().toLowerCase() === String(bed.bed_number || '').trim().toLowerCase());
+    if (duplicate) return toast.error('This ward + bed number already exists for this hospital.');
+    return addBed(e);
+  }
+  const counts = BED_STATUSES.reduce((acc, s) => ({ ...acc, [s]: beds.filter((b) => String(b.status || '').toLowerCase() === s).length }), {});
   return (
-    <section className="modulePage bedsPage">
+    <section className="modulePage bedsPage improvedBedsPage">
+      <div className="bedStatusGrid">
+        {BED_STATUSES.slice(0, 5).map((s) => <div className="card bedMetric" key={s}><span>{s}</span><strong>{counts[s] || 0}</strong></div>)}
+      </div>
       {permissions.bedCreate && (
-        <form className="card form polishedForm" onSubmit={addBed}>
+        <form className="card form polishedForm" onSubmit={submit}>
           <div className="sectionTitleRow">
             <div>
               <h2>Add Bed</h2>
-              <p className="muted">Create ward-wise beds with operational status. Bed numbers are checked per hospital and ward.</p>
+              <p className="muted">Bed status now uses hospital-friendly values only. Duplicate ward + bed number is blocked before submit.</p>
             </div>
           </div>
           <div className="formGrid labeledGrid">
@@ -23,8 +34,8 @@ export default function Beds({ bed, setBed, addBed, beds, permissions = {} }) {
         </form>
       )}
       <div className="card">
-        <div className="sectionTitleRow"><h2>Bed Register</h2><span className="muted">{beds?.length || 0} records</span></div>
-        <DataTable rows={beds} cols={["hospital_id", "ward", "bed_number", "status"]} />
+        <div className="sectionTitleRow"><h2>Bed Register</h2><span className="muted">{beds.length} records</span></div>
+        <DataTable rows={beds} cols={["ward", "bed_number", "status", "patient_id"]} />
       </div>
     </section>
   );
