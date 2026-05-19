@@ -82,6 +82,7 @@ import {
   ProductionOps,
   SalesDemoCenter,
   LegalSecurityCenter,
+  AdvancedFeaturePage,
 PilotDeploymentCenter,
 } from "./pages";
 import { DEFAULT_ENABLED_MODULES, DEFAULT_FEATURE_FLAGS, filterTabsByPermissions, hasPermission, normalizeFeatureFlags } from "./utils";
@@ -1275,20 +1276,7 @@ function App() {
         }}
       >
             {["fhir", "hl7", "pacs", "biometric", "erp", "whatsapp_sms", "abdm_abha", "two_factor_auth", "audit_compliance"].includes(tab) && (
-              <section className="card enterpriseFeaturePage">
-                <div className="sectionHead">
-                  <div>
-                    <h2>{tabs.find((t) => t[0] === tab)?.[1] || "Enterprise Feature"}</h2>
-                    <p className="muted">This advanced feature flag is enabled for the active hospital. Detailed workflows and integrations can be expanded in the next dedicated phase.</p>
-                  </div>
-                  <span className="statusPill success">Enabled</span>
-                </div>
-                <div className="featureNotice">
-                  <strong>Active hospital:</strong> {currentHospital?.name || user?.hospital_name || "Current hospital"}
-                  <br />
-                  <span>Use Configuration → Advanced Feature Flags to turn this feature on or off per hospital.</span>
-                </div>
-              </section>
+              <AdvancedFeaturePage featureKey={tab} currentHospital={currentHospital} />
             )}
             {tab === "dashboard" && (
               <Dashboard

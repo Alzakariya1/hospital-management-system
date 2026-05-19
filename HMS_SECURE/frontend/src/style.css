@@ -3800,3 +3800,53 @@ body { letter-spacing: normal; }
   .commandStatsGrid, .commandAlertGrid, .pharmacyStatsGrid, .inventoryPage .pharmacyStatsGrid, .dashboardTwoCol, .dashboardThreeCol, .pharmacyActionGrid, .pharmacyFormGrid, .quickActionGrid, .inventoryPage > .pharmacyFilters { grid-template-columns: 1fr; }
   .pharmacyHero, .inventoryPage .pharmacyHero, .inventoryPage .appointmentHero { align-items:flex-start; flex-direction:column; padding:22px !important; }
 }
+
+/* V45 deep fix: Legal/Security and advanced enterprise feature workspaces */
+.page-stack { display: flex; flex-direction: column; gap: 22px; max-width: 1280px; margin: 0 auto; padding-bottom: 36px; }
+.page-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+.page-title-row h1 { margin: 0 0 8px; font-size: clamp(28px, 3vw, 42px); line-height: 1.1; }
+.page-title-row .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.stat-card { border: 1px solid var(--border, #e5e7eb); border-radius: 20px; padding: 18px 20px; background: var(--card, #fff); box-shadow: var(--shadow-soft, 0 12px 32px rgba(15,23,42,.08)); }
+.stat-card span { display: block; color: var(--muted, #64748b); font-size: 13px; }
+.stat-card strong { display: block; margin: 5px 0; font-size: 28px; color: var(--text, #0f172a); }
+.stat-card small { color: var(--muted, #64748b); }
+.grid.two, .grid.twoCols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.grid.compact, .grid.two.compact { gap: 12px; }
+.card.form, .adv-card.form { display: flex; flex-direction: column; gap: 12px; }
+.card.form input, .card.form select, .card.form textarea,
+.adv-card.form input, .adv-card.form select, .adv-card.form textarea { width: 100%; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; padding: 11px 13px; background: var(--card, #fff); color: var(--text, #0f172a); }
+.card.form textarea, .adv-card.form textarea { min-height: 96px; resize: vertical; }
+.card.form button, .page-title-row button, .adv-card.form button, .adv-card button:not(.ghostBtn), .heroActions button:not(.ghostBtn) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 12px; padding: 11px 16px; background: var(--theme-primary, #5b3fb4); color: #fff; font-weight: 800; cursor: pointer; }
+.check-row { display: flex !important; align-items: center; gap: 10px; flex-direction: row !important; font-weight: 700; }
+.check-row input { width: auto !important; min-height: auto !important; }
+.table-card { overflow: hidden; }
+.table-card table, .compact-enterprise-table { width: 100%; border-collapse: collapse; }
+.table-card th, .table-card td, .compact-enterprise-table th, .compact-enterprise-table td { padding: 13px 14px; border-bottom: 1px solid var(--border, #e5e7eb); text-align: left; vertical-align: top; }
+.table-card th, .compact-enterprise-table th { background: #f8fafc; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+.badge, .statusPill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 6px 12px; background: #eef2ff; color: #4338ca; font-weight: 800; text-transform: capitalize; }
+.badge.ok, .statusPill.success { background: #dcfce7; color: #047857; }
+.badge.danger { background: #fee2e2; color: #b91c1c; }
+button.mini { padding: 7px 10px; border-radius: 10px; font-size: 12px; }
+.code-box { white-space: pre-wrap; word-break: break-word; border: 1px solid #e2e8f0; border-radius: 16px; background: #0f172a; color: #e2e8f0; padding: 16px; overflow: auto; max-height: 420px; }
+.advancedFeatureWorkspace { max-width: 1280px; margin: 0 auto; padding-bottom: 38px; }
+.advHero { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; align-items: stretch; border-radius: 26px; padding: 30px; color: #fff; background: linear-gradient(135deg, #4338ca 0%, #7c3aed 55%, #0f172a 100%); box-shadow: 0 20px 45px rgba(67,56,202,.22); }
+.advHero h1 { margin: 8px 0 10px; font-size: clamp(30px, 4vw, 48px); line-height: 1; color: #fff; }
+.advHero p { max-width: 850px; color: rgba(255,255,255,.9); font-size: 16px; line-height: 1.65; }
+.advHero .eyebrow { background: rgba(255,255,255,.16); color: #fff; border-radius: 999px; padding: 7px 12px; }
+.advHeroPanel { border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.12); border-radius: 20px; padding: 18px; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+.advHeroPanel strong { font-size: 20px; }
+.advHeroPanel small { color: rgba(255,255,255,.78); }
+.advStatsGrid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 16px; }
+.adv-main-grid { align-items: stretch; }
+.adv-card { border-radius: 22px; padding: 22px; box-shadow: var(--shadow-soft, 0 12px 32px rgba(15,23,42,.08)); }
+.featureChecklist { display: grid; gap: 12px; margin: 14px 0; }
+.featureChecklist .featureItem { align-items: flex-start; background: #f8fafc; }
+.featureChecklist .featureItem p { margin: 4px 0 0; color: var(--muted, #64748b); }
+.checkDot { width: 28px; height: 28px; flex: 0 0 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #dcfce7; color: #047857; font-weight: 900; }
+.featureToggleBox { margin-top: 18px; border: 1px dashed #cbd5e1; border-radius: 18px; padding: 16px; background: #fff; }
+.adv-code-preview { min-height: 300px; max-height: 470px; font-size: 12px; }
+.alert.success { margin-top: 12px; border: 1px solid #bbf7d0; background: #f0fdf4; color: #065f46; border-radius: 14px; padding: 12px; display: grid; gap: 6px; }
+.alert.success code { background: #fff; border: 1px solid #bbf7d0; border-radius: 10px; padding: 8px; overflow-x: auto; }
+@media (max-width: 1100px) { .stats-grid, .advStatsGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .advHero { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .grid.two, .grid.twoCols, .stats-grid, .advStatsGrid { grid-template-columns: 1fr; } .page-title-row { flex-direction: column; } .advHero { padding: 22px; } }

@@ -40,3 +40,5 @@ export { default as SalesDemoCenter } from './SalesDemoCenter';
 export { default as LegalSecurityCenter } from './LegalSecurityCenter';
 
 export { default as PilotDeploymentCenter } from './PilotDeploymentCenter';
+
+export { default as AdvancedFeaturePage } from './AdvancedFeaturePage';
