@@ -3728,3 +3728,75 @@ body { letter-spacing: normal; }
 .alert.danger { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-radius: 14px; background: rgba(239, 68, 68, .09); color: #991b1b; margin: 12px 0; }
 @media (max-width: 1100px) { .commandStatsGrid, .billingSummaryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .bedStatusGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .labeledGrid { grid-template-columns: 1fr; } .quickActionGrid { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .commandHeroFixed, .portalHero.card { flex-direction: column; align-items: flex-start; } .commandStatsGrid, .billingSummaryGrid, .bedStatusGrid { grid-template-columns: 1fr; } .portalHeroActions, .portalHeroActions select { width: 100%; min-width: 0; } }
+
+/* V45 emergency visible UI fixes: command center route, SaaS icon import, pharmacy/inventory readability */
+.commandCenterPage { display: grid; gap: 20px; }
+.commandCenterPage .enterpriseTableWrap,
+.pharmacyPage .enterpriseTableWrap,
+.inventoryPage .enterpriseTableWrap { overflow-x: auto; }
+.commandCenterPage .enterpriseTable,
+.pharmacyPage .enterpriseTable,
+.inventoryPage .enterpriseTable { min-width: 760px; }
+.commandStatsGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.commandAlertGrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.commandAlert { padding: 18px; border-radius: 18px; border: 1px solid var(--border); background: var(--card); display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-soft); }
+.commandAlert span { color: var(--muted); font-weight: 700; }
+.commandAlert strong { font-size: 28px; color: var(--theme-primary, var(--purple)); }
+.commandAlert.ok { background: linear-gradient(135deg, rgba(16,185,129,.11), var(--card)); }
+.commandAlert.warn { background: linear-gradient(135deg, rgba(245,158,11,.13), var(--card)); }
+.commandAlert.danger { background: linear-gradient(135deg, rgba(239,68,68,.13), var(--card)); }
+.dashboardTwoCol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.dashboardThreeCol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.commandPanelFixed, .commandMiniPanel { min-height: 260px; overflow: hidden; }
+.sectionTitleRow { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.sectionTitleRow h2, .commandMiniPanel h3 { display:flex; align-items:center; gap:8px; margin:0; }
+.bigMetric { font-size: 36px; font-weight: 900; margin: 10px 0 2px; color: var(--theme-primary, var(--purple)); }
+.quickActionGrid { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:12px; }
+.quickActionCard { padding:14px; border:1px solid var(--border); border-radius:16px; background: color-mix(in srgb, var(--theme-primary, #6d4aff) 5%, var(--card)); }
+.quickActionCard p { margin:6px 0 0; color: var(--muted); }
+
+.pharmacyPage { max-width: 1180px; margin: 0 auto; padding-bottom: 34px; }
+.pharmacyHero,
+.inventoryPage .pharmacyHero,
+.inventoryPage .appointmentHero {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 22px !important;
+  padding: 28px 32px !important;
+  box-shadow: 0 18px 35px rgba(79,70,229,.24);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.pharmacyHero h1,
+.pharmacyHero h2,
+.inventoryPage .pharmacyHero h1,
+.inventoryPage .appointmentHero h1 { color:#fff !important; margin: 7px 0 8px; line-height: 1.1; }
+.pharmacyHero p,
+.pharmacyHero .muted,
+.inventoryPage .pharmacyHero p,
+.inventoryPage .appointmentHero p { color: rgba(255,255,255,.88) !important; }
+.pharmacyHero .eyebrow,
+.inventoryPage .pharmacyHero .eyebrow,
+.inventoryPage .appointmentHero .eyebrow { background: rgba(255,255,255,.18) !important; color:#fff !important; }
+.pharmacyStatsGrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.inventoryPage .pharmacyStatsGrid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pharmacyStatsGrid .appointmentStat { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: var(--shadow-soft); }
+.pharmacyForm, .pharmacyInventoryCard, .pharmacySalesCard, .pharmacyActionGrid > .card { border-radius: 22px; padding: 24px; }
+.pharmacyFormGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pharmacyFormGrid label span { display:block; margin-bottom:7px; font-size: 12px; font-weight: 800; letter-spacing:.04em; text-transform: uppercase; color: var(--muted); }
+.pharmacyActionGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+.pharmacyFilters { width: 100%; max-width: 100%; }
+.inventoryPage > .pharmacyFilters { display:grid; grid-template-columns: minmax(0,1fr) 180px; gap:12px; }
+.emptyTableState { background: color-mix(in srgb, var(--theme-primary, #6d4aff) 5%, var(--card)); border: 1px dashed color-mix(in srgb, var(--theme-primary, #6d4aff) 22%, var(--border)); border-radius: 18px; padding: 38px 20px; }
+
+@media (max-width: 980px) {
+  .commandStatsGrid, .commandAlertGrid, .pharmacyStatsGrid, .inventoryPage .pharmacyStatsGrid, .dashboardTwoCol, .dashboardThreeCol, .pharmacyActionGrid { grid-template-columns: 1fr 1fr; }
+  .pharmacyFormGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .commandStatsGrid, .commandAlertGrid, .pharmacyStatsGrid, .inventoryPage .pharmacyStatsGrid, .dashboardTwoCol, .dashboardThreeCol, .pharmacyActionGrid, .pharmacyFormGrid, .quickActionGrid, .inventoryPage > .pharmacyFilters { grid-template-columns: 1fr; }
+  .pharmacyHero, .inventoryPage .pharmacyHero, .inventoryPage .appointmentHero { align-items:flex-start; flex-direction:column; padding:22px !important; }
+}

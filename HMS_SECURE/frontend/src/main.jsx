@@ -1533,6 +1533,10 @@ function App() {
               <IntegrationCenter permissions={permissions} />
             )}
 
+            {tab === "commandCenter" && (
+              <CommandCenter />
+            )}
+
             {tab === "operations" && (
               <ProductionOps permissions={permissions} />
             )}

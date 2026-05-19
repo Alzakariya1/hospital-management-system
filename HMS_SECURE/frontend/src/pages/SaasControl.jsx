@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Building2, Crown, Download, Gauge, IndianRupee, ShieldAlert, Users, PlayCircle, PauseCircle, XCircle, ReceiptText, CreditCard, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { Building2, Crown, Download, Gauge, IndianRupee, ShieldAlert, Users, PlayCircle, PauseCircle, XCircle, ReceiptText, CreditCard, Link as LinkIcon, CheckCircle2, ServerCog } from 'lucide-react';
 import { saasApi } from '../api';
 
 const money = (value = 0) => `₹${Number(value || 0).toLocaleString('en-IN')}`;
