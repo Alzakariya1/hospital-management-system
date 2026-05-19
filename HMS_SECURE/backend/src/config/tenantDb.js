@@ -20,13 +20,8 @@ function sanitizeDbName(value) {
 }
 
 function buildTenantDbName({ hospital_code, id, name, prefix } = {}) {
-  // Hospital tenant DBs must be deterministic and human-readable: <prefix>_<hospital-name-or-code>_<numeric-id>.
-  // This avoids data conflict and also prevents collisions when two hospitals use similar codes/names.
-  const safeId = Number.isFinite(Number(id)) && Number(id) > 0 ? Number(id) : Date.now();
-  const namePart = sanitizeDbName(name || hospital_code || `hospital_${safeId}`) || `hospital_${safeId}`;
-  const codePart = hospital_code ? sanitizeDbName(hospital_code) : '';
-  const base = sanitizeDbName([namePart, codePart, safeId].filter(Boolean).join('_'));
-  return `${sanitizeDbName(prefix || process.env.TENANT_DB_PREFIX || 'hms_tenant')}_${base}`.slice(0, 63);
+  const base = sanitizeDbName(hospital_code || name || `hospital_${id || Date.now()}`) || `hospital_${Date.now()}`;
+  return `${sanitizeDbName(prefix || process.env.TENANT_DB_PREFIX || 'hms_tenant')}_${base}`;
 }
 
 function uriForDb(dbName) {

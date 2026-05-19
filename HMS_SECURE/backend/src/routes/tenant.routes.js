@@ -2,11 +2,10 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const { Hospital, User, AuditLog } = require('../models');
 const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
+const { cloudinary, hasCloudinaryConfig } = require('../config/cloudinary');
 const asyncHandler = require('../utils/asyncHandler');
 const { verifyToken, requirePermission } = require('../middleware/auth');
 const { DEFAULT_HOSPITAL_ID } = require('../middleware/tenant');
-const { buildTenantDbName, ensureTenantDatabase, sanitizeDbName } = require('../config/tenantDb');
 const { getPlan, getAllowedModules, getAllowedFeatures, normalizePlanModules, normalizePlanFeatureFlags, mergePlanLimits, ensureWithinLimit } = require('../utils/subscription');
 
 const router = express.Router();
@@ -26,6 +25,26 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 const ALLOWED_LOGO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'];
+
+function fileToDataUrl(file) {
+  return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+}
+
+async function uploadBufferToCloudinary(file, options) {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(options, (error, uploadResult) => error ? reject(error) : resolve(uploadResult));
+    stream.end(file.buffer);
+  });
+}
+
+async function safelyDestroyCloudinary(publicId, resourceType = 'auto') {
+  if (!publicId || !hasCloudinaryConfig()) return;
+  try {
+    await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+  } catch (error) {
+    console.warn('Cloudinary cleanup skipped:', error?.message || error);
+  }
+}
 
 function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
@@ -249,24 +268,9 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
     }
     throw err;
   }
-
   let adminUser = null;
-  let tenantDbName = null;
 
   try {
-    // Phase V44: every newly added hospital gets its own physical MongoDB database immediately.
-    // Platform/super-admin data remains in the master DB; patient/doctor/billing/etc. go to this tenant DB.
-    tenantDbName = sanitizeDbName(req.body.tenant_db_name) || buildTenantDbName({
-      hospital_code: hospital.hospital_code,
-      id: hospital.id,
-      name: hospital.name,
-    });
-    await ensureTenantDatabase(tenantDbName);
-    hospital.tenant_db_name = tenantDbName;
-    hospital.tenant_db_status = 'active';
-    hospital.tenant_db_created_at = hospital.tenant_db_created_at || new Date();
-    await hospital.save();
-
     const adminPayload = await buildInitialAdminPayload(req, hospital.id);
     if (adminPayload) {
       const limitCheck = await ensureWithinLimit(hospital.id, 'users', 1);
@@ -292,7 +296,7 @@ router.post('/tenants', verifyToken, requirePermission('hospital.manage'), async
   });
 
   res.status(201).json({
-    message: adminUser ? 'Hospital, tenant database and admin user created successfully' : 'Hospital and tenant database created successfully',
+    message: adminUser ? 'Hospital and admin user created successfully' : 'Hospital created successfully',
     hospital: publicHospital(hospital),
     admin_user: publicUser(adminUser),
   });
@@ -382,26 +386,29 @@ router.post('/tenants/:id/logo', verifyToken, requirePermission('hospital.manage
   }
 
   const currentBranding = hospital.branding || {};
-  if (currentBranding.logo_public_id) {
-    try { await cloudinary.uploader.destroy(currentBranding.logo_public_id, { resource_type: 'image' }); } catch (_) { }
-  }
+  await safelyDestroyCloudinary(currentBranding.logo_public_id, 'image');
 
-  const result = await new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: `hms/hospital-logos/${hospitalId}`,
-        resource_type: 'image',
-        public_id: `logo-${Date.now()}`,
-      },
-      (error, uploadResult) => error ? reject(error) : resolve(uploadResult),
-    );
-    stream.end(req.file.buffer);
-  });
+  let logoUrl;
+  let logoPublicId = '';
+  let logoStorage = 'database';
+  if (hasCloudinaryConfig()) {
+    const result = await uploadBufferToCloudinary(req.file, {
+      folder: `hms/hospital-logos/${hospitalId}`,
+      resource_type: 'image',
+      public_id: `logo-${Date.now()}`,
+    });
+    logoUrl = result.secure_url;
+    logoPublicId = result.public_id;
+    logoStorage = 'cloudinary';
+  } else {
+    logoUrl = fileToDataUrl(req.file);
+  }
 
   hospital.branding = {
     ...(hospital.branding || {}),
-    logo_url: result.secure_url,
-    logo_public_id: result.public_id,
+    logo_url: logoUrl,
+    logo_public_id: logoPublicId,
+    logo_storage: logoStorage,
   };
   await hospital.save();
 
@@ -412,7 +419,7 @@ router.post('/tenants/:id/logo', verifyToken, requirePermission('hospital.manage
     module_name: 'tenants',
   });
 
-  res.json({ message: 'Hospital logo uploaded successfully', hospital: publicHospital(hospital) });
+  res.json({ message: logoStorage === 'cloudinary' ? 'Hospital logo uploaded successfully' : 'Hospital logo saved successfully. Cloudinary is not configured, so the file was stored in MongoDB.', hospital: publicHospital(hospital) });
 }));
 
 router.delete('/tenants/:id', verifyToken, requirePermission('hospital.manage'), asyncHandler(async (req, res) => {

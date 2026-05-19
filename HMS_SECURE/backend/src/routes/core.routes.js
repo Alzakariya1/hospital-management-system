@@ -138,8 +138,28 @@ router.get('/doctors/:id', requirePermission('doctor.view'), asyncHandler(async 
 router.post('/doctors', requirePermission('doctor.create'), asyncHandler(async (req, res) => {
     const uid = req.body.doctor_uid || `DOC-${Date.now()}`;
     const custom_fields = await validateCustomFields(req, 'doctors', req.body.custom_fields || {});
-    const r = await Doctor.create(tenantCreateData(req, { ...req.body, custom_fields, doctor_uid: uid, status: req.body.status || 'active' }));
-    res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid });
+    const payload = { ...req.body, custom_fields, doctor_uid: uid, status: req.body.status || 'active' };
+    if (Object.prototype.hasOwnProperty.call(payload, 'doctor_id')) {
+        payload.doctor_id = typeof payload.doctor_id === 'string' ? payload.doctor_id.trim() : payload.doctor_id;
+        if (!payload.doctor_id) delete payload.doctor_id;
+    }
+    if (payload.doctor_id) {
+        const duplicateDoctor = await Doctor.findOne(tenantFilter(req, { doctor_id: payload.doctor_id })).lean();
+        if (duplicateDoctor) {
+            return res.status(409).json({
+                message: `Doctor ID already exists for ${duplicateDoctor.full_name || 'another doctor'}: ${payload.doctor_id}`,
+            });
+        }
+    }
+    try {
+        const r = await Doctor.create(tenantCreateData(req, payload));
+        res.status(201).json({ message: 'Doctor created', id: r.id, doctor_uid: uid, doctor: r.toJSON?.() || r });
+    } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(409).json({ message: 'Doctor ID already exists in this hospital. Please use a different Doctor ID.' });
+        }
+        throw error;
+    }
 }));
 
 router.put('/doctors/:id', requirePermission('doctor.edit'), asyncHandler(async (req, res) => {

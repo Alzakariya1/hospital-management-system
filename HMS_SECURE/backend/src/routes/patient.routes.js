@@ -5,7 +5,7 @@ const { verifyToken, requirePermission } = require("../middleware/auth");
 const { attachTenant, tenantFilter, tenantCreateData } = require("../middleware/tenant");
 const router = express.Router();
 const multer = require("multer");
-const cloudinary = require("../config/cloudinary");
+const { cloudinary, hasCloudinaryConfig } = require("../config/cloudinary");
 router.use(verifyToken, attachTenant);
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -13,6 +13,33 @@ const upload = multer({
         fileSize: 5 * 1024 * 1024,
     },
 });
+
+function fileToDataUrl(file) {
+    return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+}
+
+async function uploadBufferToCloudinary(file, options) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(options, (error, uploadResult) => {
+            if (error) reject(error);
+            else resolve(uploadResult);
+        });
+        stream.end(file.buffer);
+    });
+}
+
+async function safelyDestroyCloudinary(publicId, resourceType = 'auto') {
+    if (!publicId || !hasCloudinaryConfig()) return;
+    try {
+        await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    } catch (error) {
+        console.warn('Cloudinary cleanup skipped:', error?.message || error);
+    }
+}
+
+function cleanString(value) {
+    return typeof value === 'string' ? value.trim() : value;
+}
 
 
 async function validateCustomFields(req, targetModule, customFields = {}) {
@@ -153,10 +180,30 @@ router.post(
     asyncHandler(async (req, res) => {
         const uid = req.body.patient_uid || `PAT-${Date.now()}`;
         const custom_fields = await validateCustomFields(req, 'patients', req.body.custom_fields || {});
-        const r = await Patient.create(tenantCreateData(req, { ...req.body, custom_fields, patient_uid: uid }));
-        res
-            .status(201)
-            .json({ message: "Patient created", id: r.id, patient_uid: uid });
+        const payload = { ...req.body, custom_fields, patient_uid: uid };
+        if (Object.prototype.hasOwnProperty.call(payload, 'patient_id')) {
+            payload.patient_id = cleanString(payload.patient_id);
+            if (!payload.patient_id) delete payload.patient_id;
+        }
+        if (payload.patient_id) {
+            const existingPatient = await Patient.findOne(tenantFilter(req, { patient_id: payload.patient_id })).lean();
+            if (existingPatient) {
+                return res.status(409).json({
+                    message: `Patient ID already exists for ${existingPatient.full_name || 'another patient'}: ${payload.patient_id}`,
+                });
+            }
+        }
+        try {
+            const r = await Patient.create(tenantCreateData(req, payload));
+            res.status(201).json({ message: "Patient created", id: r.id, patient_uid: uid, patient: r.toJSON?.() || r });
+        } catch (error) {
+            if (error?.code === 11000) {
+                return res.status(409).json({
+                    message: 'Patient ID already exists in this hospital. Please use a different Patient ID.',
+                });
+            }
+            throw error;
+        }
     }),
 );
 router.put(
@@ -184,13 +231,46 @@ router.put(
         ];
         const update = {};
         allowed.forEach((k) => {
-            if (k in req.body) update[k] = req.body[k];
+            if (k in req.body) update[k] = cleanString(req.body[k]);
         });
         if ('custom_fields' in req.body) update.custom_fields = await validateCustomFields(req, 'patients', req.body.custom_fields || {});
         if (!Object.keys(update).length)
             return res.status(400).json({ message: "No valid fields to update" });
-        await Patient.updateOne(tenantFilter(req, { id: Number(req.params.id) }), { $set: update });
-        res.json({ message: "Patient updated" });
+
+        const patientNumericId = Number(req.params.id);
+        const existingPatient = await Patient.findOne(tenantFilter(req, { id: patientNumericId })).lean();
+        if (!existingPatient) return res.status(404).json({ message: "Patient not found" });
+
+        if (Object.prototype.hasOwnProperty.call(update, 'patient_id')) {
+            if (!update.patient_id) delete update.patient_id;
+            else {
+                const duplicatePatient = await Patient.findOne(tenantFilter(req, {
+                    patient_id: update.patient_id,
+                    id: { $ne: patientNumericId },
+                })).lean();
+                if (duplicatePatient) {
+                    return res.status(409).json({
+                        message: `Patient ID already exists for ${duplicatePatient.full_name || 'another patient'}: ${update.patient_id}`,
+                    });
+                }
+            }
+        }
+
+        try {
+            const updated = await Patient.findOneAndUpdate(
+                tenantFilter(req, { id: patientNumericId }),
+                { $set: update },
+                { new: true, runValidators: true },
+            ).lean();
+            res.json({ message: "Patient updated", patient: updated });
+        } catch (error) {
+            if (error?.code === 11000) {
+                return res.status(409).json({
+                    message: 'Patient ID already exists in this hospital. Please use a different Patient ID.',
+                });
+            }
+            throw error;
+        }
     }),
 );
 router.post(
@@ -208,20 +288,21 @@ router.post(
             return res.status(400).json({ message: "Document file is required" });
         }
 
-        const result = await new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-                {
-                    folder: "hms/patient-documents",
-                    resource_type: "auto",
-                },
-                (error, uploadResult) => {
-                    if (error) reject(error);
-                    else resolve(uploadResult);
-                },
-            );
+        let fileUrl;
+        let filePublicId = "";
+        let storage = "database";
 
-            stream.end(req.file.buffer);
-        });
+        if (hasCloudinaryConfig()) {
+            const result = await uploadBufferToCloudinary(req.file, {
+                folder: "hms/patient-documents",
+                resource_type: "auto",
+            });
+            fileUrl = result.secure_url;
+            filePublicId = result.public_id;
+            storage = "cloudinary";
+        } else {
+            fileUrl = fileToDataUrl(req.file);
+        }
 
         const newDoc = {
             title: req.body.title || req.file.originalname,
@@ -231,8 +312,9 @@ router.post(
             file_name: req.file.originalname,
             file_type: req.file.mimetype,
             file_size: req.file.size,
-            file_url: result.secure_url,
-            file_public_id: result.public_id,
+            file_url: fileUrl,
+            file_public_id: filePublicId,
+            storage,
             uploaded_at: new Date(),
         };
 
@@ -242,7 +324,7 @@ router.post(
         await patient.save();
 
         res.status(201).json({
-            message: "Document uploaded successfully",
+            message: storage === "cloudinary" ? "Document uploaded successfully" : "Document saved successfully. Cloudinary is not configured, so the file was stored in MongoDB.",
             document: newDoc,
             documents: patient.documents,
         });
@@ -271,34 +353,36 @@ router.post(
             });
         }
 
-        if (patient.profile_image_public_id) {
-            await cloudinary.uploader.destroy(patient.profile_image_public_id);
+        await safelyDestroyCloudinary(patient.profile_image_public_id, "image");
+
+        let profileImageUrl;
+        let profileImagePublicId = "";
+        let profileImageStorage = "database";
+
+        if (hasCloudinaryConfig()) {
+            const result = await uploadBufferToCloudinary(req.file, {
+                folder: "hms/patient-profile-images",
+                resource_type: "image",
+            });
+            profileImageUrl = result.secure_url;
+            profileImagePublicId = result.public_id;
+            profileImageStorage = "cloudinary";
+        } else {
+            profileImageUrl = fileToDataUrl(req.file);
         }
 
-        const result = await new Promise((resolve, reject) => {
-            const stream = cloudinary.uploader.upload_stream(
-                {
-                    folder: "hms/patient-profile-images",
-                    resource_type: "image",
-                },
-                (error, uploadResult) => {
-                    if (error) reject(error);
-                    else resolve(uploadResult);
-                },
-            );
-
-            stream.end(req.file.buffer);
-        });
-
-        patient.profile_image_url = result.secure_url;
-        patient.profile_image_public_id = result.public_id;
+        patient.profile_image_url = profileImageUrl;
+        patient.profile_image_public_id = profileImagePublicId;
+        patient.profile_image_storage = profileImageStorage;
 
         await patient.save();
 
         res.json({
-            message: "Patient profile image uploaded successfully",
+            message: profileImageStorage === "cloudinary" ? "Patient profile image uploaded successfully" : "Patient profile image saved successfully. Cloudinary is not configured, so the file was stored in MongoDB.",
             profile_image_url: patient.profile_image_url,
             profile_image_public_id: patient.profile_image_public_id,
+            storage: profileImageStorage,
+            patient: patient.toJSON?.() || patient,
         });
     }),
 );
@@ -319,11 +403,7 @@ router.delete(
             return res.status(404).json({ message: "Document not found" });
         }
 
-        if (doc.file_public_id) {
-            await cloudinary.uploader.destroy(doc.file_public_id, {
-                resource_type: "auto",
-            });
-        }
+        await safelyDestroyCloudinary(doc.file_public_id, "auto");
 
         patient.documents.splice(docIndex, 1);
         await patient.save();
